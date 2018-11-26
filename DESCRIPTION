@@ -1,0 +1,13 @@
+Package: bcfbma
+Type: Package
+Title: Bayesian Causal Forests using Bayesian Model Averaging
+Version: 1.0
+Date: 2018-11-24
+Author: Eoghan O'Neill
+Maintainer: Eoghan O'Neill <oneill.eoghan.1@gmail.com>
+Description: Bayesian Causal Forests using Bayesian Model Averaging is an extension to the original Bayesian Causal Forests of Hahn et al. (2018), which will be computationally feasible for high dimensional data. 
+  This is based on the BART-BMA (Hernandez et al. 2018) of BART (Chipman et al. 2010).
+License: GPL (>= 2)
+Imports: Rcpp (>= 0.12.18)
+LinkingTo: Rcpp, RcppArmadillo
+RoxygenNote: 6.1.1
