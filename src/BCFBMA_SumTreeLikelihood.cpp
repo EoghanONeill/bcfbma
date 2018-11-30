@@ -1022,9 +1022,10 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
       
       double split_point=cp_mat(k,1);											// variable split_point equals element in k+1^th row 2nd column of cp_mat
       arma::vec curr_cols2=data_curr_node.col(split_var-1);					// curr_cols2 is split_var^th column of data_curr_node
+      arma::vec get_min_a=Rcpp::as<arma::vec>(get_min);		// converts to arma vec
       
-      arma::vec ld_prop=curr_cols2.elem(arma::find(curr_cols2 <= split_point));	// ld_prop is elements of curr_cols2 <= split_point
-      arma::vec rd_prop=curr_cols2.elem(arma::find(curr_cols2> split_point));		// rd_prop is elements of curr_cols2 > split_point
+      arma::vec ld_prop=curr_cols2.elem(arma::find(get_min_a <= split_point));	// ld_prop is elements of curr_cols2 <= split_point
+      arma::vec rd_prop=curr_cols2.elem(arma::find(get_min_a> split_point));		// rd_prop is elements of curr_cols2 > split_point
       
       if(ld_prop.size()<=2 || rd_prop.size()<=2){									// if 2 or less observations in either ld_prop or rd_prop
         continue;																// skip to next iteration of the loop
