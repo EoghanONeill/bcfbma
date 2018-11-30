@@ -282,6 +282,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_grow_obs_in_z_bcf
+NumericVector get_grow_obs_in_z_bcf(arma::vec& z_ar, NumericVector grow_obs);
+RcppExport SEXP _bcfbma_get_grow_obs_in_z_bcf(SEXP z_arSEXP, SEXP grow_obsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec& >::type z_ar(z_arSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type grow_obs(grow_obsSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_grow_obs_in_z_bcf(z_ar, grow_obs));
+    return rcpp_result_gen;
+END_RCPP
+}
 // grow_tree_bcf
 List grow_tree_bcf(arma::mat& xmat, NumericVector y, NumericMatrix prior_tree_matrix, int grow_node, NumericMatrix prior_tree_table, int splitvar, double splitpoint, NumericVector terminal_nodes, NumericVector grow_obs, double d, NumericVector get_min, arma::mat& data_curr_node);
 RcppExport SEXP _bcfbma_grow_tree_bcf(SEXP xmatSEXP, SEXP ySEXP, SEXP prior_tree_matrixSEXP, SEXP grow_nodeSEXP, SEXP prior_tree_tableSEXP, SEXP splitvarSEXP, SEXP splitpointSEXP, SEXP terminal_nodesSEXP, SEXP grow_obsSEXP, SEXP dSEXP, SEXP get_minSEXP, SEXP data_curr_nodeSEXP) {
@@ -1111,6 +1123,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bcfbma_get_daughter_obs_bcf", (DL_FUNC) &_bcfbma_get_daughter_obs_bcf, 4},
     {"_bcfbma_find_term_cols_bcf", (DL_FUNC) &_bcfbma_find_term_cols_bcf, 2},
     {"_bcfbma_get_grow_obs_bcf", (DL_FUNC) &_bcfbma_get_grow_obs_bcf, 3},
+    {"_bcfbma_get_grow_obs_in_z_bcf", (DL_FUNC) &_bcfbma_get_grow_obs_in_z_bcf, 2},
     {"_bcfbma_grow_tree_bcf", (DL_FUNC) &_bcfbma_grow_tree_bcf, 12},
     {"_bcfbma_set_daughter_bcf", (DL_FUNC) &_bcfbma_set_daughter_bcf, 6},
     {"_bcfbma_order__bcf", (DL_FUNC) &_bcfbma_order__bcf, 1},

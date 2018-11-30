@@ -85,6 +85,10 @@ get_grow_obs_bcf <- function(xmat, grow_obs, split_var) {
     .Call(`_bcfbma_get_grow_obs_bcf`, xmat, grow_obs, split_var)
 }
 
+get_grow_obs_in_z_bcf <- function(z_ar, grow_obs) {
+    .Call(`_bcfbma_get_grow_obs_in_z_bcf`, z_ar, grow_obs)
+}
+
 grow_tree_bcf <- function(xmat, y, prior_tree_matrix, grow_node, prior_tree_table, splitvar, splitpoint, terminal_nodes, grow_obs, d, get_min, data_curr_node) {
     .Call(`_bcfbma_grow_tree_bcf`, xmat, y, prior_tree_matrix, grow_node, prior_tree_table, splitvar, splitpoint, terminal_nodes, grow_obs, d, get_min, data_curr_node)
 }
