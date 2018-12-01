@@ -56,6 +56,10 @@ bcfBMA(x, ...)
 \item{gridpoint}{??}
 
 \item{maxOWsize}{Maximum number of models to keep in Occam's window}
+
+\item{num_splits_mu}{Maximum number of splits in a mu tree}
+
+\item{num_splits_tau}{Maximum number of splits in a tau tree}
 }
 \value{
 Include lots of details here.

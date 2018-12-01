@@ -27,6 +27,8 @@
 #' @param split_rule_node ??
 #' @param gridpoint ??
 #' @param maxOWsize Maximum number of models to keep in Occam's window
+#' @param num_splits_mu Maximum number of splits in a mu tree
+#' @param num_splits_tau Maximum number of splits in a tau tree
 #' @export
 #' @return Include lots of details here.
 
@@ -39,7 +41,7 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                           x.test=matrix(0.0,0,0),test_z = numeric(),test_pihat = matrix(0.0,0,0),
                           ntree_control=5,ntree_moderate=5,
                           alpha_mu=0.95,alpha_tau=0.95,beta_mu=1,beta_tau=1,split_rule_node=0,
-                          gridpoint=0,maxOWsize=100){
+                          gridpoint=0,maxOWsize=100, num_splits_mu =5, num_splits_tau =5){
   binary=FALSE
   start_mean=0
   start_sd=1
@@ -122,7 +124,7 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                                     pen_mu,pen_tau,num_cp_mu,num_cp_tau,
                                     x.test,test_z,test_pihat,ntree_control,ntree_moderate,
                                     alpha_mu,beta_mu,alpha_tau,beta_tau,
-                                    split_rule_node,gridpoint,maxOWsize)
+                                    split_rule_node,gridpoint,maxOWsize,num_splits_mu,num_splits_tau)
   
   if(length(bcfBMA_call)==11){
     #length of bcfBMA_call is 11 if test data was included in the call

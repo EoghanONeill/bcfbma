@@ -2936,7 +2936,7 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
                        List resids_cp_mat_mu,IntegerVector err_list,NumericMatrix x_control_test,NumericMatrix x_moderate_test,NumericVector test_z,
                        double alpha_mu,double alpha_tau,double beta_mu,double beta_tau,bool is_test_data,
                        double pen_mu,int num_cp_mu,double pen_tau,int num_cp_tau,
-                       bool split_rule_node,bool gridpoint,int maxOWsize
+                       bool split_rule_node,bool gridpoint,int maxOWsize, int num_splits_mu,int num_splits_tau
 ){
   List eval_model;										// create a list. Length not given.
   NumericVector lik_list;									// create a vector. Length not givem
@@ -2952,7 +2952,7 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
   NumericVector test_preds;								// create a vector. length not given.
   List cp_mat_list=resids_cp_mat_mu;
     
-    for(int j=0;j<5;j++){									// for-loop of length 5.
+    for(int j=0;j<num_splits_mu;j++){									// for-loop of length 5.
       int lsize=1000;										// reate a variable lsize. Initialized as 1000.
       List table_subset_curr_round(lsize);				// create a list of length 1000.
       std::vector<double> lik_subset_curr_round(lsize);	// create a vector of length 1000.
@@ -3181,7 +3181,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
                            bool is_test_data,double pen_mu,int num_cp_mu,double pen_tau,int num_cp_tau,
                            bool split_rule_node,bool gridpoint,int maxOWsize,
                            List prev_sum_trees_mu,List prev_sum_trees_tau,List prev_sum_trees_mat_mu,List prev_sum_trees_mat_tau,
-                           NumericVector y_scaled
+                           NumericVector y_scaled,int num_splits_mu,int num_splits_tau
 ){
   List example_tree_tab2 = prev_sum_trees_mu[parent[0]];
   List example_tree_mat2 = prev_sum_trees_mu[parent[0]];
@@ -3203,7 +3203,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
   NumericVector test_preds;							// create a vector.
   List cp_mat_list=resids_cp_mat_mu;
   
-  for(int j=0;j<5;j++){									// create a for-loop of length 5.
+  for(int j=0;j<num_splits_mu;j++){									// create a for-loop of length 5.
     int lsize=1000;										// create a variable initialized equal to 1000.
     List table_subset_curr_round(lsize);				// create a list of length 1000
     std::vector<double> lik_subset_curr_round(lsize);	// create a vector of length 1000
@@ -3467,7 +3467,7 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
                                    bool split_rule_node,bool gridpoint,int maxOWsize,
                                    List prev_sum_trees_mu,
                                    List prev_sum_trees_mat_mu,
-                                   NumericVector y_scaled
+                                   NumericVector y_scaled,int num_splits_mu,int num_splits_tau
 ){
   List eval_model;										// create a list
   NumericVector lik_list;								// create a vector
@@ -3489,7 +3489,7 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
   NumericMatrix temp_treated_resids = wrap(temp_treated_resids_a);	
   
   
-  for(int j=0;j<5;j++){									// create a for-loop of length 5.
+  for(int j=0;j<num_splits_tau;j++){									// create a for-loop of length 5.
     int lsize=1000;										// create a variable initialized equal to 1000.
     List table_subset_curr_round(lsize);				// create a list of length 1000
     std::vector<double> lik_subset_curr_round(lsize);	// create a vector of length 1000
@@ -3770,7 +3770,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
                             bool is_test_data,double pen_mu,int num_cp_mu,double pen_tau,int num_cp_tau,
                             bool split_rule_node,bool gridpoint,int maxOWsize,
                             List prev_sum_trees_mu,List prev_sum_trees_tau,List prev_sum_trees_mat_mu,List prev_sum_trees_mat_tau,
-                            NumericVector y_scaled
+                            NumericVector y_scaled,int num_splits_mu,int num_splits_tau
 ){
   List eval_model;										// create a list
   NumericVector lik_list;								// create a vector
@@ -3792,7 +3792,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
   arma::mat temp_treated_resids_a = temp_all_resids_a.rows(arma::find(z_ar==1));	
   NumericMatrix temp_treated_resids = wrap(temp_treated_resids_a);	
   
-  for(int j=0;j<5;j++){									// create a for-loop of length 5.
+  for(int j=0;j<num_splits_tau;j++){									// create a for-loop of length 5.
     int lsize=1000;										// create a variable initialized equal to 1000.
     List table_subset_curr_round(lsize);				// create a list of length 1000
     std::vector<double> lik_subset_curr_round(lsize);	// create a vector of length 1000
@@ -4086,7 +4086,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                            double sigma_mu_mu,double sigma_mu_tau,double pen_mu,double pen_tau,int num_cp_mu,int num_cp_tau,
                            NumericMatrix test_data,NumericVector test_z,NumericMatrix test_pihat,
                            int ntree_control,int ntree_moderate,
-                           double alpha_mu,double alpha_tau,double beta_mu,double beta_tau,bool split_rule_node,bool gridpoint,int maxOWsize){
+                           double alpha_mu,double alpha_tau,double beta_mu,double beta_tau,bool split_rule_node,bool gridpoint,int maxOWsize,
+                           int num_splits_mu,int num_splits_tau){
   bool is_test_data=0;					// create bool is_test_data. Initialize equal to 0.
   if(test_data.nrow()>0){					// If test data has non-zero number of rows.
     is_test_data=1;						// set is_test_data equal to 1.
@@ -4409,7 +4410,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                                       x_control_test,x_moderate_test,test_z,
                                       alpha_mu,alpha_tau,beta_mu,beta_tau,
                                       is_test_data,pen_mu,num_cp_mu,pen_tau,num_cp_tau,	// some of these arguments are probably unnecessary
-                                      split_rule_node,gridpoint,maxOWsize);
+                                      split_rule_node,gridpoint,maxOWsize,num_splits_mu,num_splits_tau);
         
       }else{							// If not in the first round of the for-loop.
         //if j >0 then sum of trees become a list so need to read in list and get likelihood for each split point and terminal node
@@ -4422,7 +4423,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                                           alpha_mu,alpha_tau,beta_mu,beta_tau,
                                           is_test_data,pen_mu,num_cp_mu,pen_tau,num_cp_tau,	// some of these arguments are probably unnecessary
                                           split_rule_node,gridpoint,maxOWsize,
-                                          prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,y_scaled);	// function defined on line 1953.
+                                          prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,y_scaled,num_splits_mu,num_splits_tau);	// function defined on line 1953.
       }
       //Rcout << "Get to after get best trees in mu round in loop j = " << j << ".\n";
       
@@ -5066,7 +5067,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                                                    //prev_sum_trees_tau,
                                                    prev_sum_trees_mat_mu,
                                                    //prev_sum_trees_mat_tau,
-                                                   y_scaled);	// function defined on line 1953.
+                                                   y_scaled,num_splits_mu,num_splits_tau);	// function defined on line 1953.
       }else{							// If not in the first round of the for-loop.
         //if j >0 then sum of trees become a list so need to read in list and get likelihood for each split point and terminal node
         CART_BMA_tau=get_best_trees_sum_tau_bcf(x_control_a, x_moderate_a,z,resids,
@@ -5077,7 +5078,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                                             alpha_mu,alpha_tau,beta_mu,beta_tau,
                                             is_test_data,pen_mu,num_cp_mu,pen_tau,num_cp_tau,	// some of these arguments are probably unnecessary
                                             split_rule_node,gridpoint,maxOWsize,
-                                            prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,y_scaled);	// function defined on line 1953.
+                                            prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,y_scaled,num_splits_mu,num_splits_tau);	// function defined on line 1953.
       }
       Rcout << "Get to 5000 in tau round in loop j = " << j << ".\n";
       
