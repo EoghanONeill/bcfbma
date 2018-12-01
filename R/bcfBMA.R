@@ -51,6 +51,7 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
   qchi = qchisq(1.0-sigquant,nu,1,0);
   lambda = (sigma*sigma*qchi)/nu;
   
+  
   #PROBABLY NEED TO DO SOMETHING SIMILAR FOR z and test_z with binary_z and binary_test_z
   if(is.factor(y.train)) {
     # if(length(levels(y.train)) != 2) stop("y.train is a factor with number of levels != 2")
@@ -64,6 +65,10 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
       #stop("Response must be a numeric vector")
     }
   }
+  
+  if(!all(z %in% c(0,1))) stop("z values must be 0 or 1")
+  if(!all(test_z %in% c(0,1))) stop("test_z values must be 0 or 1")
+  
   
   if(is.vector(x.train) | is.factor(x.train)| is.data.frame(x.train)) x.train = as.matrix(x.train)
   if(is.vector(x.test) | is.factor(x.test)| is.data.frame(x.test)) x.test = as.matrix(x.test)
