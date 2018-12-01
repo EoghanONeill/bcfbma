@@ -602,6 +602,16 @@ IntegerVector order__bcf(NumericVector x) {	// gives vector of position of large
 }
 //######################################################################################################################//
 
+// [[Rcpp::export]]
+
+IntegerVector orderforOW__bcf(NumericVector x) {	// gives vector of position of smallest value, then position of second smallest value, and so on.
+  NumericVector sorted = clone(x).sort();		// sorted is x in ascending order
+  //std::reverse(sorted.begin(), sorted.end()); // reverse so that it is in descending order. Could use one line with std::sort(clone(x).begin(), clone(x).end(), std::greater<>())
+  
+  return match(sorted, x);	//  match is the Rcpp sugar version of the R function match, which returns a vector of the positions of the first matches of the first argument in the second.
+}
+//######################################################################################################################//
+
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
@@ -1105,8 +1115,8 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
     if(testlik.size()>0){									// If a nonzero number of models remain in Occam's window
       //check if number of trees to be returned is greater than maxOWsize if so only return the best maxOWsize models
       if(testlik.size()>maxOWsize){						// maxOWsize is an input variable
-        IntegerVector owindices=order__bcf(testlik);		// Function order__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on.
-        owindices=owindices-1;							// Presumably the match function in order__bcf gives indices beginning at 1, and therefore 1 must be taken away from all index values.
+        IntegerVector owindices=orderforOW__bcf(testlik);		// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on.
+        owindices=owindices-1;							// Presumably the match function in orderforOW__bcf gives indices beginning at 1, and therefore 1 must be taken away from all index values.
         //get the top maxOWsize indices to keep in OW
         NumericVector temp_olik(maxOWsize);				// create vector temp_olik of size maxOWsize
         List temp_otrees(maxOWsize);					// create List temp_otrees of size maxOWsize
@@ -1292,8 +1302,8 @@ List get_best_split_bcf(NumericVector resids,arma::mat& data,NumericMatrix treet
     if(testlik.size()>0){									// If a nonzero number of models remain in Occam's window
       //check if number of trees to be returned is greater than maxOWsize if so only return the best maxOWsize models
       if(testlik.size()>maxOWsize){						// maxOWsize is an input variable
-        IntegerVector owindices=order__bcf(testlik);		// Function order__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on.
-        owindices=owindices-1;							// Presumably the match function in order__bcf gives indices beginning at 1, and therefore 1 must be taken away from all index values.
+        IntegerVector owindices=orderforOW__bcf(testlik);		// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on.
+        owindices=owindices-1;							// Presumably the match function in orderforOW__bcf gives indices beginning at 1, and therefore 1 must be taken away from all index values.
         //get the top maxOWsize indices to keep in OW
         NumericVector temp_olik(maxOWsize);				// create vector temp_olik of size maxOWsize
         List temp_otrees(maxOWsize);					// create List temp_otrees of size maxOWsize
@@ -1557,8 +1567,8 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
     if(testlik.size()>0){										// If a nonzero number of models remain in Occam's window
       //check if number of trees to be returned is greater than maxOWsize if so only return the best maxOWsize models
       if(testlik.size()>maxOWsize){							// maxOWsize is an input variable
-        IntegerVector owindices=order__bcf(testlik);			// Function order__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on.
-        owindices=owindices-1;								// Presumably the match function in order__bcf gives indices beginning at 1, and therefore 1 must be taken away from all index values.
+        IntegerVector owindices=orderforOW__bcf(testlik);			// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on.
+        owindices=owindices-1;								// Presumably the match function in orderforOW__bcf gives indices beginning at 1, and therefore 1 must be taken away from all index values.
         //get the top maxOWsize indices to keep in OW
         NumericVector temp_olik(maxOWsize);					// create vector temp_olik of size maxOWsize
         List temp_otrees(maxOWsize);						// create List temp_otrees of size maxOWsize
@@ -1892,8 +1902,8 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
     if(testlik.size()>0){										// If a nonzero number of models remain in Occam's window
       //check if number of trees to be returned is greater than maxOWsize if so only return the best maxOWsize models
       if(testlik.size()>maxOWsize){							// maxOWsize is an input variable
-        IntegerVector owindices=order__bcf(testlik);			// Function order__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on.
-        owindices=owindices-1;								// Presumably the match function in order__bcf gives indices beginning at 1, and therefore 1 must be taken away from all index values.
+        IntegerVector owindices=orderforOW__bcf(testlik);			// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on.
+        owindices=owindices-1;								// Presumably the match function in orderforOW__bcf gives indices beginning at 1, and therefore 1 must be taken away from all index values.
         //get the top maxOWsize indices to keep in OW
         NumericVector temp_olik(maxOWsize);					// create vector temp_olik of size maxOWsize
         List temp_otrees(maxOWsize);						// create List temp_otrees of size maxOWsize
@@ -2227,8 +2237,8 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
     if(testlik.size()>0){										// If a nonzero number of models remain in Occam's window
       //check if number of trees to be returned is greater than maxOWsize if so only return the best maxOWsize models
       if(testlik.size()>maxOWsize){							// maxOWsize is an input variable
-        IntegerVector owindices=order__bcf(testlik);			// Function order__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on.
-        owindices=owindices-1;								// Presumably the match function in order__bcf gives indices beginning at 1, and therefore 1 must be taken away from all index values.
+        IntegerVector owindices=orderforOW__bcf(testlik);			// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on.
+        owindices=owindices-1;								// Presumably the match function in orderforOW__bcf gives indices beginning at 1, and therefore 1 must be taken away from all index values.
         //get the top maxOWsize indices to keep in OW
         NumericVector temp_olik(maxOWsize);					// create vector temp_olik of size maxOWsize
         List temp_otrees(maxOWsize);						// create List temp_otrees of size maxOWsize
@@ -3018,7 +3028,7 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
       overall_parent2=eval_model[3];								// tree parent vector for all models in Occam's window.
       //add in check to see if OW accepted more than the top maxOW models...
       if(overall_lik2.size()>maxOWsize){							// If more than maxOWsize models kept in Occam's window
-        IntegerVector owindices=order__bcf(overall_lik2);			// Function order__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on. 
+        IntegerVector owindices=orderforOW__bcf(overall_lik2);			// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on. 
         owindices=owindices-1;									// take one away from indices so that they are in the correct range.
         //get the top maxOWsize indices to keep in OW
         NumericVector temp_olik(maxOWsize);						// create vector of length maxOWsize
@@ -3305,7 +3315,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
     //add in check to see if OW accepted more than the top maxOW models...
     if(overall_lik2.size()>maxOWsize){									// If more than maxOWsize models kept in Occam's window
       //find the maxOWsize best models and continue with those!
-      IntegerVector owindices=order__bcf(overall_lik2);					// Function order__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on. 
+      IntegerVector owindices=orderforOW__bcf(overall_lik2);					// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on. 
       owindices=owindices-1;											// take one away from indices so that they are in the correct range.
       //get the top maxOWsize indices to keep in OW
       NumericVector temp_olik(maxOWsize);								// create vector of length maxOWsize
@@ -3593,7 +3603,7 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
     //add in check to see if OW accepted more than the top maxOW models...
     if(overall_lik2.size()>maxOWsize){									// If more than maxOWsize models kept in Occam's window
       //find the maxOWsize best models and continue with those!
-      IntegerVector owindices=order__bcf(overall_lik2);					// Function order__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on. 
+      IntegerVector owindices=orderforOW__bcf(overall_lik2);					// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on. 
       owindices=owindices-1;											// take one away from indices so that they are in the correct range.
       //get the top maxOWsize indices to keep in OW
       NumericVector temp_olik(maxOWsize);								// create vector of length maxOWsize
@@ -3896,7 +3906,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
     //add in check to see if OW accepted more than the top maxOW models...
     if(overall_lik2.size()>maxOWsize){									// If more than maxOWsize models kept in Occam's window
       //find the maxOWsize best models and continue with those!
-      IntegerVector owindices=order__bcf(overall_lik2);					// Function order__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on. 
+      IntegerVector owindices=orderforOW__bcf(overall_lik2);					// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on. 
       owindices=owindices-1;											// take one away from indices so that they are in the correct range.
       //get the top maxOWsize indices to keep in OW
       NumericVector temp_olik(maxOWsize);								// create vector of length maxOWsize
