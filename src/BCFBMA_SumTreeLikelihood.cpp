@@ -621,7 +621,7 @@ double get_tree_prior_bcf(NumericMatrix tree_table,NumericMatrix tree_matrix,dou
       arma::vec armacol=tree_matrix2.col(j);							// arma col is j+1^th col of tree_matrix2
       arma::uvec found=find(armacol==internal_nodes_prop[k]);			// vector of indices of elements of armacol that are equal to internal_nodes_prop[k]
       if(found.size()>0){        										// If found is of nonzero length.
-        int_nodes_index[index_count]=j+1;							// set index_count^th element of int_nodes_index equal to j+1
+        int_nodes_index[index_count]=j;							// set index_count^th element of int_nodes_index equal to j+1
         index_count++;												// increment index_count by one (only when if-condition is satisfied)
         break;														// break out of inner for-loop
       }        
