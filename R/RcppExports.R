@@ -101,6 +101,10 @@ order__bcf <- function(x) {
     .Call(`_bcfbma_order__bcf`, x)
 }
 
+orderforOW__bcf <- function(x) {
+    .Call(`_bcfbma_orderforOW__bcf`, x)
+}
+
 get_tree_prior_bcf <- function(tree_table, tree_matrix, alpha, beta) {
     .Call(`_bcfbma_get_tree_prior_bcf`, tree_table, tree_matrix, alpha, beta)
 }

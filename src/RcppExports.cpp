@@ -343,6 +343,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// orderforOW__bcf
+IntegerVector orderforOW__bcf(NumericVector x);
+RcppExport SEXP _bcfbma_orderforOW__bcf(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(orderforOW__bcf(x));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_tree_prior_bcf
 double get_tree_prior_bcf(NumericMatrix tree_table, NumericMatrix tree_matrix, double alpha, double beta);
 RcppExport SEXP _bcfbma_get_tree_prior_bcf(SEXP tree_tableSEXP, SEXP tree_matrixSEXP, SEXP alphaSEXP, SEXP betaSEXP) {
@@ -1127,6 +1138,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bcfbma_grow_tree_bcf", (DL_FUNC) &_bcfbma_grow_tree_bcf, 12},
     {"_bcfbma_set_daughter_bcf", (DL_FUNC) &_bcfbma_set_daughter_bcf, 6},
     {"_bcfbma_order__bcf", (DL_FUNC) &_bcfbma_order__bcf, 1},
+    {"_bcfbma_orderforOW__bcf", (DL_FUNC) &_bcfbma_orderforOW__bcf, 1},
     {"_bcfbma_get_tree_prior_bcf", (DL_FUNC) &_bcfbma_get_tree_prior_bcf, 4},
     {"_bcfbma_start_tree_bcf", (DL_FUNC) &_bcfbma_start_tree_bcf, 2},
     {"_bcfbma_start_matrix_bcf", (DL_FUNC) &_bcfbma_start_matrix_bcf, 1},

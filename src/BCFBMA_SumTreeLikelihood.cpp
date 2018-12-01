@@ -621,10 +621,15 @@ double get_tree_prior_bcf(NumericMatrix tree_table,NumericMatrix tree_matrix,dou
   int col=tree_matrix.ncol();																	// col is number of columns in input matrix
   std::vector<int> int_nodes_index(100*col);													// int_nodes_index is a vector of length 100*col. Why 100*col? int_nodes_index only updated in loop of length col
   int index_count=0;																			// initialize index_count equal to 0
-  if(tree_table.ncol()<5) throw std::range_error("Line 603");
+  //if(tree_table.ncol()<5) throw std::range_error("Line 603");
+  //Rcout << "Number of rows table = " << tree_table.nrow() << "\n.";
+  //Rcout << "Number of colums matrix = " << col << "\n.";
+  
   arma::uvec internal_nodes_prop=find_internal_nodes_bcf(tree_table);								// function defined on line 241. Gives vector of indices of internal nodes? Elements of fifth column that are equal to 1.
   arma::mat tree_matrix2(tree_matrix.begin(),tree_matrix.nrow(),tree_matrix.ncol(),false);	// turn input matrix to arma mat
   int count=internal_nodes_prop.size();														// initialize count equal to the length of internal_nodes_prop
+  //Rcout << "length internal nodes = " << count << "\n.";
+  if(count==0) propsplit=1-alpha;
   
   for(int k=0;k<count;k++){												// loop the length of internal_nodes_prop
     for(int j=0;j<tree_matrix.ncol();j++){								// loop of length equal to number of columns in tree_matrix
@@ -4203,7 +4208,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
   if(treetable_mu.ncol()<5) throw std::range_error("Line 4081");
   double tree_prior=get_tree_prior_bcf(treetable_mu,treemat_mu,alpha_mu,beta_mu);				// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees? but the tree is empty  at this stage?)
   double lowest_BIC=-2*(lik+log(tree_prior))+1*log(n);						// BIC actually not the BIC because add 2*log(prior). Closer to the Bayes factor? (Not noted in paper).
-  
+
   // create initial tree table lists for mu(x) and tau(x)
   // Need to check if doing this correctly for tau(x)
   List tree_table_mu;								// create tree table.
