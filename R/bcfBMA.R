@@ -31,6 +31,7 @@
 #' @param num_splits_tau Maximum number of splits in a tau tree
 #' @param gridsize_mu This integer determines the size of the grid across which to search if gridpoint=1 when constructing mu trees.
 #' @param gridsize_tau This integer determines the size of the grid across which to search if gridpoint=1 when constructing tau trees.
+#' @param include_pi Takes values "control", "moderate", "both" or "none". Whether to include pihat in mu(x) ("control"), tau(x) ("moderate"), both or none. Values of "control" or "both" are HIGHLY recommended with observational data.
 #' @export
 #' @return Include lots of details here.
 
@@ -43,7 +44,7 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                           x.test=matrix(0.0,0,0),test_z = numeric(),test_pihat = matrix(0.0,0,0),
                           ntree_control=5,ntree_moderate=5,
                           alpha_mu=0.95,alpha_tau=0.95,beta_mu=1,beta_tau=1,split_rule_node=0,
-                          gridpoint=0,maxOWsize=100, num_splits_mu =5, num_splits_tau =5, gridsize_mu=10, gridsize_tau=10){
+                          gridpoint=0,maxOWsize=100, num_splits_mu =5, num_splits_tau =5, gridsize_mu=10, gridsize_tau=10, include_pi= "control"){
   binary=FALSE
   start_mean=0
   start_sd=1
@@ -54,6 +55,21 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
   sigma=sd(y.train)/(max(y.train)-min(y.train))
   qchi = qchisq(1.0-sigquant,nu,1,0);
   lambda = (sigma*sigma*qchi)/nu;
+  include_pi2=-1
+  if(include_pi=="control") {
+    include_pi2 = 0
+  }
+  if(include_pi=="moderate") {
+    include_pi2 = 1
+  }
+  if(include_pi=="both") {
+    include_pi2 = 2
+  }
+  if(include_pi=="none") {
+    include_pi2 = 4
+  }
+  if(include_pi2==-1) stop('include_pi must be equal to control, moderate, both, or none.')
+
   
   #PROBABLY NEED TO DO SOMETHING SIMILAR FOR z and test_z with binary_z and binary_test_z
   if(is.factor(y.train)) {
@@ -126,7 +142,9 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                                     pen_mu,pen_tau,num_cp_mu,num_cp_tau,
                                     x.test,test_z,test_pihat,ntree_control,ntree_moderate,
                                     alpha_mu,beta_mu,alpha_tau,beta_tau,
-                                    split_rule_node,gridpoint,maxOWsize,num_splits_mu,num_splits_tau,gridsize_mu, gridsize_tau)
+                                    split_rule_node,gridpoint,maxOWsize,
+                                    num_splits_mu,num_splits_tau,gridsize_mu, gridsize_tau,
+                                    include_pi2)
   
   if(length(bcfBMA_call)==11){
     #length of bcfBMA_call is 11 if test data was included in the call

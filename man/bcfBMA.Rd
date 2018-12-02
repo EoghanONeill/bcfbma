@@ -64,6 +64,8 @@ bcfBMA(x, ...)
 \item{gridsize_mu}{This integer determines the size of the grid across which to search if gridpoint=1 when constructing mu trees.}
 
 \item{gridsize_tau}{This integer determines the size of the grid across which to search if gridpoint=1 when constructing tau trees.}
+
+\item{include_pi}{Takes values "control", "moderate", "both" or "none". Whether to include pihat in mu(x) ("control"), tau(x) ("moderate"), both or none. Values of "control" or "both" are HIGHLY recommended with observational data.}
 }
 \value{
 Include lots of details here.
