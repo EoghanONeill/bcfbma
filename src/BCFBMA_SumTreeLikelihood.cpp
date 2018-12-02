@@ -4397,7 +4397,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
         if(j==0){																	// If in the first round of the for-loop.
           throw std::range_error("No split points could be found to grow trees");
         }else{																		// If not in the first round of the for-loop.
-          throw std::range_error("No trees can be grown for the number of iterations desired, as no splits were found.Please try fewer iterations.");
+          throw std::range_error("No Mu trees can be grown for the number of iterations desired, as no splits were found.Please try fewer iterations.");
         }
       } 
       
@@ -5040,7 +5040,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
         if(j==0){																	// If in the first round of the for-loop.
           throw std::range_error("No split points could be found to grow trees");
         }else{																		// If not in the first round of the for-loop.
-          throw std::range_error("No trees can be grown for the number of iterations desired, as no splits were found.Please try fewer iterations.");
+          throw std::range_error("No Tau trees can be grown for the number of iterations desired, as no splits were found.Please try fewer iterations.");
         }
       }
       Rcout << "Get to 4961 in tau round in loop j = " << j << ".\n";
