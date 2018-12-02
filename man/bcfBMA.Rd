@@ -19,19 +19,19 @@ bcfBMA(x, ...)
 
 \item{a_tau}{This is a parameter that influences the variance of the terminal node values for trees that are interacted with the treatment.}
 
-\item{nu}{??}
+\item{nu}{This is a hyperparameter in the distribution of the variance of the error term. THe inverse of the variance is distributed as Gamma (nu/2, nu*lambda/2).}
 
 \item{sigquant}{??}
 
-\item{c}{? This determines the size of Occam's Window}
+\item{c}{This determines the size of Occam's Window}
 
-\item{pen_mu}{??}
+\item{pen_mu}{This is a parameter used by the Pruned Exact Linear Time Algorithm when finding changepoints for mu trees.}
 
-\item{pen_tau}{??}
+\item{pen_tau}{This is a parameter used by the Pruned Exact Linear Time Algorithm when finding changepoints for tau trees.}
 
-\item{num_cp_mu}{??}
+\item{num_cp_mu}{This is a number between 0 and 100 that determines the proportion of changepoints proposed by the changepoint detection algorithm to keep when growing mu trees.}
 
-\item{num_cp_tau}{??}
+\item{num_cp_tau}{This is a number between 0 and 100 that determines the proportion of changepoints proposed by the changepoint detection algorithm to keep when growing tau trees.}
 
 \item{x.test}{Test data covariate matrix excluding the treatment and propensity scores.}
 
@@ -51,15 +51,19 @@ bcfBMA(x, ...)
 
 \item{beta_tau}{Parameter in prior probability of tree node splitting.}
 
-\item{split_rule_node}{??}
+\item{split_rule_node}{Binary variable. If equals 1, then find a new set of potential splitting points via a changepoint algorithm after adding each split to a tree. If equals zero, use the same set of potential split points for all splits in a tree.}
 
-\item{gridpoint}{??}
+\item{gridpoint}{Binary variable. If equals 1, then a grid search changepoint detection algorithm will be used. If equals 0, then the Pruned Exact Linear Time (PELT) changepoint detection algorithm will be used (Killick et al. 2012).}
 
 \item{maxOWsize}{Maximum number of models to keep in Occam's window}
 
 \item{num_splits_mu}{Maximum number of splits in a mu tree}
 
 \item{num_splits_tau}{Maximum number of splits in a tau tree}
+
+\item{gridsize_mu}{This integer determines the size of the grid across which to search if gridpoint=1 when constructing mu trees.}
+
+\item{gridsize_tau}{This integer determines the size of the grid across which to search if gridpoint=1 when constructing tau trees.}
 }
 \value{
 Include lots of details here.

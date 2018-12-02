@@ -8,13 +8,13 @@
 #' @param pihat Training data propensity score estimates. Each column should be a vector of propensity score estimates.
 #' @param a_mu This is a parameter that influences the variance of the terminal node values for trees that are not interacted with the treatment.
 #' @param a_tau This is a parameter that influences the variance of the terminal node values for trees that are interacted with the treatment.
-#' @param nu ??
+#' @param nu This is a hyperparameter in the distribution of the variance of the error term. THe inverse of the variance is distributed as Gamma (nu/2, nu*lambda/2).
 #' @param sigquant ??
-#' @param c ? This determines the size of Occam's Window
-#' @param pen_mu ??
-#' @param pen_tau ??
-#' @param num_cp_mu ??
-#' @param num_cp_tau ??
+#' @param c This determines the size of Occam's Window
+#' @param pen_mu This is a parameter used by the Pruned Exact Linear Time Algorithm when finding changepoints for mu trees.
+#' @param pen_tau This is a parameter used by the Pruned Exact Linear Time Algorithm when finding changepoints for tau trees.
+#' @param num_cp_mu This is a number between 0 and 100 that determines the proportion of changepoints proposed by the changepoint detection algorithm to keep when growing mu trees.
+#' @param num_cp_tau This is a number between 0 and 100 that determines the proportion of changepoints proposed by the changepoint detection algorithm to keep when growing tau trees.
 #' @param x.test Test data covariate matrix excluding the treatment and propensity scores.
 #' @param test_z Test data treatment vector. This should be a binary vector, equal to one for treated individuals.
 #' @param test_pihat Test data propensity score estimates. Each column should be a vector of propensity score estimates.
@@ -24,11 +24,13 @@
 #' @param alpha_tau Parameter in prior probability of tree node splitting.
 #' @param beta_mu Parameter in prior probability of tree node splitting.
 #' @param beta_tau Parameter in prior probability of tree node splitting.
-#' @param split_rule_node ??
-#' @param gridpoint ??
+#' @param split_rule_node Binary variable. If equals 1, then find a new set of potential splitting points via a changepoint algorithm after adding each split to a tree. If equals zero, use the same set of potential split points for all splits in a tree.
+#' @param gridpoint Binary variable. If equals 1, then a grid search changepoint detection algorithm will be used. If equals 0, then the Pruned Exact Linear Time (PELT) changepoint detection algorithm will be used (Killick et al. 2012). 
 #' @param maxOWsize Maximum number of models to keep in Occam's window
 #' @param num_splits_mu Maximum number of splits in a mu tree
 #' @param num_splits_tau Maximum number of splits in a tau tree
+#' @param gridsize_mu This integer determines the size of the grid across which to search if gridpoint=1 when constructing mu trees.
+#' @param gridsize_tau This integer determines the size of the grid across which to search if gridpoint=1 when constructing tau trees.
 #' @export
 #' @return Include lots of details here.
 
@@ -41,7 +43,7 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                           x.test=matrix(0.0,0,0),test_z = numeric(),test_pihat = matrix(0.0,0,0),
                           ntree_control=5,ntree_moderate=5,
                           alpha_mu=0.95,alpha_tau=0.95,beta_mu=1,beta_tau=1,split_rule_node=0,
-                          gridpoint=0,maxOWsize=100, num_splits_mu =5, num_splits_tau =5){
+                          gridpoint=0,maxOWsize=100, num_splits_mu =5, num_splits_tau =5, gridsize_mu=10, gridsize_tau=10){
   binary=FALSE
   start_mean=0
   start_sd=1
@@ -52,7 +54,6 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
   sigma=sd(y.train)/(max(y.train)-min(y.train))
   qchi = qchisq(1.0-sigquant,nu,1,0);
   lambda = (sigma*sigma*qchi)/nu;
-  
   
   #PROBABLY NEED TO DO SOMETHING SIMILAR FOR z and test_z with binary_z and binary_test_z
   if(is.factor(y.train)) {
@@ -70,7 +71,8 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
   
   if(!all(z %in% c(0,1))) stop("z values must be 0 or 1")
   if(!all(test_z %in% c(0,1))) stop("test_z values must be 0 or 1")
-  
+  if(gridsize_mu<1) stop("gridsize_mu must be a positive integer")
+  if(gridsize_tau<1) stop("gridsize_tau must be a positive integer")
   
   if(is.vector(x.train) | is.factor(x.train)| is.data.frame(x.train)) x.train = as.matrix(x.train)
   if(is.vector(x.test) | is.factor(x.test)| is.data.frame(x.test)) x.test = as.matrix(x.test)
@@ -124,7 +126,7 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                                     pen_mu,pen_tau,num_cp_mu,num_cp_tau,
                                     x.test,test_z,test_pihat,ntree_control,ntree_moderate,
                                     alpha_mu,beta_mu,alpha_tau,beta_tau,
-                                    split_rule_node,gridpoint,maxOWsize,num_splits_mu,num_splits_tau)
+                                    split_rule_node,gridpoint,maxOWsize,num_splits_mu,num_splits_tau,gridsize_mu, gridsize_tau)
   
   if(length(bcfBMA_call)==11){
     #length of bcfBMA_call is 11 if test data was included in the call
