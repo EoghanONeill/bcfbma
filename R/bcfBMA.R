@@ -1,7 +1,8 @@
 
-#' @title Bayesian Causal Forest Using Bayesian Model Averaging
+#' @title Bayesian Causal Forest Using Bayesian Model Averaging (BCF-BMA)
 #' 
-#' @description Insert description
+#' @description This is an implementation of Bayesian causal forests (Hahn et al. 2018) using Bayesian Model Averaging, following the approach used in BART-BMA (Hernandez et al. 2018). 
+#' The outcome is modelled as mu(x)+Z*tau(x), where mu(x) and tau(x) are sums-of-trees and Z is a treatment indicator variable. Therefore tau(x) gives the Individual Treatment Effect (ITE) estimates.
 #' @param x.train Training data covariate matrix excluding the treatment and propensity scores.
 #' @param y.train Training data outcome vector.
 #' @param z Training data treatment vector. This should be a binary vector, equal to one for treated individuals.
@@ -32,8 +33,27 @@
 #' @param gridsize_mu This integer determines the size of the grid across which to search if gridpoint=1 when constructing mu trees.
 #' @param gridsize_tau This integer determines the size of the grid across which to search if gridpoint=1 when constructing tau trees.
 #' @param include_pi Takes values "control", "moderate", "both" or "none". Whether to include pihat in mu(x) ("control"), tau(x) ("moderate"), both or none. Values of "control" or "both" are HIGHLY recommended with observational data.
-#' @export
-#' @return Include lots of details here.
+#' @export 
+#' @return The following objects are returned by bcfbma:
+#' \item{fitted.values_outcome}{The vector of predictions of the outcome for all training observations.} 
+#' \item{fitted.values_mu}{The vector of fiited values of mu(x) for all training observations.}
+#' \item{fitted.values_tau}{The vector of fiited values of tau(x) for all training observations. These are the in-sample ITE estimates.}
+#' \item{sumoftrees_mu}{This is a list of lists of matrices. The outer list corresponds to a list of sum-of-tree models, and each element of the outer list is a list of matrices describing the structure of the mu(x) trees within a sum-of-tree model. See details.} 
+#' \item{sumoftrees_tau}{This is a list of lists of matrices. The outer list corresponds to a list of sum-of-tree models, and each element of the outer list is a list of matrices describing the structure of the tau(x) trees within a sum-of-tree model. See details.} 
+#' \item{obs_to_termNodesMatrix_mu}{This is a list of lists of matrices. The outer list corresponds to a list of sum-of-tree models, and each element of the outer list is a list of matrices describing to which node each of the observations is allocated to at all depths of each mu(x) trees within a sum-of-tree model. See details.} 
+#' \item{obs_to_termNodesMatrix_tau}{This is a list of lists of matrices. The outer list corresponds to a list of sum-of-tree models, and each element of the outer list is a list of matrices describing to which node each of the observations is allocated to at all depths of each tau(x) trees within a sum-of-tree model. See details.}
+#' \item{bic}{This is a vector of BICs for each sum-of-tree model.} 
+#' \item{numvars}{This is the total number of variables in the input training data matrix, excluding the pihat matrix.} 
+#' \item{call}{match.call returns a call in which all of the specified arguments are specified by their full names.} 
+#' \item{y_minmax}{Range of the input training data outcome vector.} 
+#' \item{response}{Input taining data outcome vector.}
+#' \item{nrowTrain}{number of observations in the input training data.} 
+#' \item{sigma}{sd(y.train)/(max(y.train)-min(y.train))} 
+#' \item{a_mu}{input parameter} 
+#' \item{a_tau}{input parameter} 
+#' \item{nu}{input parameter} 
+#' \item{lambda}{parameter determined by the inputs sigma, sigquant, and nu} 
+#' \item{numPSmethods}{Number of columns of the input matrix pihat. This should be the number of different propoensity score estimates used.} 
 
 
 bcfBMA<-function(x,...)UseMethod("bcfBMA")
