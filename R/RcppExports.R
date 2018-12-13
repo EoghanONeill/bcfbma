@@ -249,3 +249,79 @@ BCF_BMA_sumLikelihood <- function(data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau,
     .Call(`_bcfbma_BCF_BMA_sumLikelihood`, data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2)
 }
 
+BCF_BMA_sumLikelihood_add_mu_or_tau <- function(data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2) {
+    .Call(`_bcfbma_BCF_BMA_sumLikelihood_add_mu_or_tau`, data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2)
+}
+
+find_term_nodes_gs <- function(tree_table) {
+    .Call(`_bcfbma_find_term_nodes_gs`, tree_table)
+}
+
+find_term_obs_gs <- function(tree_matrix_temp, terminal_node) {
+    .Call(`_bcfbma_find_term_obs_gs`, tree_matrix_temp, terminal_node)
+}
+
+calc_rowsums <- function(predictions) {
+    .Call(`_bcfbma_calc_rowsums`, predictions)
+}
+
+calculate_resids <- function(predictions, response) {
+    .Call(`_bcfbma_calculate_resids`, predictions, response)
+}
+
+update_Gibbs_mean_var <- function(tree_table, resids, a, sigma, mu_mu, terminal_nodes, term_obs_tree) {
+    .Call(`_bcfbma_update_Gibbs_mean_var`, tree_table, resids, a, sigma, mu_mu, terminal_nodes, term_obs_tree)
+}
+
+update_sigma <- function(a1, b, resids, n) {
+    .Call(`_bcfbma_update_sigma`, a1, b, resids, n)
+}
+
+find_node_means <- function(sum_tree, term_nodes) {
+    .Call(`_bcfbma_find_node_means`, sum_tree, term_nodes)
+}
+
+get_tree_info <- function(overall_sum_trees, overall_sum_mat, num_obs) {
+    .Call(`_bcfbma_get_tree_info`, overall_sum_trees, overall_sum_mat, num_obs)
+}
+
+remove_curr_col <- function(predy, i) {
+    .Call(`_bcfbma_remove_curr_col`, predy, i)
+}
+
+get_new_mean <- function(terminal_nodes, new_mean_var) {
+    .Call(`_bcfbma_get_new_mean`, terminal_nodes, new_mean_var)
+}
+
+update_predictions_gs <- function(tree_table, new_mean, new_var, n, terminal_nodes, term_obs_tree) {
+    .Call(`_bcfbma_update_predictions_gs`, tree_table, new_mean, new_var, n, terminal_nodes, term_obs_tree)
+}
+
+scale_response_gs <- function(a, b, c, d, y) {
+    .Call(`_bcfbma_scale_response_gs`, a, b, c, d, y)
+}
+
+get_original_gs <- function(low, high, sp_low, sp_high, sum_preds) {
+    .Call(`_bcfbma_get_original_gs`, low, high, sp_low, sp_high, sum_preds)
+}
+
+find_internal_nodes_gs <- function(treetable) {
+    .Call(`_bcfbma_find_internal_nodes_gs`, treetable)
+}
+
+get_tree_info_test_data <- function(test_data, tree_data) {
+    .Call(`_bcfbma_get_tree_info_test_data`, test_data, tree_data)
+}
+
+get_tree_info_testdata_overall <- function(overall_sum_trees, num_obs, test_data) {
+    .Call(`_bcfbma_get_tree_info_testdata_overall`, overall_sum_trees, num_obs, test_data)
+}
+
+gibbs_sampler <- function(overall_sum_trees, overall_sum_mat, y, BIC_weights, num_iter, burnin, num_obs, num_test_obs, a, sigma, mu_mu, nu, lambda, resids, test_data) {
+    .Call(`_bcfbma_gibbs_sampler`, overall_sum_trees, overall_sum_mat, y, BIC_weights, num_iter, burnin, num_obs, num_test_obs, a, sigma, mu_mu, nu, lambda, resids, test_data)
+}
+
+gibbs_sampler2 <- function(overall_sum_trees, overall_sum_mat, y, BIC_weights, num_iter, burnin, num_obs, a, sigma, mu_mu, nu, lambda, resids) {
+    .Call(`_bcfbma_gibbs_sampler2`, overall_sum_trees, overall_sum_mat, y, BIC_weights, num_iter, burnin, num_obs, a, sigma, mu_mu, nu, lambda, resids)
+}
+
