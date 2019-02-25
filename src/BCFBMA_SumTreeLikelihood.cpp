@@ -407,19 +407,6 @@ NumericMatrix find_obs_to_update_grow_bcf(NumericMatrix prior_tree_matrix_temp,d
   
   return(prior_tree_matrix_temp);	// return the matrix
 }
-//######################################################################################################################// 
-// [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export]]
-arma::mat get_subset_bcf(arma::mat& xmat,NumericVector grow_obs){	// Reference to xmat? What is the purpose of "&"?
-  int p = xmat.n_cols;				// p defined as number of columns in xmat
-  arma::mat B(grow_obs.size(),p);		// matrix with number of rows equal to length of grow_obs, and number of columns equal to p
-  
-  for(int i=0;i<grow_obs.size();i++){		// loop of length equal to that of grow_obs
-    B.row(i)=xmat.row(i);				// Set row i of B equal to row i of xmat. Presumably grow_obs is of length <= the number of rows of xmat
-  }
-  
-  return(B);								// return the arma mat
-}
 //######################################################################################################################//
 
 // [[Rcpp::depends(RcppArmadillo)]]
@@ -1011,7 +998,7 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
   arma::colvec curr_col=data.col(0);										// Let the arma colvec, curr_col, equal the 1st column of the input matrix data
   arma::uvec grow_obs=find_term_obs_bcf(treemat_c,terminal_nodes[0]);			// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of treemat_c that has elements equal to terminal_nodes[0]).
   NumericVector d1=unique(find_term_cols_bcf(treemat_c,terminal_nodes[0]));	// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
-  arma::mat data_curr_node=get_subset_bcf(data,wrap(grow_obs));				// matrix consisting of first grow_obs rows of data. Function get_subset_bcf defined on line 382
+  arma::mat data_curr_node=data.rows(grow_obs);				// matrix consisting of first grow_obs rows of data. 
   double d=d1[0];															// index of rightmost column of treemat_c with at least one element equal to terminal_nodes[0]
   NumericVector get_min=get_grow_obs_bcf(data,wrap(grow_obs),cp_mat(0,0)+1);	// obtain the elements of the cp_mat(0,0)+1^th column of data that are indexed by grow_obs
   double lik;																// create a variable called lik. Not initialized.
@@ -1021,7 +1008,7 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
     grow_obs=find_term_obs_bcf(treemat_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of treemat_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node									//
     d1=unique(find_term_cols_bcf(treemat_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
-    data_curr_node=get_subset_bcf(data,wrap(grow_obs));								// matrix consisting of first grow_obs rows of data. Note grow_obs changed on line 926, therefore not duplicating line 919. Function get_subset_bcf defined on line 382
+    data_curr_node=data.rows(grow_obs);								// matrix consisting of first grow_obs rows of data. Note grow_obs changed on line 926, therefore not duplicating line 919.
     d=d1[0];																	// index of rightmost column of treemat_c with at least one element equal to terminal_nodes[l] (letter l)
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
     if(data_curr_node.n_rows<=2){												// if data_curr_node has 2 rows or less.
@@ -1199,7 +1186,7 @@ List get_best_split_bcf(NumericVector resids,arma::mat& data,NumericMatrix treet
   arma::colvec curr_col=data.col(0);										// Let the arma colvec, curr_col, equal the 1st column of the input matrix data
   arma::uvec grow_obs=find_term_obs_bcf(treemat_c,terminal_nodes[0]);			// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of treemat_c that has elements equal to terminal_nodes[0]).
   NumericVector d1=unique(find_term_cols_bcf(treemat_c,terminal_nodes[0]));	// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
-  arma::mat data_curr_node=get_subset_bcf(data,wrap(grow_obs));				// matrix consisting of first grow_obs rows of data. Function get_subset_bcf defined on line 382
+  arma::mat data_curr_node=data.rows(grow_obs);				// matrix consisting of first grow_obs rows of data.
   double d=d1[0];															// index of rightmost column of treemat_c with at least one element equal to terminal_nodes[0]
   NumericVector get_min=get_grow_obs_bcf(data,wrap(grow_obs),cp_mat(0,0)+1);	// obtain the elements of the cp_mat(0,0)+1^th column of data that are indexed by grow_obs
   double lik;																// create a variable called lik. Not initialized.
@@ -1209,7 +1196,7 @@ List get_best_split_bcf(NumericVector resids,arma::mat& data,NumericMatrix treet
     grow_obs=find_term_obs_bcf(treemat_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of treemat_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node									//
     d1=unique(find_term_cols_bcf(treemat_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
-    data_curr_node=get_subset_bcf(data,wrap(grow_obs));								// matrix consisting of first grow_obs rows of data. Note grow_obs changed on line 926, therefore not duplicating line 919. Function get_subset_bcf defined on line 382
+    data_curr_node=data.rows(grow_obs);								// matrix consisting of first grow_obs rows of data. Note grow_obs changed on line 926, therefore not duplicating line 919.
     d=d1[0];																	// index of rightmost column of treemat_c with at least one element equal to terminal_nodes[l] (letter l)
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
     if(data_curr_node.n_rows<=2){												// if data_curr_node has 2 rows or less.
@@ -1395,7 +1382,7 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
   arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[0]).
   //Rcout << "length of grow_obs equals " << grow_obs.n_elem<< ".\n";
   NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
-  arma::mat data_curr_node=get_subset_bcf(x_moderate_a,wrap(grow_obs));					// matrix consisting of first grow_obs rows of x_moderate_a. Function get_subset_bcf defined on line 382
+  arma::mat data_curr_node=x_moderate_a.rows(grow_obs);					// matrix consisting of first grow_obs rows of x_moderate_a.
   double d=d1[0];																// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[0]
   NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),cp_mat(0,0)+1);		// obtain the elements of the cp_mat(0,0)+1^th column of x_moderate_a that are indexed by grow_obs
   double lik;																	// create a variable called lik. Not initialized.
@@ -1405,7 +1392,7 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
     grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node
     d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
-    data_curr_node=get_subset_bcf(x_moderate_a,wrap(grow_obs));								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919. Function get_subset_bcf defined on line 382
+    data_curr_node=x_moderate_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
     d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
     if(data_curr_node.n_rows<=2){												// if data_curr_node has 2 rows or less.
@@ -1658,7 +1645,7 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
   arma::colvec curr_col=x_moderate_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_moderate_a.
   arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[0]).
   NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
-  arma::mat data_curr_node=get_subset_bcf(x_moderate_a,wrap(grow_obs));					// matrix consisting of first grow_obs rows of x_moderate_a. Function get_subset_bcf defined on line 382
+  arma::mat data_curr_node=x_moderate_a.rows(grow_obs);					// matrix consisting of first grow_obs rows of x_moderate_a.
   double d=d1[0];																// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[0]
   NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),cp_mat(0,0)+1);		// obtain the elements of the cp_mat(0,0)+1^th column of x_moderate_a that are indexed by grow_obs
   double lik;																	// create a variable called lik. Not initialized.
@@ -1668,7 +1655,7 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
     grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node
     d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
-    data_curr_node=get_subset_bcf(x_moderate_a,wrap(grow_obs));								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919. Function get_subset_bcf defined on line 382
+    data_curr_node=x_moderate_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
     d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
     if(data_curr_node.n_rows<=2){												// if data_curr_node has 2 rows or less.
@@ -1995,7 +1982,7 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
   arma::colvec curr_col=x_control_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_control_a.
   arma::uvec grow_obs=find_term_obs_bcf(tree_mat_mu_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_mu_c that has elements equal to terminal_nodes[0]).
   NumericVector d1=unique(find_term_cols_bcf(tree_mat_mu_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
-  arma::mat data_curr_node=get_subset_bcf(x_control_a,wrap(grow_obs));					// matrix consisting of first grow_obs rows of x_control_a. Function get_subset_bcf defined on line 382
+  arma::mat data_curr_node=x_control_a.rows(grow_obs);					// matrix consisting of first grow_obs rows of x_control_a.
   double d=d1[0];																// index of rightmost column of tree_mat_mu_c with at least one element equal to terminal_nodes[0]
   NumericVector get_min=get_grow_obs_bcf(x_control_a,wrap(grow_obs),cp_mat(0,0)+1);		// obtain the elements of the cp_mat(0,0)+1^th column of x_control_a that are indexed by grow_obs
   double lik;																	// create a variable called lik. Not initialized.
@@ -2005,7 +1992,7 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
     grow_obs=find_term_obs_bcf(tree_mat_mu_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_mu_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node
     d1=unique(find_term_cols_bcf(tree_mat_mu_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
-    data_curr_node=get_subset_bcf(x_control_a,wrap(grow_obs));								// matrix consisting of first grow_obs rows of x_control_a. Note grow_obs changed on line 926, therefore not duplicating line 919. Function get_subset_bcf defined on line 382
+    data_curr_node=x_control_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_control_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
     d=d1[0];																	// index of rightmost column of tree_mat_mu_c with at least one element equal to terminal_nodes[l] (letter l)
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
     if(data_curr_node.n_rows<=2){												// if data_curr_node has 2 rows or less.
