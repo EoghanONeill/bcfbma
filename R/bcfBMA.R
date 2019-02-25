@@ -116,17 +116,17 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
   if(is.vector(test_pihat) | is.factor(test_pihat)| is.data.frame(test_pihat)) pihat = as.matrix(test_pihat)
   
   if(is.matrix(x.train)) {
-    if(nrow(x.test)) {
+    if(nrow(x.test)>0) {
       if(!is.matrix(x.test)) stop('x.test must be a matrix')
     } 
   }
   if(is.matrix(x.train)) {
-    if(nrow(pihat)) {
+    if(nrow(pihat)>0) {
       if(!is.matrix(pihat)) stop('x.test must be a matrix')
     } 
   }
   if(is.matrix(x.train)) {
-    if(nrow(test_pihat)) {
+    if(nrow(test_pihat)>0) {
       if(!is.matrix(test_pihat)) stop('x.test must be a matrix')
     } 
   }
