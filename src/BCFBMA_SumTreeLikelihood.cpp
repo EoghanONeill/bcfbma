@@ -101,11 +101,13 @@ NumericMatrix set_daughter_to_end_mat_bcf(double d,NumericMatrix prior_tree_matr
     //update prior_tree_matrix
     //insert extra column for the new split node
     
-    N.insert_cols(ncol_mat,1); 		// insert one more column at the end of N (initializes as zeros). note index starts at 0. (there are now d+2 columns)
-    colmat2[ld_obs]=left_daughter;		// change ld_obs th element to left_daughter. (or vector of obs indexed by ld_obs)
-    colmat2[rd_obs]=left_daughter+1;	// change rd_obs th element to left_daughter+1. (or vector of obs indexed by rd_obs)
-    colmat=Rcpp::as<arma::vec>(colmat2);		// convert from numeric vector to arma vec and write over colmat
-    N.col(d+1)=colmat;				// put this new column in as column d+2 (index starts at 0 so there are now d+2 columns) of N. this replaces the last column of zeros (note the if condition).
+    N.insert_cols(ncol_mat,1);
+    int nrow_mat=prior_tree_matrix_temp.nrow();
+    NumericVector colmatzero(nrow_mat);
+    colmatzero[ld_obs]=left_daughter;
+    colmatzero[rd_obs]=left_daughter+1;
+    colmat=Rcpp::as<arma::vec>(colmatzero);
+    N.col(d+1)=colmat;			// put this new column in as column d+2 (index starts at 0 so there are now d+2 columns) of N. this replaces the last column of zeros (note the if condition).
     
   }else{
     colmat2[ld_obs]=left_daughter;		// change ld_obs th element to left_daughter. (or vector of obs indexed by ld_obs)
@@ -311,7 +313,7 @@ arma::uvec find_nodes_to_update_bcf(arma::uvec all_ld,double left_daughter){
 
 NumericMatrix set_tree_to_middle_bcf(NumericVector node_to_update,NumericMatrix prior_tree_table_temp,int grow_node,double left_daughter){
   for(int i=0;i<node_to_update.size();i++){		// loop the length of node_to_update
-    if(prior_tree_table_temp(node_to_update[i],0) && prior_tree_table_temp(node_to_update[i],1)!=0){	// What logical condition is to the left of &&? Is this a mistake?
+    if((prior_tree_table_temp(node_to_update[i],0)!=0) && (prior_tree_table_temp(node_to_update[i],1)!=0)){
       prior_tree_table_temp(node_to_update[i],0)+=2;		// Add 2 to 1st column row number node_to_update[i] (if nonzero?)
       prior_tree_table_temp(node_to_update[i],1)+=2;		// Add 2 to 2nd column row number node_to_update[i] (if nonzero?)
     }
@@ -390,7 +392,7 @@ NumericMatrix find_obs_to_update_grow_bcf(NumericMatrix prior_tree_matrix_temp,d
   }
   //update prior_tree_matrix
   //insert extra column for the new split node 
-  if(prior_tree_matrix_temp.ncol()>d+1){								// If the number of columns is greater than d+1
+  if(prior_tree_matrix_temp.ncol()<=d+1){								// If the number of columns is greater than d+1
     arma::mat M=Rcpp::as<arma::mat>(prior_tree_matrix_temp);		// M equals arma mat copy of the matrix
     M.insert_cols(prior_tree_matrix_temp.ncol(),1);  				// insert one column after last column
     NumericMatrix prior_tree_matrix=as<NumericMatrix>(wrap(M));		// convert back to NumericMatrix and save as prior_tree_matrix
