@@ -69,10 +69,6 @@ find_obs_to_update_grow_bcf <- function(prior_tree_matrix_temp, left_daughter, d
     .Call(`_bcfbma_find_obs_to_update_grow_bcf`, prior_tree_matrix_temp, left_daughter, d, ld_obs, rd_obs)
 }
 
-get_subset_bcf <- function(xmat, grow_obs) {
-    .Call(`_bcfbma_get_subset_bcf`, xmat, grow_obs)
-}
-
 get_daughter_obs_bcf <- function(xmat, obs_to_update, split_var, split_point) {
     .Call(`_bcfbma_get_daughter_obs_bcf`, xmat, obs_to_update, split_var, split_point)
 }

@@ -1376,8 +1376,12 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
   List changetree;															// create an empty list.
   double BIC;																	// create a double variable. Not initialized.
   int p;																		// create an integer variable. Not initialized.
+  int p_other_mu=0;
+  //int p_other_tau=0;
   List eval_model;															// create an empty list.
   NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
+  NumericVector other_int_nodes_mu;
+  NumericVector other_int_nodes_tau;
   arma::colvec curr_col=x_moderate_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_moderate_a.
   arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[0]).
   //Rcout << "length of grow_obs equals " << grow_obs.n_elem<< ".\n";
@@ -1461,6 +1465,8 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
           // This can all probably be made more efficient by taking account of the fact that there should be just one mu tree
           for(int t=0;t<prev_sum_trees_mu2.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=prev_sum_trees_mu2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+            other_int_nodes_mu = find_term_nodes_bcf(tree);
+            p_other_mu+=other_int_nodes_mu.size();
             NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             if(tree.ncol()<5) throw std::range_error("Line 1412");
@@ -1473,6 +1479,8 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
         }else{															// if s is not a list
           NumericMatrix prev_sum_trees_mu2=prev_sum_trees_mu[parent2[i]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
           NumericMatrix prev_sum_trees_mat_mu2=prev_sum_trees_mat_mu[parent2[i]];		// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          other_int_nodes_mu = find_term_nodes_bcf(prev_sum_trees_mu2);
+          p_other_mu=other_int_nodes_mu.size();
           List st_mu(1);													// create list, st, of length 2.
           List st_mat_mu(1);												// create lisr, st_mat of length 2.
           st_mu[0]=prev_sum_trees_mu2;												// let the first elemetn of st be sum_trees2.
@@ -1504,7 +1512,7 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
       
       int_nodes=find_term_nodes_bcf(proposal_tree[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
       p=int_nodes.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
-      BIC=-2*(lik+log(tree_prior))+p*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      BIC=-2*(lik+log(tree_prior))+(p_other_mu+p)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
         lowest_BIC=BIC;											// update (input variable) lowest_BIC
         best_sv=split_var;										// set a value for, or update best_sv
@@ -1639,9 +1647,13 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
   double tree_prior=0;														// create a double avriable, initialized equal to 0.
   List changetree;															// create an empty list.
   double BIC;																	// create a double variable. Not initialized.
-  int p;																		// create an integer variable. Not initialized.
+  //int p;																		// create an integer variable. Not initialized.
+  int p_other_mu=0;
+  int p_other_tau=0;
   List eval_model;															// create an empty list.
   NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
+  NumericVector other_int_nodes_mu;
+  NumericVector other_int_nodes_tau;
   arma::colvec curr_col=x_moderate_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_moderate_a.
   arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[0]).
   NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
@@ -1729,6 +1741,8 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
             // This can all probably be made more efficient by taking account of the fact that there should be just one mu tree
             for(int t=0;t<prev_sum_trees_mu2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=prev_sum_trees_mu2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+              other_int_nodes_mu = find_term_nodes_bcf(tree);
+              p_other_mu+=other_int_nodes_mu.size();
               NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               if(tree.ncol()<5) throw std::range_error("Line 1660");
@@ -1736,6 +1750,8 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
             }
             for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+              other_int_nodes_tau = find_term_nodes_bcf(tree);
+              p_other_tau+=other_int_nodes_tau.size();
               NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               if(tree.ncol()<5) throw std::range_error("Line 1667");
@@ -1758,6 +1774,8 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
             // This can all probably be made more efficient by taking account of the fact that there should be just one mu tree
             for(int t=0;t<prev_sum_trees_mu2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=prev_sum_trees_mu2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+              other_int_nodes_mu = find_term_nodes_bcf(tree);
+              p_other_mu+=other_int_nodes_mu.size();
               NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               if(tree.ncol()<5) throw std::range_error("Line 1689");
@@ -1765,6 +1783,8 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
             }
             for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+              other_int_nodes_tau = find_term_nodes_bcf(tree);
+              p_other_tau+=other_int_nodes_tau.size();
               NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               if(tree.ncol()<5) throw std::range_error("Line 1695");
@@ -1792,6 +1812,8 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
             lik=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,sum_trees_tau2,st_mat_mu,sum_trees_mat_tau2,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
             for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
               NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
+              other_int_nodes_mu = find_term_nodes_bcf(tree);
+              p_other_mu+=other_int_nodes_mu.size();
               NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               if(tree.ncol()<5) throw std::range_error("Line 1723");
@@ -1799,6 +1821,8 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
             }
             for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+              other_int_nodes_tau = find_term_nodes_bcf(tree);
+              p_other_tau+=other_int_nodes_tau.size();
               NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               if(tree.ncol()<5) throw std::range_error("Line 1730");
@@ -1822,6 +1846,8 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
             lik=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
             for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
               NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
+              other_int_nodes_mu = find_term_nodes_bcf(tree);
+              p_other_mu+=other_int_nodes_mu.size();
               NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               if(tree.ncol()<5) throw std::range_error("Line 1753");
@@ -1829,6 +1855,8 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
             }
             for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+              other_int_nodes_tau = find_term_nodes_bcf(tree);
+              p_other_tau+=other_int_nodes_tau.size();
               NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               if(tree.ncol()<5) throw std::range_error("Line 1760");
@@ -1839,9 +1867,9 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
       }
       //at the moment tree prior is only for current tree need to get it for entire sum of tree list.
       
-      int_nodes=find_term_nodes_bcf(proposal_tree[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
-      p=int_nodes.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
-      BIC=-2*(lik+log(tree_prior))+p*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      //int_nodes=find_term_nodes_bcf(proposal_tree[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
+      //p=int_nodes.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
+      BIC=-2*(lik+log(tree_prior))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
         lowest_BIC=BIC;											// update (input variable) lowest_BIC
         best_sv=split_var;										// set a value for, or update best_sv
@@ -1976,9 +2004,13 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
   double tree_prior=0;														// create a double avriable, initialized equal to 0.
   List changetree;															// create an empty list.
   double BIC;																	// create a double variable. Not initialized.
-  int p;																		// create an integer variable. Not initialized.
+  //int p;																		// create an integer variable. Not initialized.
+  int p_other_mu=0;
+  int p_other_tau=0;
   List eval_model;															// create an empty list.
   NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
+  NumericVector other_int_nodes_mu;
+  NumericVector other_int_nodes_tau;
   arma::colvec curr_col=x_control_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_control_a.
   arma::uvec grow_obs=find_term_obs_bcf(tree_mat_mu_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_mu_c that has elements equal to terminal_nodes[0]).
   NumericVector d1=unique(find_term_cols_bcf(tree_mat_mu_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
@@ -2054,6 +2086,8 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
             // This can all probably be made more efficient by taking account of the fact that there should be just one mu tree
             for(int t=0;t<prev_sum_trees_mu2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=prev_sum_trees_mu2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+              other_int_nodes_mu = find_term_nodes_bcf(tree);
+              p_other_mu+=other_int_nodes_mu.size();
               NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               if(tree.ncol()<5) throw std::range_error("Line 1977");
@@ -2061,6 +2095,8 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
             }
             for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+              other_int_nodes_tau = find_term_nodes_bcf(tree);
+              p_other_tau+=other_int_nodes_tau.size();
               NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               if(tree.ncol()<5) throw std::range_error("Line 1984");
@@ -2089,6 +2125,8 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
             // This can all probably be made more efficient by taking account of the fact that there should be just one mu tree
             for(int t=0;t<prev_sum_trees_mu2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=prev_sum_trees_mu2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+              other_int_nodes_mu = find_term_nodes_bcf(tree);
+              p_other_mu+=other_int_nodes_mu.size();
               NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               if(tree.ncol()<5) throw std::range_error("Line 2006");
@@ -2096,6 +2134,8 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
             }
             for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+              other_int_nodes_tau = find_term_nodes_bcf(tree);
+              p_other_tau+=other_int_nodes_tau.size();
               NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               if(tree.ncol()<5) throw std::range_error("Line 2013");
@@ -2124,6 +2164,8 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
             lik=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,sum_trees_tau2,st_mat_mu,sum_trees_mat_tau2,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
             for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
               NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
+              other_int_nodes_mu = find_term_nodes_bcf(tree);
+              p_other_mu+=other_int_nodes_mu.size();
               NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               if(tree.ncol()<5) throw std::range_error("Line 2040");
@@ -2131,6 +2173,8 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
             }
             for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+              other_int_nodes_tau = find_term_nodes_bcf(tree);
+              p_other_tau+=other_int_nodes_tau.size();
               NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               if(tree.ncol()<5) throw std::range_error("Line 2047");
@@ -2156,6 +2200,8 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
             lik=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
             for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
               NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
+              other_int_nodes_mu = find_term_nodes_bcf(tree);
+              p_other_mu+=other_int_nodes_mu.size();
               NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               if(tree.ncol()<5) throw std::range_error("Line 2070");
@@ -2163,6 +2209,8 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
             }
             for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+              other_int_nodes_tau = find_term_nodes_bcf(tree);
+              p_other_tau+=other_int_nodes_tau.size();
               NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               if(tree.ncol()<5) throw std::range_error("Line 2077");
@@ -2173,9 +2221,9 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
       }
       //at the moment tree prior is only for current tree need to get it for entire sum of tree list.
       
-      int_nodes=find_term_nodes_bcf(proposal_tree[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
-      p=int_nodes.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
-      BIC=-2*(lik+log(tree_prior))+p*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      //int_nodes=find_term_nodes_bcf(proposal_tree[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
+      //p=int_nodes.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
+      BIC=-2*(lik+log(tree_prior))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
         lowest_BIC=BIC;											// update (input variable) lowest_BIC
         best_sv=split_var;										// set a value for, or update best_sv
