@@ -5695,7 +5695,9 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
     
   } //	END OF OUTER LOOP
   
-
+  if(oo_count==0){
+    throw std::range_error("BCF-BMA did not find any suitable model for the data. Maybe limit for Occam's window is too small. Maybe use more observations or change parameter values.");
+  }
   
   overall_overall_sum_trees_mu=resize_bcf(overall_overall_sum_trees_mu,oo_count);						// remove spaces that are not filled in.
   overall_overall_sum_trees_tau=resize_bcf(overall_overall_sum_trees_tau,oo_count);						// remove spaces that are not filled in.
@@ -7389,7 +7391,9 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
     
   } //	END OF OUTER LOOP
   
-  
+  if(oo_count==0){
+    throw std::range_error("BART-BMA did not find any suitable model for the data. Maybe limit for Occam's window is too small. Maybe use more observations or change parameter values.");
+  }
   
   overall_overall_sum_trees_mu=resize_bcf(overall_overall_sum_trees_mu,oo_count);						// remove spaces that are not filled in.
   overall_overall_sum_trees_tau=resize_bcf(overall_overall_sum_trees_tau,oo_count);						// remove spaces that are not filled in.
