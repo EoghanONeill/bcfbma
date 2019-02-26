@@ -4515,7 +4515,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       if(curr_round_lik.size()==0) {						// If number of sum of tree models is zero?
         Rcout << "curr_round_lik.size()==0 BREAK in mu round in loop j = " << j << ".\n";
         //REMOVE THIS ERROR IF WANT TO ALLOW LESS THAN MAX NUMBER OF TREES
-        throw std::range_error("No mu trees chosen in round");
+        //throw std::range_error("No mu trees chosen in round");
         
         break;											// break out of for-loop
       } 
@@ -5178,7 +5178,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       if(curr_round_lik.size()==0) {						// If number of sum of tree models is zero?
         Rcout << "curr_round_lik.size()==0 BREAK in tau round in loop j = " << j << ".\n";
         //REMOVE THIS ERROR IF WANT TO ALLOW LESS THAN MAX NUMBER OF TREES
-        throw std::range_error("No tau trees chosen in round");
+        //throw std::range_error("No tau trees chosen in round");
         break;											// break out of for-loop
       } 
       
