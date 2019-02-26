@@ -166,19 +166,21 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                                     num_splits_mu,num_splits_tau,gridsize_mu, gridsize_tau,
                                     include_pi2)
   
-  if(length(bcfBMA_call)==11){
+  if(length(bcfBMA_call)==12){
     #length of bcfBMA_call is 11 if test data was included in the call
     names(bcfBMA_call)<-c("fitted.values_outcome","fitted.values_mu","fitted.values_tau",
                           "sumoftrees_mu","sumoftrees_tau",
                           "obs_to_termNodesMatrix_mu","obs_to_termNodesMatrix_tau",
                           "bic",
-                          "test.preds_outcome","test.preds_mu","test.preds_tau")
+                          "test.preds_outcome","test.preds_mu","test.preds_tau","sum_residuals")
+    bcfBMA_call[[12]]<-bcfBMA_call[[12]][[length(bcfBMA_call[[12]])]]
     bcfBMA_call$test_data<-x.test
   }else{
     names(bcfBMA_call)<-c("fitted.values_outcome","fitted.values_mu","fitted.values_tau",
                           "sumoftrees_mu","sumoftrees_tau",
                           "obs_to_termNodesMatrix_mu","obs_to_termNodesMatrix_tau",
-                          "bic")
+                          "bic","sum_residuals")
+    bcfBMA_call[[9]]<-bcfBMA_call[[9]][[length(bcfBMA_call[[9]])]]
   }
   
   bcfBMA_call$numvars<-ncol(x.train) #ncol(training)
