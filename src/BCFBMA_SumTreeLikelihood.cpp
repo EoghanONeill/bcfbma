@@ -1735,7 +1735,7 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
             //Rcout << "Length of mu mat list = " << prev_sum_trees_mat_mu2.size() <<".\n";
             //Rcout << "Length of tau mat list = " << sum_trees_mat_tau2.size() <<".\n";
             
-            NumericMatrix testexamplemat5 = prev_sum_trees_mat_mu2[0];
+            //NumericMatrix testexamplemat5 = prev_sum_trees_mat_mu2[0];
             //Rcout << "number of rows of mat into likelihood = " << testexamplemat5.nrow() <<".\n";
             
             sum_trees_tau2.push_back(proposal_tree[0]);						// append the treetable proposal_tree[0] to the end of the list sum_trees2
@@ -3003,11 +3003,35 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
   NumericVector overall_lik2;								// create a vector. length not given.
   IntegerVector overall_parent2;							// create a vector. length not give,
   List overall_mat(overall_size);							// create a list of length 1000.
-  int overall_count=0;									// create a variable overall_count, Initialized equal to 0.
+  //int overall_count=0;									// create a variable overall_count, Initialized equal to 0.
   std::vector<int> overall_parent(overall_size);			// create a vector of length 1000.
   std::vector<double> overall_lik(overall_size);			// create a vector of length 1000.
   NumericVector test_preds;								// create a vector. length not given.
   List cp_mat_list=resids_cp_mat_mu;
+  
+  
+  
+  
+  //COMMENTED OUT ATTEMPT TO FIX NO ZERO SPLIT TREES BUG
+  
+  Rcout << "get to likelihood function mu round one. \n";
+  overall_trees[0]= tree_table_mu[0];
+  overall_mat[0]= tree_mat_mu[0];
+  overall_parent[0]=-1;
+  double lik_temp=likelihood_function_bcf(resids,tree_table_mu[0],tree_mat_mu[0],a_mu,mu_mu,nu,lambda);
+  double tree_prior_temp=get_tree_prior_bcf(tree_table_mu[0],tree_mat_mu[0],alpha_mu,beta_mu);
+  double lowest_BIC_temp=-2*(lik_temp+log(tree_prior_temp))+1*log(x_control_a.n_rows);
+  overall_lik[0]= lowest_BIC_temp;
+  int overall_count=1;  
+  
+  
+  Rcout << "get past likelihood function mu round one. \n";
+  
+  
+  
+  
+  
+  
     
     for(int j=0;j<num_splits_mu;j++){									// for-loop of length 5.
       int lsize=1000;										// reate a variable lsize. Initialized as 1000.
@@ -3259,6 +3283,302 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
   std::vector<double> overall_lik(overall_size);		// create a vector of length 1000.
   NumericVector test_preds;							// create a vector.
   List cp_mat_list=resids_cp_mat_mu;
+  
+  
+  
+  
+  
+  
+  
+  //////   //COMMENTED OUT ATTEMPT TO FIX NO ZERO SPLIT TREES BUG
+  
+  for(int q=0; q<prev_sum_trees_mu.size();q++){
+  
+  SEXP s_mu = prev_sum_trees_mu[parent[q]];									// s is a pointer to S expression type equal to the element of the sumtrees input list indexed by the i^th element of the input Integer vetor parent2. i is also an input integer.
+    SEXP s_tau = prev_sum_trees_tau[parent[q]];									// s is a pointer to S expression type equal to the element of the sumtrees input list indexed by the i^th element of the input Integer vetor parent2. i is also an input integer.
+    
+    if(is<List>(s_mu)){												// is s is a list
+      if(is<List>(s_tau)){												// is s is a list
+        //Rcout << "RELEVANT LINE 2027.\n";
+        
+        List prev_sum_trees_mu2_temp=prev_sum_trees_mu[parent[q]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+        List prev_sum_trees_mat_mu2_temp=prev_sum_trees_mat_mu[parent[q]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        List sum_trees_tau2_temp=prev_sum_trees_tau[parent[q]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+        List sum_trees_mat_tau2_temp=prev_sum_trees_mat_tau[parent[q]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        
+        prev_sum_trees_mu2_temp.push_back(tree_table_mu[0]);						// append the treetable proposal_tree[0] to the end of the list sum_trees2
+        prev_sum_trees_mat_mu2_temp.push_back(tree_mat_mu[0]);	
+
+
+        double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2_temp,sum_trees_tau2_temp,prev_sum_trees_mat_mu2_temp,sum_trees_mat_tau2_temp,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+
+        double tree_prior_temp=0;
+        int p_other_mu=0;
+        int p_other_tau=0;
+        NumericVector other_int_nodes_mu;
+        NumericVector other_int_nodes_tau;
+        
+          for(int t=0;t<prev_sum_trees_mu2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
+          NumericMatrix tree=prev_sum_trees_mu2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+          other_int_nodes_mu = find_term_nodes_bcf(tree);
+          p_other_mu+=other_int_nodes_mu.size();
+          NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          if(tree.ncol()<5) throw std::range_error("Line 1977");
+          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
+          NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+          other_int_nodes_tau = find_term_nodes_bcf(tree);
+          p_other_tau+=other_int_nodes_tau.size();
+          NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          if(tree.ncol()<5) throw std::range_error("Line 1984");
+          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        
+        
+        double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          
+        overall_trees[overall_count]=tree_table_mu[0];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
+        overall_mat[overall_count]=tree_mat_mu[0];			// include all elements of mat_subset_curr_round in overall_mat (across iterations of this loop)
+        overall_parent[overall_count]=parent[q];				// include all elements of parent_curr_round in overall_parent (across iterations of this loop)
+        
+        overall_lik[overall_count]=BIC;			// include all elements of lik_subset_curr_round in overall_lik (across iterations of this loop)
+        
+        overall_count++;												// increment overall_count by one.
+          
+        
+      }else{
+        //Rcout << "\n RELEVANT LINE 2057.\n";
+        
+        List prev_sum_trees_mu2_temp=prev_sum_trees_mu[parent[q]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+        List prev_sum_trees_mat_mu2_temp=prev_sum_trees_mat_mu[parent[q]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        prev_sum_trees_mu2_temp.push_back(tree_table_mu[0]);						// append the treetable proposal_tree[0] to the end of the list sum_trees2
+        prev_sum_trees_mat_mu2_temp.push_back(tree_mat_mu[0]);	
+        NumericMatrix sum_trees_tau2_temp=prev_sum_trees_tau[parent[q]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+        NumericMatrix sum_trees_mat_tau2_temp=prev_sum_trees_mat_tau[parent[q]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        List st_tau(1);													// create list, st, of length 2.
+        List st_mat_tau(1);												// create lisr, st_mat of length 2.
+        st_tau[0]=sum_trees_tau2_temp;												// let the first elemetn of st be sum_trees2.
+        st_mat_tau[0]=sum_trees_mat_tau2_temp;										// let the first element of st_mat be sum_trees_mat2.
+
+        
+        double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2_temp,st_tau,prev_sum_trees_mat_mu2_temp,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+
+        double tree_prior_temp=0;
+        int p_other_mu=0;
+        int p_other_tau=0;
+        NumericVector other_int_nodes_mu;
+        NumericVector other_int_nodes_tau;
+        
+          for(int t=0;t<prev_sum_trees_mu2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
+          NumericMatrix tree=prev_sum_trees_mu2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+          other_int_nodes_mu = find_term_nodes_bcf(tree);
+          p_other_mu+=other_int_nodes_mu.size();
+          NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          if(tree.ncol()<5) throw std::range_error("Line 2006");
+          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
+          NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+          other_int_nodes_tau = find_term_nodes_bcf(tree);
+          p_other_tau+=other_int_nodes_tau.size();
+          NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          if(tree.ncol()<5) throw std::range_error("Line 2013");
+          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          
+          overall_trees[overall_count]=tree_table_mu[0];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
+          overall_mat[overall_count]=tree_mat_mu[0];			// include all elements of mat_subset_curr_round in overall_mat (across iterations of this loop)
+          overall_parent[overall_count]=parent[q];				// include all elements of parent_curr_round in overall_parent (across iterations of this loop)
+          
+          overall_lik[overall_count]=BIC;			// include all elements of lik_subset_curr_round in overall_lik (across iterations of this loop)
+          
+          overall_count++;												// increment overall_count by one.
+          
+        
+      }
+      
+    }else{															// if s is not a list
+      if(is<List>(s_tau)){												// is s is a list
+        //Rcout << "RELEVANT LINE 2093.\n";
+        
+        NumericMatrix prev_sum_trees_mu2_temp=prev_sum_trees_mu[parent[q]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
+        NumericMatrix prev_sum_trees_mat_mu2_temp=prev_sum_trees_mat_mu[parent[q]];		// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        List st_mu(2);													// create list, st, of length 2.
+        List st_mat_mu(2);												// create lisr, st_mat of length 2.
+        st_mu[0]=prev_sum_trees_mu2_temp;												// let the first elemetn of st be sum_trees2.
+        st_mu[1]=tree_table_mu[0];												// let the first elemetn of st be sum_trees2.
+        st_mat_mu[0]=prev_sum_trees_mat_mu2_temp;										// let the first element of st_mat be sum_trees_mat2.
+        st_mat_mu[1]=tree_mat_mu[0];										// let the first element of st_mat be sum_trees_mat2.
+        // return(st);
+        List sum_trees_tau2_temp=prev_sum_trees_tau[parent[q]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+        List sum_trees_mat_tau2_temp=prev_sum_trees_mat_tau[parent[q]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        
+
+        double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,sum_trees_tau2_temp,st_mat_mu,sum_trees_mat_tau2_temp,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+        double tree_prior_temp=0;
+        
+        int p_other_mu=0;
+        int p_other_tau=0;
+        
+        NumericVector other_int_nodes_mu;
+        NumericVector other_int_nodes_tau;
+        
+        for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
+          NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
+          other_int_nodes_mu = find_term_nodes_bcf(tree);
+          p_other_mu+=other_int_nodes_mu.size();
+          NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          if(tree.ncol()<5) throw std::range_error("Line 2040");
+          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
+          NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+          other_int_nodes_tau = find_term_nodes_bcf(tree);
+          p_other_tau+=other_int_nodes_tau.size();
+          NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          if(tree.ncol()<5) throw std::range_error("Line 2047");
+          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        
+        overall_trees[overall_count]=tree_table_mu[0];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
+        overall_mat[overall_count]=tree_mat_mu[0];			// include all elements of mat_subset_curr_round in overall_mat (across iterations of this loop)
+        overall_parent[overall_count]=parent[q];				// include all elements of parent_curr_round in overall_parent (across iterations of this loop)
+        
+        overall_lik[overall_count]=BIC;			// include all elements of lik_subset_curr_round in overall_lik (across iterations of this loop)
+        
+        overall_count++;												// increment overall_count by one.
+        
+      }else{
+        //Rcout << "RELEVANT LINE 2124.\n";
+        
+        NumericMatrix prev_sum_trees_mu2_temp=prev_sum_trees_mu[parent[q]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
+        NumericMatrix prev_sum_trees_mat_mu2_temp=prev_sum_trees_mat_mu[parent[q]];		// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        List st_mu(2);													// create list, st, of length 2.
+        List st_mat_mu(2);												// create lisr, st_mat of length 2.
+        st_mu[0]=prev_sum_trees_mu2_temp;												// let the first elemetn of st be sum_trees2.
+        st_mu[1]=tree_table_mu[0];										// let the second element of st be proposal_tree[0] (tree table).
+        st_mat_mu[0]=prev_sum_trees_mat_mu2_temp;										// let the first element of st_mat be sum_trees_mat2.
+        st_mat_mu[1]=tree_mat_mu[0];		
+        NumericMatrix sum_trees_tau2_temp=prev_sum_trees_tau[parent[q]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+        NumericMatrix sum_trees_mat_tau2_temp=prev_sum_trees_mat_tau[parent[q]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        List st_tau(1);													// create list, st, of length 2.
+        List st_mat_tau(1);												// create lisr, st_mat of length 2.
+        st_tau[0]=sum_trees_tau2_temp;												// let the first elemetn of st be sum_trees2.
+        st_mat_tau[0]=sum_trees_mat_tau2_temp;										// let the first element of st_mat be sum_trees_mat2.
+        double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+        double tree_prior_temp=0;
+        
+        int p_other_mu=0;
+        int p_other_tau=0;
+        
+        NumericVector other_int_nodes_mu;
+        NumericVector other_int_nodes_tau;
+        
+        
+        for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
+          NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
+          other_int_nodes_mu = find_term_nodes_bcf(tree);
+          p_other_mu+=other_int_nodes_mu.size();
+          NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          if(tree.ncol()<5) throw std::range_error("Line 2070");
+          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
+          NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+          other_int_nodes_tau = find_term_nodes_bcf(tree);
+          p_other_tau+=other_int_nodes_tau.size();
+          NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          if(tree.ncol()<5) throw std::range_error("Line 2077");
+          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        
+        overall_trees[overall_count]=tree_table_mu[0];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
+        overall_mat[overall_count]=tree_mat_mu[0];			// include all elements of mat_subset_curr_round in overall_mat (across iterations of this loop)
+        overall_parent[overall_count]=parent[q];				// include all elements of parent_curr_round in overall_parent (across iterations of this loop)
+        
+        overall_lik[overall_count]=BIC;			// include all elements of lik_subset_curr_round in overall_lik (across iterations of this loop)
+        
+        overall_count++;
+      }
+    }
+    if(overall_count==(overall_size-1)){							// if the length of the overall lists and vectors to be filled is not large enough
+      overall_size=overall_size*2;								// double the size
+      overall_trees=resize_bigger_bcf(overall_trees,overall_size);	// double the size of overall_trees
+      overall_lik.resize(overall_size);							// double the size of overall_lik
+      overall_mat=resize_bigger_bcf(overall_mat,overall_size);		// double the size of overall_mat
+      overall_parent.resize(overall_size);						// double the size of overall_parent
+    }
+  
+  }
+  
+  overall_trees=resize_bcf(overall_trees,overall_count);					// remove remaining spaces that are not filled in
+  overall_lik.resize(overall_count);									// remove remaining spaces that are not filled in
+  overall_mat=resize_bcf(overall_mat,overall_count);						// remove remaining spaces that are not filled in
+  overall_parent.resize(overall_count);								// remove remaining spaces that are not filled in
+  eval_model=evaluate_model_occams_window_bcf(as<NumericVector>(wrap(overall_lik)),lowest_BIC,log(c),overall_trees,overall_mat,as<IntegerVector>(wrap(overall_parent)));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_mu_list, tree_lik, tree_parent
+  overall_lik2=eval_model[0];											// vector of all BICS for models in Occam's window. (maybe likelihoods rather than BICs?)
+  overall_trees=eval_model[1];										// list of tree tables in Occam's window
+  overall_mat=eval_model[2];											// list of tree matrices in Occam's window
+  overall_count=overall_trees.size();									// re-set overall_count to number of models in Occam's window
+  overall_parent2=eval_model[3];										// tree parent vector for all models in Occam's window.
+  //add in check to see if OW accepted more than the top maxOW models...
+  if(overall_lik2.size()>maxOWsize){									// If more than maxOWsize models kept in Occam's window
+    //find the maxOWsize best models and continue with those!
+    IntegerVector owindices=orderforOW__bcf(overall_lik2);					// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on. 
+    owindices=owindices-1;											// take one away from indices so that they are in the correct range.
+    //get the top maxOWsize indices to keep in OW
+    NumericVector temp_olik(maxOWsize);								// create vector of length maxOWsize
+    List temp_otrees(maxOWsize);									// create list of length maxOWsize
+    List temp_omat(maxOWsize);										// create list of length maxOWsize
+    IntegerVector temp_oparent(maxOWsize);							// create vector of length maxOWsize
+    
+    //now only select those elements
+    for(int t=0;t<maxOWsize;t++){									// for-loop of length equal to size of Occam's window
+      temp_olik[t]=overall_lik2[owindices[t]];					// keep the BICs (likelihoods?) for the top maxOWsize models
+      temp_otrees[t]=overall_trees[owindices[t]];					// keep the tree tables for the top maxOWsize models
+      temp_omat[t]= overall_mat[owindices[t]];					// keep the tree matrices for the top maxOWsize models
+      temp_oparent[t]=overall_parent2[owindices[t]];				// keep the tree parent vectors for the top maxOWsize models
+    }
+    
+    overall_lik2=temp_olik;											// reset overall_lik2 to keep only top maxOWsize models
+    overall_trees=temp_otrees;										// reset overall_trees to keep only top maxOWsize models
+    overall_mat=temp_omat;											// reset overall_mat to keep only top maxOWsize models
+    overall_count=overall_trees.size();								// reset overall_count to keep only top maxOWsize models
+    overall_parent2=temp_oparent;									// reset overall_parent2 to keep only top maxOWsize models
+  }
+  
+  if(overall_trees.size()<overall_size-1){							// if length of overall_trees is less than overall_size-1
+    overall_trees=resize_bigger_bcf(overall_trees,overall_size);		// increse size of overall_trees
+    overall_mat=resize_bigger_bcf(overall_mat,overall_size);			// increse size of overall_mat
+    overall_lik.resize(overall_size);								// increse size of overall_lik
+    overall_parent.resize(overall_size);							// increse size of overall_parent
+  }else{																// if length of overall_trees is greater than or equal to overall_size-1
+    overall_size=2*overall_size;									// double the size
+    overall_trees=resize_bigger_bcf(overall_trees,overall_size);		// double the length of overall_trees
+    overall_mat=resize_bigger_bcf(overall_mat,overall_size);			// double the length of overall_mat
+    overall_lik.resize(overall_size);								// double the length of overall_lik
+    overall_parent.resize(overall_size);							// double the length of overall_parent
+  }
+  
+  
+  
+  
+  
+  
+  
+  
   
   for(int j=0;j<num_splits_mu;j++){									// create a for-loop of length 5.
     int lsize=1000;										// create a variable initialized equal to 1000.
@@ -3544,6 +3864,156 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
   arma::mat temp_all_resids_a(resids.begin(), resids.nrow(), resids.ncol(), false);	
   arma::mat temp_treated_resids_a = temp_all_resids_a.rows(arma::find(z_ar==1));	
   NumericMatrix temp_treated_resids = wrap(temp_treated_resids_a);	
+  
+  
+
+  for(int q=0; q<prev_sum_trees_mu.size();q++){
+    
+  
+  SEXP s = prev_sum_trees_mu[parent[q]];									// s is a pointer to S expression type equal to the element of the sumtrees input list indexed by the i^th element of the input Integer vetor parent2. i is also an input integer.
+  if(is<List>(s)){												// is s is a list
+
+    List prev_sum_trees_mu2_temp=prev_sum_trees_mu[parent[q]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+    List prev_sum_trees_mat_mu2_temp=prev_sum_trees_mat_mu[parent[q]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+    
+    List st_tau(1);													// create list, st, of length 2.
+    List st_mat_tau(1);												// create lisr, st_mat of length 2.
+    st_tau[0]=tree_table_tau[0];												// let the first elemetn of st be sum_trees2.
+    st_mat_tau[0]=tree_mat_tau[0];										// let the first element of st_mat be sum_trees_mat2.
+    
+    double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2_temp,st_tau,prev_sum_trees_mat_mu2_temp,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+    double tree_prior_temp=0;
+    int p_other_mu=0;
+    NumericVector other_int_nodes_mu;
+    
+    
+      for(int t=0;t<prev_sum_trees_mu2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
+      NumericMatrix tree=prev_sum_trees_mu2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+      other_int_nodes_mu = find_term_nodes_bcf(tree);
+      p_other_mu+=other_int_nodes_mu.size();
+      NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+      //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+      if(tree.ncol()<5) throw std::range_error("Line 1412");
+      tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+    }
+      tree_prior_temp*=get_tree_prior_bcf(tree_table_tau[0],tree_mat_tau[0],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+ 
+ NumericVector int_nodes_tau=find_term_nodes_bcf(tree_table_tau[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
+ int p_other_tau=int_nodes_tau.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
+ double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);	
+ 
+ overall_trees[overall_count]=tree_table_tau[0];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
+ overall_mat[overall_count]=tree_mat_tau[0];			// include all elements of mat_subset_curr_round in overall_mat (across iterations of this loop)
+ overall_parent[overall_count]=parent[q];				// include all elements of parent_curr_round in overall_parent (across iterations of this loop)
+
+  overall_lik[overall_count]=BIC;			// include all elements of lik_subset_curr_round in overall_lik (across iterations of this loop)
+ overall_count++;												// increment overall_count by one.
+ 
+ Rcout << "get to end ifelse function tau round one. \n";
+ 
+  }else{															// if s is not a list
+
+    NumericMatrix prev_sum_trees_mu2_temp=prev_sum_trees_mu[parent[q]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
+    NumericMatrix prev_sum_trees_mat_mu2_temp=prev_sum_trees_mat_mu[parent[q]];		// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+    int p_other_mu=0;
+    NumericVector other_int_nodes_mu;
+
+    other_int_nodes_mu = find_term_nodes_bcf(prev_sum_trees_mu2_temp);
+    p_other_mu=other_int_nodes_mu.size();
+    List st_mu(1);													// create list, st, of length 2.
+    List st_mat_mu(1);												// create lisr, st_mat of length 2.
+    st_mu[0]=prev_sum_trees_mu2_temp;												// let the first elemetn of st be sum_trees2.
+    st_mat_mu[0]=prev_sum_trees_mat_mu2_temp;										// let the first element of st_mat be sum_trees_mat2.
+    // return(st);
+    List st_tau(1);													// create list, st, of length 2.
+    List st_mat_tau(1);												// create lisr, st_mat of length 2.
+    st_tau[0]=tree_table_tau[0];												// let the first elemetn of st be sum_trees2.
+    st_mat_tau[0]=tree_mat_tau[0];										// let the first element of st_mat be sum_trees_mat2.
+
+    double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+    double tree_prior_temp=0;
+
+    tree_prior_temp*=get_tree_prior_bcf(prev_sum_trees_mu2_temp,prev_sum_trees_mat_mu2_temp,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+
+    tree_prior_temp*=get_tree_prior_bcf(tree_table_tau[0],tree_mat_tau[0],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+
+  NumericVector int_nodes_tau=find_term_nodes_bcf(tree_table_tau[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
+  int p_other_tau=int_nodes_tau.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
+  double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);	
+
+  overall_trees[overall_count]=tree_table_tau[0];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
+  overall_mat[overall_count]=tree_mat_tau[0];			// include all elements of mat_subset_curr_round in overall_mat (across iterations of this loop)
+  overall_parent[overall_count]=parent[q];				// include all elements of parent_curr_round in overall_parent (across iterations of this loop)
+
+  overall_lik[overall_count]=BIC;			// include all elements of lik_subset_curr_round in overall_lik (across iterations of this loop)
+  overall_count++;												// increment overall_count by one.
+  
+
+  }
+  
+  if(overall_count==(overall_size-1)){							// if the length of the overall lists and vectors to be filled is not large enough
+    overall_size=overall_size*2;								// double the size
+    overall_trees=resize_bigger_bcf(overall_trees,overall_size);	// double the size of overall_trees
+    overall_lik.resize(overall_size);							// double the size of overall_lik
+    overall_mat=resize_bigger_bcf(overall_mat,overall_size);		// double the size of overall_mat
+    overall_parent.resize(overall_size);						// double the size of overall_parent
+  }
+  
+  
+}
+
+  overall_trees=resize_bcf(overall_trees,overall_count);					// remove remaining spaces that are not filled in
+  overall_lik.resize(overall_count);									// remove remaining spaces that are not filled in
+  overall_mat=resize_bcf(overall_mat,overall_count);						// remove remaining spaces that are not filled in
+  overall_parent.resize(overall_count);								// remove remaining spaces that are not filled in
+  eval_model=evaluate_model_occams_window_bcf(as<NumericVector>(wrap(overall_lik)),lowest_BIC,log(c),overall_trees,overall_mat,as<IntegerVector>(wrap(overall_parent)));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+  overall_lik2=eval_model[0];											// vector of all BICS for models in Occam's window. (maybe likelihoods rather than BICs?)
+  overall_trees=eval_model[1];										// list of tree tables in Occam's window
+  overall_mat=eval_model[2];											// list of tree matrices in Occam's window
+  overall_count=overall_trees.size();									// re-set overall_count to number of models in Occam's window
+  overall_parent2=eval_model[3];										// tree parent vector for all models in Occam's window.
+  //add in check to see if OW accepted more than the top maxOW models...
+  if(overall_lik2.size()>maxOWsize){									// If more than maxOWsize models kept in Occam's window
+    //find the maxOWsize best models and continue with those!
+    IntegerVector owindices=orderforOW__bcf(overall_lik2);					// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on. 
+    owindices=owindices-1;											// take one away from indices so that they are in the correct range.
+    //get the top maxOWsize indices to keep in OW
+    NumericVector temp_olik(maxOWsize);								// create vector of length maxOWsize
+    List temp_otrees(maxOWsize);									// create list of length maxOWsize
+    List temp_omat(maxOWsize);										// create list of length maxOWsize
+    IntegerVector temp_oparent(maxOWsize);							// create vector of length maxOWsize
+    
+    //now only select those elements
+    for(int t=0;t<maxOWsize;t++){									// for-loop of length equal to size of Occam's window
+      temp_olik[t]=overall_lik2[owindices[t]];					// keep the BICs (likelihoods?) for the top maxOWsize models
+      temp_otrees[t]=overall_trees[owindices[t]];					// keep the tree tables for the top maxOWsize models
+      temp_omat[t]= overall_mat[owindices[t]];					// keep the tree matrices for the top maxOWsize models
+      temp_oparent[t]=overall_parent2[owindices[t]];				// keep the tree parent vectors for the top maxOWsize models
+    }
+    
+    overall_lik2=temp_olik;											// reset overall_lik2 to keep only top maxOWsize models
+    overall_trees=temp_otrees;										// reset overall_trees to keep only top maxOWsize models
+    overall_mat=temp_omat;											// reset overall_mat to keep only top maxOWsize models
+    overall_count=overall_trees.size();								// reset overall_count to keep only top maxOWsize models
+    overall_parent2=temp_oparent;	
+  
+  }
+  if(overall_trees.size()<overall_size-1){							// if length of overall_trees is less than overall_size-1
+    overall_trees=resize_bigger_bcf(overall_trees,overall_size);		// increse size of overall_trees
+    overall_mat=resize_bigger_bcf(overall_mat,overall_size);			// increse size of overall_mat
+    overall_lik.resize(overall_size);								// increse size of overall_lik
+    overall_parent.resize(overall_size);							// increse size of overall_parent
+  }else{																// if length of overall_trees is greater than or equal to overall_size-1
+    overall_size=2*overall_size;									// double the size
+    overall_trees=resize_bigger_bcf(overall_trees,overall_size);		// double the length of overall_trees
+    overall_mat=resize_bigger_bcf(overall_mat,overall_size);			// double the length of overall_mat
+    overall_lik.resize(overall_size);								// double the length of overall_lik
+    overall_parent.resize(overall_size);							// double the length of overall_parent
+  }
+  
+  
+  
+  
   
   
   for(int j=0;j<num_splits_tau;j++){									// create a for-loop of length 5.
@@ -3849,6 +4319,301 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
   arma::mat temp_treated_resids_a = temp_all_resids_a.rows(arma::find(z_ar==1));	
   NumericMatrix temp_treated_resids = wrap(temp_treated_resids_a);	
   
+  
+  
+  //////   //COMMENTED OUT ATTEMPT TO FIX NO ZERO SPLIT TREES BUG
+  
+  
+  ////BEGGINING OF ZERO SPLIT TREE CODE
+  ///////////////////////////////////////////////////////////////////////
+  
+  
+  for(int q=0; q<prev_sum_trees_tau.size();q++){
+    
+    
+    SEXP s_mu = prev_sum_trees_mu[parent[q]];									// s is a pointer to S expression type equal to the element of the sumtrees input list indexed by the i^th element of the input Integer vetor parent2. i is also an input integer.
+    SEXP s_tau = prev_sum_trees_tau[parent[q]];									// s is a pointer to S expression type equal to the element of the sumtrees input list indexed by the i^th element of the input Integer vetor parent2. i is also an input integer.
+    if(is<List>(s_mu)){												// is s is a list
+      if(is<List>(s_tau)){												// is s is a list
+        //Rcout << "\n RELEVANT LINE 1703.\n";
+        
+        List prev_sum_trees_mu2_temp=prev_sum_trees_mu[parent[q]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+        List prev_sum_trees_mat_mu2_temp=prev_sum_trees_mat_mu[parent[q]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        List sum_trees_tau2_temp=prev_sum_trees_tau[parent[q]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+        List sum_trees_mat_tau2_temp=prev_sum_trees_mat_tau[parent[q]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+
+
+        sum_trees_tau2_temp.push_back(tree_table_tau[0]);						// append the treetable proposal_tree[0] to the end of the list sum_trees2
+        sum_trees_mat_tau2_temp.push_back(tree_mat_tau[0]);	
+
+        double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2_temp,sum_trees_tau2_temp,prev_sum_trees_mat_mu2_temp,sum_trees_mat_tau2_temp,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+
+        double tree_prior_temp=0;
+        
+        int p_other_mu=0;
+        int p_other_tau=0;
+        
+        NumericVector other_int_nodes_mu;
+        NumericVector other_int_nodes_tau;
+        
+        
+        
+        for(int t=0;t<prev_sum_trees_mu2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
+          NumericMatrix tree=prev_sum_trees_mu2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+          other_int_nodes_mu = find_term_nodes_bcf(tree);
+          p_other_mu+=other_int_nodes_mu.size();
+          NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          if(tree.ncol()<5) throw std::range_error("Line 1660");
+          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
+          NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+          other_int_nodes_tau = find_term_nodes_bcf(tree);
+          p_other_tau+=other_int_nodes_tau.size();
+          NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          if(tree.ncol()<5) throw std::range_error("Line 1667");
+          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        
+        double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        
+        overall_trees[overall_count]=tree_table_tau[0];		
+        overall_mat[overall_count]=tree_mat_tau[0];			
+        overall_parent[overall_count]=parent[q];				
+        
+        overall_lik[overall_count]=BIC;			
+        
+        overall_count++;												// increment overall_count by one.
+        
+      }else{
+        List prev_sum_trees_mu2_temp=prev_sum_trees_mu[parent[q]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+        List prev_sum_trees_mat_mu2_temp=prev_sum_trees_mat_mu[parent[q]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        NumericMatrix sum_trees_tau2_temp=prev_sum_trees_tau[parent[q]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+        NumericMatrix sum_trees_mat_tau2_temp=prev_sum_trees_mat_tau[parent[q]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        List st_tau(2);													// create list, st, of length 2.
+        List st_mat_tau(2);												// create lisr, st_mat of length 2.
+        st_tau[0]=sum_trees_tau2_temp;												// let the first elemetn of st be sum_trees2.
+        st_tau[1]=tree_table_tau[0];										// let the second element of st be proposal_tree[0] (tree table).
+        st_mat_tau[0]=sum_trees_mat_tau2_temp;										// let the first element of st_mat be sum_trees_mat2.
+        st_mat_tau[1]=tree_mat_tau[0];		
+        double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2_temp,st_tau,prev_sum_trees_mat_mu2_temp,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+        
+        double tree_prior_temp=0;
+        
+        int p_other_mu=0;
+        int p_other_tau=0;
+        
+        NumericVector other_int_nodes_mu;
+        NumericVector other_int_nodes_tau;
+        
+        
+        for(int t=0;t<prev_sum_trees_mu2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
+          NumericMatrix tree=prev_sum_trees_mu2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+          other_int_nodes_mu = find_term_nodes_bcf(tree);
+          p_other_mu+=other_int_nodes_mu.size();
+          NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          if(tree.ncol()<5) throw std::range_error("Line 1689");
+          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
+          NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+          other_int_nodes_tau = find_term_nodes_bcf(tree);
+          p_other_tau+=other_int_nodes_tau.size();
+          NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          if(tree.ncol()<5) throw std::range_error("Line 1695");
+          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        
+        overall_trees[overall_count]=tree_table_tau[0];		
+        overall_mat[overall_count]=tree_mat_tau[0];			
+        overall_parent[overall_count]=parent[q];				
+        
+        overall_lik[overall_count]=BIC;			
+        
+        overall_count++;												// increment overall_count by one.
+        
+      }
+      
+    }else{															// if s is not a list
+      if(is<List>(s_tau)){												// is s is a list
+        
+        NumericMatrix prev_sum_trees_mu2_temp=prev_sum_trees_mu[parent[q]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
+        NumericMatrix prev_sum_trees_mat_mu2_temp=prev_sum_trees_mat_mu[parent[q]];		// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        List st_mu(1);													// create list, st, of length 2.
+        List st_mat_mu(1);												// create lisr, st_mat of length 2.
+        st_mu[0]=prev_sum_trees_mu2_temp;												// let the first elemetn of st be sum_trees2.
+        st_mat_mu[0]=prev_sum_trees_mat_mu2_temp;										// let the first element of st_mat be sum_trees_mat2.
+        // return(st);
+        List sum_trees_tau2_temp=prev_sum_trees_tau[parent[q]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+        List sum_trees_mat_tau2_temp=prev_sum_trees_mat_tau[parent[q]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        
+        sum_trees_tau2_temp.push_back(tree_table_tau[0]);						// append the treetable proposal_tree[0] to the end of the list sum_trees2
+        sum_trees_mat_tau2_temp.push_back(tree_mat_tau[0]);	
+        //NumericMatrix prop_table_tau_temp = proposal_tree[0];						// append the treetable proposal_tree[0] to the end of the list sum_trees2
+        //NumericMatrix prop_mat_tau_temp =proposal_tree[1];					// append the tree matreix proposal_tree[1] to the end of the list sum_trees_mat2
+        double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,sum_trees_tau2_temp,st_mat_mu,sum_trees_mat_tau2_temp,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+        
+        double tree_prior_temp=0;
+        
+        int p_other_mu=0;
+        int p_other_tau=0;
+        
+        NumericVector other_int_nodes_mu;
+        NumericVector other_int_nodes_tau;
+        
+        
+        for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
+          NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
+          other_int_nodes_mu = find_term_nodes_bcf(tree);
+          p_other_mu+=other_int_nodes_mu.size();
+          NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          if(tree.ncol()<5) throw std::range_error("Line 1723");
+          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
+          NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+          other_int_nodes_tau = find_term_nodes_bcf(tree);
+          p_other_tau+=other_int_nodes_tau.size();
+          NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          if(tree.ncol()<5) throw std::range_error("Line 1730");
+          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        
+        overall_trees[overall_count]=tree_table_tau[0];		
+        overall_mat[overall_count]=tree_mat_tau[0];			
+        overall_parent[overall_count]=parent[q];				
+        
+        overall_lik[overall_count]=BIC;			
+        
+        overall_count++;												// increment overall_count by one.
+        
+      }else{
+        NumericMatrix prev_sum_trees_mu2_temp=prev_sum_trees_mu[parent[q]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
+        NumericMatrix prev_sum_trees_mat_mu2_temp=prev_sum_trees_mat_mu[parent[q]];		// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        List st_mu(1);													// create list, st, of length 2.
+        List st_mat_mu(1);												// create lisr, st_mat of length 2.
+        st_mu[0]=prev_sum_trees_mu2_temp;												// let the first elemetn of st be sum_trees2.
+        st_mat_mu[0]=prev_sum_trees_mat_mu2_temp;										// let the first element of st_mat be sum_trees_mat2.
+        NumericMatrix sum_trees_tau2_temp=prev_sum_trees_tau[parent[q]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+        NumericMatrix sum_trees_mat_tau2_temp=prev_sum_trees_mat_tau[parent[q]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        List st_tau(2);													// create list, st, of length 2.
+        List st_mat_tau(2);												// create lisr, st_mat of length 2.
+        st_tau[0]=sum_trees_tau2_temp;												// let the first elemetn of st be sum_trees2.
+        st_tau[1]=tree_table_tau[0];										// let the second element of st be proposal_tree[0] (tree table).
+        st_mat_tau[0]=sum_trees_mat_tau2_temp;										// let the first element of st_mat be sum_trees_mat2.
+        st_mat_tau[1]=tree_mat_tau[0];		
+        double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+        double tree_prior_temp=0;
+        
+        int p_other_mu=0;
+        int p_other_tau=0;
+        
+        NumericVector other_int_nodes_mu;
+        NumericVector other_int_nodes_tau;
+        
+        for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
+          NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
+          other_int_nodes_mu = find_term_nodes_bcf(tree);
+          p_other_mu+=other_int_nodes_mu.size();
+          NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          if(tree.ncol()<5) throw std::range_error("Line 1753");
+          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
+          NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+          other_int_nodes_tau = find_term_nodes_bcf(tree);
+          p_other_tau+=other_int_nodes_tau.size();
+          NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          if(tree.ncol()<5) throw std::range_error("Line 1760");
+          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        
+        overall_trees[overall_count]=tree_table_tau[0];		
+        overall_mat[overall_count]=tree_mat_tau[0];			
+        overall_parent[overall_count]=parent[q];				
+        
+        overall_lik[overall_count]=BIC;			
+        
+        overall_count++;												// increment overall_count by one.
+        
+      }
+      if(overall_count==(overall_size-1)){							// if the length of the overall lists and vectors to be filled is not large enough
+        overall_size=overall_size*2;								// double the size
+        overall_trees=resize_bigger_bcf(overall_trees,overall_size);	// double the size of overall_trees
+        overall_lik.resize(overall_size);							// double the size of overall_lik
+        overall_mat=resize_bigger_bcf(overall_mat,overall_size);		// double the size of overall_mat
+        overall_parent.resize(overall_size);						// double the size of overall_parent
+      }
+    }
+  }
+    overall_trees=resize_bcf(overall_trees,overall_count);					// remove remaining spaces that are not filled in
+    overall_lik.resize(overall_count);									// remove remaining spaces that are not filled in
+    overall_mat=resize_bcf(overall_mat,overall_count);						// remove remaining spaces that are not filled in
+    overall_parent.resize(overall_count);								// remove remaining spaces that are not filled in
+    eval_model=evaluate_model_occams_window_bcf(as<NumericVector>(wrap(overall_lik)),lowest_BIC,log(c),overall_trees,overall_mat,as<IntegerVector>(wrap(overall_parent)));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    overall_lik2=eval_model[0];											// vector of all BICS for models in Occam's window. (maybe likelihoods rather than BICs?)
+    overall_trees=eval_model[1];										// list of tree tables in Occam's window
+    overall_mat=eval_model[2];											// list of tree matrices in Occam's window
+    overall_count=overall_trees.size();									// re-set overall_count to number of models in Occam's window
+    overall_parent2=eval_model[3];										// tree parent vector for all models in Occam's window.
+    //add in check to see if OW accepted more than the top maxOW models...
+    if(overall_lik2.size()>maxOWsize){									// If more than maxOWsize models kept in Occam's window
+      //find the maxOWsize best models and continue with those!
+      IntegerVector owindices=orderforOW__bcf(overall_lik2);					// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on. 
+      owindices=owindices-1;											// take one away from indices so that they are in the correct range.
+      //get the top maxOWsize indices to keep in OW
+      NumericVector temp_olik(maxOWsize);								// create vector of length maxOWsize
+      List temp_otrees(maxOWsize);									// create list of length maxOWsize
+      List temp_omat(maxOWsize);										// create list of length maxOWsize
+      IntegerVector temp_oparent(maxOWsize);							// create vector of length maxOWsize
+      
+      //now only select those elements
+      for(int t=0;t<maxOWsize;t++){									// for-loop of length equal to size of Occam's window
+        temp_olik[t]=overall_lik2[owindices[t]];					// keep the BICs (likelihoods?) for the top maxOWsize models
+        temp_otrees[t]=overall_trees[owindices[t]];					// keep the tree tables for the top maxOWsize models
+        temp_omat[t]= overall_mat[owindices[t]];					// keep the tree matrices for the top maxOWsize models
+        temp_oparent[t]=overall_parent2[owindices[t]];				// keep the tree parent vectors for the top maxOWsize models
+      }
+      
+      overall_lik2=temp_olik;											// reset overall_lik2 to keep only top maxOWsize models
+      overall_trees=temp_otrees;										// reset overall_trees to keep only top maxOWsize models
+      overall_mat=temp_omat;											// reset overall_mat to keep only top maxOWsize models
+      overall_count=overall_trees.size();								// reset overall_count to keep only top maxOWsize models
+      overall_parent2=temp_oparent;									// reset overall_parent2 to keep only top maxOWsize models
+    }
+    if(overall_trees.size()<overall_size-1){							// if length of overall_trees is less than overall_size-1
+      overall_trees=resize_bigger_bcf(overall_trees,overall_size);		// increse size of overall_trees
+      overall_mat=resize_bigger_bcf(overall_mat,overall_size);			// increse size of overall_mat
+      overall_lik.resize(overall_size);								// increse size of overall_lik
+      overall_parent.resize(overall_size);							// increse size of overall_parent
+    }else{																// if length of overall_trees is greater than or equal to overall_size-1
+      overall_size=2*overall_size;									// double the size
+      overall_trees=resize_bigger_bcf(overall_trees,overall_size);		// double the length of overall_trees
+      overall_mat=resize_bigger_bcf(overall_mat,overall_size);			// double the length of overall_mat
+      overall_lik.resize(overall_size);								// double the length of overall_lik
+      overall_parent.resize(overall_size);							// double the length of overall_parent
+    }
+    
+  
+  
+////END OF ZERO SPLIT TREE CODE
+///////////////////////////////////////////////////////////////////////
+  
+  
+  
+  
+  
   for(int j=0;j<num_splits_tau;j++){									// create a for-loop of length 5.
     int lsize=1000;										// create a variable initialized equal to 1000.
     List table_subset_curr_round(lsize);				// create a list of length 1000
@@ -3874,7 +4639,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           List sum_trees_tau2=prev_sum_trees_tau[parent[i]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
           List sum_trees_mat_tau2=prev_sum_trees_mat_tau[parent[i]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
           //Rcout << "Length of mat list = " << prev_sum_trees_mat_mu2.size() <<".\n";
-          NumericMatrix testexamplemat5 = prev_sum_trees_mat_mu2[0];
+          //NumericMatrix testexamplemat5 = prev_sum_trees_mat_mu2[0];
           //Rcout << "number of rows of mat into likelihood = " << testexamplemat5.nrow() <<".\n";
           
           best_subset=get_best_split_sum_tau_bcf(resids(_,parent[i]),x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
