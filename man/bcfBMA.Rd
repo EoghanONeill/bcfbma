@@ -66,6 +66,8 @@ bcfBMA(x, ...)
 \item{gridsize_tau}{This integer determines the size of the grid across which to search if gridpoint=1 when constructing tau trees.}
 
 \item{include_pi}{Takes values "control", "moderate", "both" or "none". Whether to include pihat in mu(x) ("control"), tau(x) ("moderate"), both or none. Values of "control" or "both" are HIGHLY recommended with observational data.}
+
+\item{zero_split}{Binary variable. If equals 1, then zero split trees can be included in a sum-of-trees model. If equals zero, then only trees with at least one split can be included in a sum-of-trees model.}
 }
 \value{
 The following objects are returned by bcfbma:
