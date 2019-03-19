@@ -68,6 +68,8 @@ bcfBMA(x, ...)
 \item{include_pi}{Takes values "control", "moderate", "both" or "none". Whether to include pihat in mu(x) ("control"), tau(x) ("moderate"), both or none. Values of "control" or "both" are HIGHLY recommended with observational data.}
 
 \item{zero_split}{Binary variable. If equals 1, then zero split trees can be included in a sum-of-trees model. If equals zero, then only trees with at least one split can be included in a sum-of-trees model.}
+
+\item{only_max_num_trees}{Binary variable. If equals 1, then only sum-of-trees models containing the maximum number of trees, num_rounds, are selected. If equals 0, then sum-of-trees models containing less than num_rounds trees can be selected. The default is only_max_num_trees=1.}
 }
 \value{
 The following objects are returned by bcfbma:

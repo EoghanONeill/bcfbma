@@ -34,6 +34,7 @@
 #' @param gridsize_tau This integer determines the size of the grid across which to search if gridpoint=1 when constructing tau trees.
 #' @param include_pi Takes values "control", "moderate", "both" or "none". Whether to include pihat in mu(x) ("control"), tau(x) ("moderate"), both or none. Values of "control" or "both" are HIGHLY recommended with observational data.
 #' @param zero_split Binary variable. If equals 1, then zero split trees can be included in a sum-of-trees model. If equals zero, then only trees with at least one split can be included in a sum-of-trees model.
+#' @param only_max_num_trees Binary variable. If equals 1, then only sum-of-trees models containing the maximum number of trees, num_rounds, are selected. If equals 0, then sum-of-trees models containing less than num_rounds trees can be selected. The default is only_max_num_trees=1.
 #' @export 
 #' @return The following objects are returned by bcfbma:
 #' \item{fitted.values_outcome}{The vector of predictions of the outcome for all training observations.} 
@@ -65,7 +66,8 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                           x.test=matrix(0.0,0,0),test_z = numeric(),test_pihat = matrix(0.0,0,0),
                           ntree_control=5,ntree_moderate=5,
                           alpha_mu=0.95,alpha_tau=0.95,beta_mu=1,beta_tau=1,split_rule_node=0,
-                          gridpoint=0,maxOWsize=100, num_splits_mu =5, num_splits_tau =5, gridsize_mu=10, gridsize_tau=10, include_pi= "control", zero_split=1){
+                          gridpoint=0,maxOWsize=100, num_splits_mu =5, num_splits_tau =5, gridsize_mu=10, gridsize_tau=10,
+                          include_pi= "control", zero_split=1, only_max_num_trees=1){
   binary=FALSE
   start_mean=0
   start_sd=1
@@ -165,7 +167,7 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                                     alpha_mu,beta_mu,alpha_tau,beta_tau,
                                     split_rule_node,gridpoint,maxOWsize,
                                     num_splits_mu,num_splits_tau,gridsize_mu, gridsize_tau,
-                                    include_pi2,zero_split)
+                                    include_pi2,zero_split,only_max_num_trees)
   
   if(length(bcfBMA_call)==12){
     #length of bcfBMA_call is 11 if test data was included in the call
