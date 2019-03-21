@@ -617,8 +617,9 @@ double get_tree_prior_bcf(NumericMatrix tree_table,NumericMatrix tree_matrix,dou
   arma::uvec internal_nodes_prop=find_internal_nodes_bcf(tree_table);								// function defined on line 241. Gives vector of indices of internal nodes? Elements of fifth column that are equal to 1.
   arma::mat tree_matrix2(tree_matrix.begin(),tree_matrix.nrow(),tree_matrix.ncol(),false);	// turn input matrix to arma mat
   int count=internal_nodes_prop.size();														// initialize count equal to the length of internal_nodes_prop
-  //Rcout << "length internal nodes = " << count << "\n.";
+  Rcout << "length internal nodes = " << count << "\n.";
   if(count==0) propsplit=1-alpha;
+  Rcout << "line 622 propsplit = " << propsplit << "\n.";
   
   for(int k=0;k<count;k++){												// loop the length of internal_nodes_prop
     for(int j=0;j<tree_matrix.ncol();j++){								// loop of length equal to number of columns in tree_matrix
@@ -640,6 +641,7 @@ double get_tree_prior_bcf(NumericMatrix tree_table,NumericMatrix tree_matrix,dou
     int_nodes_index=temp;										// redefine int_nodes_index equal to temp
     index_count=0;												// reset index_count to 0
   }
+  Rcout << "line 644 propsplit = " << propsplit << "\n.";
   
   return(propsplit);		// return the number propsplit
 }
@@ -1882,6 +1884,7 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
       Rcout << "lik=" << lik << ".\n";
       Rcout << "BIC=" << BIC << ".\n";
       Rcout << "lowest_BIC=" << lowest_BIC << ".\n";
+      Rcout << "LINE 1885 tree_prior=" << tree_prior << ".\n";
       
       if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
         lowest_BIC=BIC;											// update (input variable) lowest_BIC
@@ -2244,6 +2247,8 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
       Rcout << "lik=" << lik << ".\n";
       Rcout << "BIC=" << BIC << ".\n";
       Rcout << "lowest_BIC=" << lowest_BIC << ".\n";
+      Rcout << "LINE 2247 tree_prior=" << tree_prior << ".\n";
+      
       if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
         lowest_BIC=BIC;											// update (input variable) lowest_BIC
         best_sv=split_var;										// set a value for, or update best_sv
@@ -3314,7 +3319,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
 
         double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2_temp,sum_trees_tau2_temp,prev_sum_trees_mat_mu2_temp,sum_trees_mat_tau2_temp,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
 
-        double tree_prior_temp=0;
+        double tree_prior_temp=1;
         int p_other_mu=0;
         int p_other_tau=0;
         NumericVector other_int_nodes_mu;
@@ -3368,7 +3373,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
         
         double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2_temp,st_tau,prev_sum_trees_mat_mu2_temp,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
 
-        double tree_prior_temp=0;
+        double tree_prior_temp=1;
         int p_other_mu=0;
         int p_other_tau=0;
         NumericVector other_int_nodes_mu;
@@ -3423,7 +3428,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
         
 
         double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,sum_trees_tau2_temp,st_mat_mu,sum_trees_mat_tau2_temp,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
-        double tree_prior_temp=0;
+        double tree_prior_temp=1;
         
         int p_other_mu=0;
         int p_other_tau=0;
@@ -3477,7 +3482,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
         st_tau[0]=sum_trees_tau2_temp;												// let the first elemetn of st be sum_trees2.
         st_mat_tau[0]=sum_trees_mat_tau2_temp;										// let the first element of st_mat be sum_trees_mat2.
         double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
-        double tree_prior_temp=0;
+        double tree_prior_temp=1;
         
         int p_other_mu=0;
         int p_other_tau=0;
@@ -3885,7 +3890,7 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
     st_mat_tau[0]=tree_mat_tau[0];										// let the first element of st_mat be sum_trees_mat2.
     
     double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2_temp,st_tau,prev_sum_trees_mat_mu2_temp,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
-    double tree_prior_temp=0;
+    double tree_prior_temp=1;
     int p_other_mu=0;
     NumericVector other_int_nodes_mu;
     
@@ -3934,7 +3939,7 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
     st_mat_tau[0]=tree_mat_tau[0];										// let the first element of st_mat be sum_trees_mat2.
 
     double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
-    double tree_prior_temp=0;
+    double tree_prior_temp=1;
 
     tree_prior_temp*=get_tree_prior_bcf(prev_sum_trees_mu2_temp,prev_sum_trees_mat_mu2_temp,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
 
@@ -4352,7 +4357,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
 
         double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2_temp,sum_trees_tau2_temp,prev_sum_trees_mat_mu2_temp,sum_trees_mat_tau2_temp,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
 
-        double tree_prior_temp=0;
+        double tree_prior_temp=1;
         
         int p_other_mu=0;
         int p_other_tau=0;
@@ -4370,6 +4375,9 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           if(tree.ncol()<5) throw std::range_error("Line 1660");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          Rcout << "LINE 4378 t =" << t << ".\n";
+          Rcout << "LINE 4378 tree_prior_temp =" << tree_prior_temp << ".\n";
+          
         }
         for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -4379,9 +4387,14 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           if(tree.ncol()<5) throw std::range_error("Line 1667");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          Rcout << "LINE 4390 t =" << t << ".\n";
+          Rcout << "LINE 4390 tree_prior_temp =" << tree_prior_temp << ".\n";
         }
         
         double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        Rcout << "LINE 4395 BIC =" << BIC << ".\n";
+        Rcout << "LINE 4395 lik_temp =" << lik_temp << ".\n";
+        Rcout << "LINE 4395 tree_prior_temp =" << tree_prior_temp << ".\n";
         
         overall_trees[overall_count]=tree_table_tau[0];		
         overall_mat[overall_count]=tree_mat_tau[0];			
@@ -4404,7 +4417,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
         st_mat_tau[1]=tree_mat_tau[0];		
         double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2_temp,st_tau,prev_sum_trees_mat_mu2_temp,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
         
-        double tree_prior_temp=0;
+        double tree_prior_temp=1;
         
         int p_other_mu=0;
         int p_other_tau=0;
@@ -4432,6 +4445,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        Rcout << "LINE 4440 BIC =" << BIC << ".\n";
         
         overall_trees[overall_count]=tree_table_tau[0];		
         overall_mat[overall_count]=tree_mat_tau[0];			
@@ -4462,7 +4476,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
         //NumericMatrix prop_mat_tau_temp =proposal_tree[1];					// append the tree matreix proposal_tree[1] to the end of the list sum_trees_mat2
         double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,sum_trees_tau2_temp,st_mat_mu,sum_trees_mat_tau2_temp,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
         
-        double tree_prior_temp=0;
+        double tree_prior_temp=1;
         
         int p_other_mu=0;
         int p_other_tau=0;
@@ -4490,6 +4504,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        Rcout << "LINE 4500 BIC =" << BIC << ".\n";
         
         overall_trees[overall_count]=tree_table_tau[0];		
         overall_mat[overall_count]=tree_mat_tau[0];			
@@ -4515,7 +4530,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
         st_mat_tau[0]=sum_trees_mat_tau2_temp;										// let the first element of st_mat be sum_trees_mat2.
         st_mat_tau[1]=tree_mat_tau[0];		
         double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
-        double tree_prior_temp=0;
+        double tree_prior_temp=1;
         
         int p_other_mu=0;
         int p_other_tau=0;
@@ -4542,6 +4557,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        Rcout << "LINE 4553 BIC =" << BIC << ".\n";
         
         overall_trees[overall_count]=tree_table_tau[0];		
         overall_mat[overall_count]=tree_mat_tau[0];			
@@ -6044,6 +6060,9 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
             
           }
           temp_BIC[k]=curr_round_lik[k];									// Let the k+1^th element of temp_BIC be the BIC of the k+1^th model.
+          Rcout << "TEST LINE 6052 temp_BIC[k]=  "<< temp_BIC[k] << " .\n";
+          
+          
           temp_preds_outcome(_,k)=curr_temp_pred_outcome;									// Let the k+1^th column of temp_preds be the in-samle predictions from adding the k+1^th tree
           temp_preds_mu(_,k)=curr_temp_pred_mu;									// Let the k+1^th column of temp_preds be the in-samle predictions from adding the k+1^th tree
           temp_preds_tau(_,k)=curr_temp_pred_tau;									// Let the k+1^th column of temp_preds be the in-samle predictions from adding the k+1^th tree
@@ -6380,6 +6399,10 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
         }
       }
       }
+      
+      bool test_temp_tau = NumericVector::is_na(temp_preds_tau[0]);
+      Rcout << "TEST LINE 6385 temp_preds_tau is na :  "<< test_temp_tau << " .\n";
+      
       prev_round_preds_outcome=temp_preds_outcome;															// let prev_round_preds equal to the matrix of predictions.
       prev_round_preds_mu=temp_preds_mu;															// let prev_round_preds equal to the matrix of predictions.
       prev_round_preds_tau=temp_preds_tau;															// let prev_round_preds equal to the matrix of predictions.
@@ -6536,6 +6559,10 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
     NumericVector temp_preds_outcome=oosp_outcome(_,k);														// let temp_preds equal the predictions from the k+1^th model
     NumericVector temp_preds_mu=oosp_mu(_,k);														// let temp_preds equal the predictions from the k+1^th model
     NumericVector temp_preds_tau=oosp_tau(_,k);														// let temp_preds equal the predictions from the k+1^th model
+    bool test_temp_preds_tau2 = NumericVector::is_na(temp_preds_tau[0]);
+    Rcout << "TEST LINE 6544 test_temp_preds_tau2 is na :  "<< test_temp_preds_tau2 << " .\n";
+    
+    
     NumericVector temp_test_preds_outcome;															// create a vector called temp_test_preds
     NumericVector temp_test_preds_mu;															// create a vector called temp_test_preds
     NumericVector temp_test_preds_tau;															// create a vector called temp_test_preds
@@ -6551,8 +6578,18 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
     NumericVector orig_temp_preds_mu=get_original_bcf(min(y),max(y),-0.5,0.5,temp_preds_mu) ;			// Rescale the in-sample predictions back to the original scale of the outcome. Defined on line 2216
     NumericVector orig_temp_preds_tau=get_original_bcf(min(y),max(y),-0.5,0.5,temp_preds_tau) ;			// Rescale the in-sample predictions back to the original scale of the outcome. Defined on line 2216
     NumericVector BICi=-0.5*end_BIC;														// create a vector of the BICs multiplied by -0.5
+    Rcout << "end_BIC = "<< end_BIC << " .\n";
+    Rcout << "end_BIC[0] = "<< end_BIC[0] << " .\n";
+    
+    //Rcout << "TEST LINE 6566 weight =  "<< weight << " .\n";
+    
     double max_BIC=max(BICi);																// set the variable max_BIC equal to the maximum of the (negative 0.5 times the) BICs
     double weight=exp(BICi[k]-(max_BIC+log(sum(exp(BICi-max_BIC)))));						// create the weight for the k+1^th model
+    bool test_weight = NumericVector::is_na(weight);
+    Rcout << "TEST LINE 6565 test_weight is na :  "<< test_weight << " .\n";
+    Rcout << "TEST LINE 6566 weight =  "<< weight << " .\n";
+    
+    
     post_weights[k]=weight;																	// Let the k+1^th element of post_weights be the weight of the k+1^th model
     overallpreds_outcome(_,k) = temp_preds_outcome*weight;													// Let the k+1^th element of overallpreds be the predictions of the k+1^th model multiplied by the model's weight (i.e, the contributions of the k+1^th model to the predictions).
     overallpreds_mu(_,k) = temp_preds_mu*weight;													// Let the k+1^th element of overallpreds be the predictions of the k+1^th model multiplied by the model's weight (i.e, the contributions of the k+1^th model to the predictions).
@@ -6562,13 +6599,20 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       overall_test_preds_mu(_,k) = temp_test_preds_mu*weight;											// Let the k+1^th element of overall_test_preds be the out-of-sample predictions of the k+1^th model multiplied by the model's weight (i.e, the contributions of the k+1^th model to the predictions).
       overall_test_preds_tau(_,k) = temp_test_preds_tau*weight;											// Let the k+1^th element of overall_test_preds be the out-of-sample predictions of the k+1^th model multiplied by the model's weight (i.e, the contributions of the k+1^th model to the predictions).
     }
-  }     
+  }
+  bool test_overallpreds_tau = NumericVector::is_na(overallpreds_tau(0,0));
+  Rcout << "TEST LINE 6571 test_overallpreds_tau is na :  "<< test_overallpreds_tau << " .\n";
+  
   arma::mat M1_outcome(overallpreds_outcome.begin(), overallpreds_outcome.nrow(), overallpreds_outcome.ncol(), false);						// M1 is an arma mat copy of overallpreds (entry i,j gives contribution of j^th model to prediction of i^th observation)
   arma::mat M1_mu(overallpreds_mu.begin(), overallpreds_mu.nrow(), overallpreds_mu.ncol(), false);						// M1 is an arma mat copy of overallpreds (entry i,j gives contribution of j^th model to prediction of i^th observation)
   arma::mat M1_tau(overallpreds_tau.begin(), overallpreds_tau.nrow(), overallpreds_tau.ncol(), false);						// M1 is an arma mat copy of overallpreds (entry i,j gives contribution of j^th model to prediction of i^th observation)
   predicted_values_outcome=sum(M1_outcome,1);																					// predicted_values is a vector of predictions for each observation in the training data (before inverse scaling). (row sums of overallpreds)
   predicted_values_mu=sum(M1_mu,1);																					// predicted_values is a vector of predictions for each observation in the training data (before inverse scaling). (row sums of overallpreds)
   predicted_values_tau=sum(M1_tau,1);																					// predicted_values is a vector of predictions for each observation in the training data (before inverse scaling). (row sums of overallpreds)
+ 
+ bool test_predicted_values_tau = NumericVector::is_na(predicted_values_tau[0]);
+ Rcout << "TEST LINE 6581 test_predicted_values_tau is na :  "<< test_predicted_values_tau << " .\n";
+ 
   arma::mat M2_outcome(overall_test_preds_outcome.begin(), overall_test_preds_outcome.nrow(), overall_test_preds_outcome.ncol(), false);		// M2 is arma copy of overall_test_preds (entry i,j gives contribution of j^th model to prediction of i^th test observation)
   arma::mat M2_mu(overall_test_preds_mu.begin(), overall_test_preds_mu.nrow(), overall_test_preds_mu.ncol(), false);		// M2 is arma copy of overall_test_preds (entry i,j gives contribution of j^th model to prediction of i^th test observation)
   arma::mat M2_tau(overall_test_preds_tau.begin(), overall_test_preds_tau.nrow(), overall_test_preds_tau.ncol(), false);		// M2 is arma copy of overall_test_preds (entry i,j gives contribution of j^th model to prediction of i^th test observation)

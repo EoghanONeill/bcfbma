@@ -164,7 +164,7 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                                     nu,lambda,c,sigma_mu_mu,sigma_mu_tau,
                                     pen_mu,pen_tau,num_cp_mu,num_cp_tau,
                                     x.test,test_z,test_pihat,ntree_control,ntree_moderate,
-                                    alpha_mu,beta_mu,alpha_tau,beta_tau,
+                                    alpha_mu,alpha_tau,beta_mu,beta_tau,
                                     split_rule_node,gridpoint,maxOWsize,
                                     num_splits_mu,num_splits_tau,gridsize_mu, gridsize_tau,
                                     include_pi2,zero_split,only_max_num_trees)
