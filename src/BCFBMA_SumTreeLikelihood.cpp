@@ -617,9 +617,9 @@ double get_tree_prior_bcf(NumericMatrix tree_table,NumericMatrix tree_matrix,dou
   arma::uvec internal_nodes_prop=find_internal_nodes_bcf(tree_table);								// function defined on line 241. Gives vector of indices of internal nodes? Elements of fifth column that are equal to 1.
   arma::mat tree_matrix2(tree_matrix.begin(),tree_matrix.nrow(),tree_matrix.ncol(),false);	// turn input matrix to arma mat
   int count=internal_nodes_prop.size();														// initialize count equal to the length of internal_nodes_prop
-  Rcout << "length internal nodes = " << count << "\n.";
+  // Rcout << "length internal nodes = " << count << "\n.";
   if(count==0) propsplit=1-alpha;
-  Rcout << "line 622 propsplit = " << propsplit << "\n.";
+  // Rcout << "line 622 propsplit = " << propsplit << "\n.";
   
   for(int k=0;k<count;k++){												// loop the length of internal_nodes_prop
     for(int j=0;j<tree_matrix.ncol();j++){								// loop of length equal to number of columns in tree_matrix
@@ -641,7 +641,7 @@ double get_tree_prior_bcf(NumericMatrix tree_table,NumericMatrix tree_matrix,dou
     int_nodes_index=temp;										// redefine int_nodes_index equal to temp
     index_count=0;												// reset index_count to 0
   }
-  Rcout << "line 644 propsplit = " << propsplit << "\n.";
+  // Rcout << "line 644 propsplit = " << propsplit << "\n.";
   
   return(propsplit);		// return the number propsplit
 }
@@ -1880,11 +1880,11 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
       BIC=-2*(lik+log(tree_prior))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       
       //BIC=-2*(lik)+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
-      Rcout << "p_other_mu+p_other_tau=" << p_other_mu+p_other_tau << ".\n";
-      Rcout << "lik=" << lik << ".\n";
-      Rcout << "BIC=" << BIC << ".\n";
-      Rcout << "lowest_BIC=" << lowest_BIC << ".\n";
-      Rcout << "LINE 1885 tree_prior=" << tree_prior << ".\n";
+      // Rcout << "p_other_mu+p_other_tau=" << p_other_mu+p_other_tau << ".\n";
+      // Rcout << "lik=" << lik << ".\n";
+      // Rcout << "BIC=" << BIC << ".\n";
+      // Rcout << "lowest_BIC=" << lowest_BIC << ".\n";
+      // Rcout << "LINE 1885 tree_prior=" << tree_prior << ".\n";
       
       if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
         lowest_BIC=BIC;											// update (input variable) lowest_BIC
@@ -2243,11 +2243,11 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
       //p=int_nodes.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
       BIC=-2*(lik+log(tree_prior))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       //BIC=-2*(lik)+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
-      Rcout << "p_other_mu+p_other_tau=" << p_other_mu+p_other_tau << ".\n";
-      Rcout << "lik=" << lik << ".\n";
-      Rcout << "BIC=" << BIC << ".\n";
-      Rcout << "lowest_BIC=" << lowest_BIC << ".\n";
-      Rcout << "LINE 2247 tree_prior=" << tree_prior << ".\n";
+      // Rcout << "p_other_mu+p_other_tau=" << p_other_mu+p_other_tau << ".\n";
+      // Rcout << "lik=" << lik << ".\n";
+      // Rcout << "BIC=" << BIC << ".\n";
+      // Rcout << "lowest_BIC=" << lowest_BIC << ".\n";
+      // Rcout << "LINE 2247 tree_prior=" << tree_prior << ".\n";
       
       if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
         lowest_BIC=BIC;											// update (input variable) lowest_BIC
@@ -3020,7 +3020,7 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
     
   //COMMENTED OUT ATTEMPT TO FIX NO ZERO SPLIT TREES BUG
   
-  Rcout << "get to likelihood function mu round one. \n";
+  // Rcout << "get to likelihood function mu round one. \n";
   overall_trees[0]= tree_table_mu[0];
   overall_mat[0]= tree_mat_mu[0];
   overall_parent[0]=-1;
@@ -3032,7 +3032,7 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
   
   }
   
-  Rcout << "get past likelihood function mu round one. \n";
+  // Rcout << "get past likelihood function mu round one. \n";
   
   
   
@@ -3917,7 +3917,7 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
   overall_lik[overall_count]=BIC;			// include all elements of lik_subset_curr_round in overall_lik (across iterations of this loop)
  overall_count++;												// increment overall_count by one.
  
- Rcout << "get to end ifelse function tau round one. \n";
+ // Rcout << "get to end ifelse function tau round one. \n";
  
   }else{															// if s is not a list
 
@@ -4375,8 +4375,8 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           if(tree.ncol()<5) throw std::range_error("Line 1660");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
-          Rcout << "LINE 4378 t =" << t << ".\n";
-          Rcout << "LINE 4378 tree_prior_temp =" << tree_prior_temp << ".\n";
+          // Rcout << "LINE 4378 t =" << t << ".\n";
+          // Rcout << "LINE 4378 tree_prior_temp =" << tree_prior_temp << ".\n";
           
         }
         for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
@@ -4387,14 +4387,14 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           if(tree.ncol()<5) throw std::range_error("Line 1667");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
-          Rcout << "LINE 4390 t =" << t << ".\n";
-          Rcout << "LINE 4390 tree_prior_temp =" << tree_prior_temp << ".\n";
+          // Rcout << "LINE 4390 t =" << t << ".\n";
+          // Rcout << "LINE 4390 tree_prior_temp =" << tree_prior_temp << ".\n";
         }
         
         double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
-        Rcout << "LINE 4395 BIC =" << BIC << ".\n";
-        Rcout << "LINE 4395 lik_temp =" << lik_temp << ".\n";
-        Rcout << "LINE 4395 tree_prior_temp =" << tree_prior_temp << ".\n";
+        // Rcout << "LINE 4395 BIC =" << BIC << ".\n";
+        // Rcout << "LINE 4395 lik_temp =" << lik_temp << ".\n";
+        // Rcout << "LINE 4395 tree_prior_temp =" << tree_prior_temp << ".\n";
         
         overall_trees[overall_count]=tree_table_tau[0];		
         overall_mat[overall_count]=tree_mat_tau[0];			
@@ -4445,7 +4445,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
-        Rcout << "LINE 4440 BIC =" << BIC << ".\n";
+        // Rcout << "LINE 4440 BIC =" << BIC << ".\n";
         
         overall_trees[overall_count]=tree_table_tau[0];		
         overall_mat[overall_count]=tree_mat_tau[0];			
@@ -4504,7 +4504,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
-        Rcout << "LINE 4500 BIC =" << BIC << ".\n";
+        // Rcout << "LINE 4500 BIC =" << BIC << ".\n";
         
         overall_trees[overall_count]=tree_table_tau[0];		
         overall_mat[overall_count]=tree_mat_tau[0];			
@@ -4557,7 +4557,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
-        Rcout << "LINE 4553 BIC =" << BIC << ".\n";
+        // Rcout << "LINE 4553 BIC =" << BIC << ".\n";
         
         overall_trees[overall_count]=tree_table_tau[0];		
         overall_mat[overall_count]=tree_mat_tau[0];			
@@ -5147,24 +5147,26 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
   
   //	Not sure if should keep these, or separately have lists for mu and tau trees, resids, mat	
   //	List prev_sum_trees;							// create a list
-  List prev_sum_tree_resids;						// create a list
+  // List prev_sum_tree_resids;						// create a list
   //	List prev_sum_trees_mat;						// create a list
   //	List cp_mat_list;								// create a list
   
   List prev_sum_trees_mu;								// create a list
-  //	List prev_sum_tree_resids_mu;						// create a list
+  List prev_sum_tree_resids_mu;						// create a list
   List prev_sum_trees_mat_mu;							// create a list
   List cp_mat_list_mu;								// create a list
   
   List prev_sum_trees_tau;							// create a list
-  //	List prev_sum_tree_resids_tau;						// create a list
+  List prev_sum_tree_resids_tau;						// create a list
   List prev_sum_trees_mat_tau;						// create a list
   List cp_mat_list_tau;								// create a list	
   
   
   
   int oo_size=300;								// create a variable. Initialized equal to 300.
-  List overall_overall_sum_tree_resids(oo_size);	// create a list of length 300.
+  List overall_overall_sum_tree_resids_mu(oo_size);	// create a list of length 300.
+  List overall_overall_sum_tree_resids_tau(oo_size);	// create a list of length 300.
+  
   List overall_overall_sum_BIC(oo_size);			// create a list of length 300.
   int oo_count=0;									// create a variable, Initialized equal to 0.
   
@@ -5187,9 +5189,9 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
   
   
   for(int j=0;j<max(ntree_control,ntree_moderate);j++){					// create a for-loop of length equal to the input value num_rounds.
-    Rcout << "Beginning of loop number = " << j << ".\n";
-    //Rcout << "ntree_control = " << ntree_control << ".\n";
-    //Rcout << "ntree_moderate = " << ntree_moderate << ".\n";
+    // Rcout << "Beginning of loop number = " << j << ".\n";
+    // Rcout << "ntree_control = " << ntree_control << ".\n";
+    // Rcout << "ntree_moderate = " << ntree_moderate << ".\n";
     
     if(j<ntree_control){
       if(j>0){
@@ -5198,7 +5200,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
         }
         }
       int overall_size=300;						// create a variable overall_size. Initialized equal to 0.
-      List overall_sum_tree_resids(overall_size);	// create a list of length 300
+      List overall_sum_tree_resids_mu(overall_size);	// create a list of length 300
+      List overall_sum_tree_resids_tau(overall_size);	// create a list of length 300
       
       List overall_sum_trees_mu(overall_size);		// create a list of length 300
       List overall_sum_trees_mat_mu(overall_size);	// create a list of length 300
@@ -5289,7 +5292,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                                           prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,
                                           prev_sum_trees_mat_tau,y_scaled,num_splits_mu,num_splits_tau,gridsize_mu,zero_split);	// function defined on line 1953.
       }
-      Rcout << "Get to after get best trees in mu round in loop j = " << j << ".\n";
+      // Rcout << "Get to after get best trees in mu round in loop j = " << j << ".\n";
       
       curr_round_lik=CART_BMA_mu[0];							// vector of BICs (for whole sum-of tree-models after suggested trees added). Should be ordered ascending
       curr_round_trees_mu=CART_BMA_mu[1];						// list of tree tables
@@ -5301,7 +5304,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       curr_BIC=CART_BMA_mu[5];								// lowest BIC among trees?
       NumericMatrix curr_round_test_preds_mu=CART_BMA_mu[6];	// (out-of-sample tree predictions?) matrix rows correspond to different units/individuals, columns correspond to predictions from different (single or sums-of?) trees.
       if(curr_round_lik.size()==0) {						// If number of sum of tree models is zero?
-        Rcout << "curr_round_lik.size()==0 BREAK in mu round in loop j = " << j << ".\n";
+        // Rcout << "curr_round_lik.size()==0 BREAK in mu round in loop j = " << j << ".\n";
         //REMOVE THIS ERROR IF WANT TO ALLOW LESS THAN MAX NUMBER OF TREES
         //throw std::range_error("No mu trees chosen in round");
         
@@ -5336,9 +5339,12 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       List temp_sum_trees_tau(lsize);							// create a list of length equal to the number of sum of tree models returned by get_best_trees_sum
       
       List temp_sum_tree_resids(lsize);					// create a list of length equal to the number of sum of tree models returned by get_best_trees_sum
+      List temp_sum_tree_resids_mu(lsize);					// create a list of length equal to the number of sum of tree models returned by get_best_trees_sum
+      List temp_sum_tree_resids_tau(lsize);					// create a list of length equal to the number of sum of tree models returned by get_best_trees_sum
       
       List temp_sum_trees_mat_mu(lsize);						// create a list of length equal to the number of sum of tree models returned by get_best_trees_sum
       List temp_sum_trees_mat_tau(lsize);						// create a list of length equal to the number of sum of tree models returned by get_best_trees_sum
+      // Rcout << "Get toLine 5347 in loop j = " << j << ".\n";
       
       int count=0; 										// create a count variable. Initialized equal to zero.
       for(int k=0;k<curr_round_lik.size();k++){			// create a for-loop of length equal to the number of sum of tree models returned by get_best_trees_sum
@@ -5368,6 +5374,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
           //temp_sum_trees_mat_tau[count]=curr_round_mat_tau[k];	// Add the tree matrix to temp_sum_trees_mat
           //NOT SURE ABOUT THE FOLLOWING LINE
           temp_sum_tree_resids[count]=resids(_,0);	// Add to the list temp_sum_tree_resids the first column of resids from the start of the loop. (which, for j=0, is empty? No dimensions?)
+          temp_sum_tree_resids_mu[count]=resids(_,0);	// Add to the list temp_sum_tree_resids the first column of resids from the start of the loop. (which, for j=0, is empty? No dimensions?)
+          // Rcout << "LENGTH OF resids(_,0)= " << resids(_,0).size() << ".\n";
         }else{											// If not in the first round of the for-loop.
           NumericVector curr_temp_pred_outcome=curr_round_preds_mu(_,k) + 
             prev_round_preds_mu(_,curr_round_parent[k])+ 
@@ -5403,27 +5411,31 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
           temp_sum_trees_mat_mu[count]=curr_round_mat_mu[k];					// Add the tree matrix to temp_sum_trees_mat.
           //temp_sum_trees_mat_tau[count]=curr_round_mat_tau[k];					// Add the tree matrix to temp_sum_trees_mat.
           temp_sum_tree_resids[count]=resids(_,curr_round_parent[k]);		// Add the curr_round_parent[k]+1^th column of resids to temp_sum_tree_resids. resids contains predictions from previous rounds?
+          temp_sum_tree_resids_mu[count]=resids(_,curr_round_parent[k]);		// Add the curr_round_parent[k]+1^th column of resids to temp_sum_tree_resids. resids contains predictions from previous rounds?
+          
         }
         count++;													// Increment the count by 1.(Note this is within the innermost for-loop).
       }  
       if(curr_round_lik.size()==0){									// if no new trees outputted in current round (by get_best_trees_sum? Why not throw this error earlier, at line 2350)
         throw std::range_error("No trees chosen in last round");
       }
-      
+      // Rcout << "Get to line 5422 in loop j = " << j << ".\n";
       for(int k=0;k<curr_round_lik.size();k++){	// create a for-loop of length equal to the number of sum of tree models returned by get_best_trees_sum
         int size_mat=300;						// create a variable, Initializd equal to 300.
         List sum_of_trees_mu(size_mat);			// create a list of length 300.
-        List sum_of_tree_resids(size_mat);		// create a list of length 300.
+        List sum_of_tree_resids_mu(size_mat);		// create a list of length 300.
+        List sum_of_tree_resids_tau(size_mat);		// create a list of length 300.
         List sum_of_trees_mat_mu(size_mat);		// create a list of length 300.
         int count=0;							// create a variable count equal to 0. (Count was already define, so could remove "int" at start of this line and just reset cound to 0).
         
-        
+        // Rcout << "Get to line 5431 in loop j = " << j << " and inner loop k = "<< k <<".\n";
         List sum_of_trees_tau(size_mat);			// create a list of length 300.
         List sum_of_trees_mat_tau(size_mat);		// create a list of length 300.
         //if (j==1) List sum_of_trees_tau(1);			// create a list of length 300.
         //if (j==1) List sum_of_trees_mat_tau(1);		// create a list of length 300.
         //if (j>1) List sum_of_trees_tau = prev_sum_trees_tau[curr_round_parent[k]];
         //if (j>1) List sum_of_trees_mat_tau = prev_sum_trees_mat_tau[curr_round_parent[k]];
+        // Rcout << "Get to line 5438 in loop j = " << j << " and inner loop k = "<< k <<".\n";
         
         if(curr_round_parent[k]==-1){			// If the k+1^th element of curr_round_parent is -1, do nothing. (-1 is a terminal node?)
         }else{									// If the k+1^th element of curr_round_parent is not equal to -1.
@@ -5433,46 +5445,58 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
             sum_of_trees_tau = resize_bcf(sum_of_trees_tau,1);			// create a list of length 300.
             sum_of_trees_mat_tau = resize_bcf(sum_of_trees_mat_tau,1);		// create a list of length 300.
             
-            //Rcout << "LENGTH OF LIST SUM_OF_TREES_TAU = " << sum_of_trees_tau.size() << ".\n";
-            //Rcout << "LENGTH OF LIST SUM_OF_TREES_MAT_TAU = " << sum_of_trees_mat_tau.size() << ".\n";
+            // Rcout << "LENGTH OF LIST SUM_OF_TREES_TAU = " << sum_of_trees_tau.size() << ".\n";
+            // Rcout << "LENGTH OF LIST SUM_OF_TREES_MAT_TAU = " << sum_of_trees_mat_tau.size() << ".\n";
             
-            //Rcout << "Get to 4508 in mu round in loop j = " << j << ".\n";
+            // Rcout << "Get to 5449 in mu round in loop j = " << j << ".\n";
             List other_tree_mulist=prev_sum_trees_mu[curr_round_parent[k]];			// create matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
-            NumericMatrix other_tree_mu=other_tree_mulist[0];;			// create matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
+            NumericMatrix other_tree_mu=other_tree_mulist[0];			// create matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
             
             //NumericMatrix other_tree_mu=prev_sum_trees_mu[curr_round_parent[k]];			// create matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
-            //Rcout << "Get to 4514 in mu round in loop j = " << j << ".\n";
+            // Rcout << "Get to 5454 in mu round in loop j = " << j << ".\n";
             
             NumericMatrix other_tree_tau=prev_sum_trees_tau[curr_round_parent[k]];			// create matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
             
-            NumericVector other_resids=prev_sum_tree_resids[curr_round_parent[k]];	// create vector equal to the curr_round_parent[k]+1^th element of the list prev_sum_tree_resids.
+            //NumericVector other_resids_mu=prev_sum_tree_resids_mu[curr_round_parent[k]];	// create vector equal to the curr_round_parent[k]+1^th element of the list prev_sum_tree_resids.
+            
+            //MIGHT NEED TO CHANGE THIS LINE
+            List other_resids_mulist=prev_sum_tree_resids_mu[curr_round_parent[k]];			// create matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
+            NumericVector other_resids_mu=other_resids_mulist[0];			// create matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
+            // Rcout << "Line 5465 LENGTH OF other_resids_mu = " << other_resids_mu.size() << ".\n";
+            NumericVector other_resids_tau=prev_sum_tree_resids_tau[curr_round_parent[k]];	// create vector equal to the curr_round_parent[k]+1^th element of the list prev_sum_tree_resids.
+            
             sum_of_trees_mu[count]= other_tree_mu;										// add other_tree to the list sum_of_trees
             sum_of_trees_tau[count]= other_tree_tau;										// add other_tree to the list sum_of_trees
-            sum_of_tree_resids[count]=other_resids-curr_round_preds_mu(_,k);									// add other_resids to the list sum_of_tree_resids
+            sum_of_tree_resids_mu[count]=other_resids_mu-curr_round_preds_mu(_,k);									// add other_resids to the list sum_of_tree_resids
+            sum_of_tree_resids_tau[count]=other_resids_tau-curr_round_preds_mu(_,k);									// add other_resids to the list sum_of_tree_resids
+            
+            
             List other_tree_mu_mat_list=prev_sum_trees_mat_mu[curr_round_parent[k]];			// create matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
             NumericMatrix other_mat_mu=other_tree_mu_mat_list[0];		// create a matrix equal to the curr_round_parent[k]+1^th element of the matrix prev_sum_trees_mat.
             NumericMatrix other_mat_tau=prev_sum_trees_mat_tau[curr_round_parent[k]];		// create a matrix equal to the curr_round_parent[k]+1^th element of the matrix prev_sum_trees_mat.
             sum_of_trees_mat_mu[count]=other_mat_mu;										// create a add other_mat to the list sum_of_trees_mat
             sum_of_trees_mat_tau[count]=other_mat_tau;										// create a add other_mat to the list sum_of_trees_mat
             count++;																// increment the count variable.
-            //Rcout << "LENGTH OF LIST SUM_OF_TREES_TAU = " << sum_of_trees_tau.size() << ".\n";
-            //Rcout << "LENGTH OF LIST SUM_OF_TREES_MAT_TAU = " << sum_of_trees_mat_tau.size() << ".\n";
+            // Rcout << "LENGTH OF LIST SUM_OF_TREES_TAU = " << sum_of_trees_tau.size() << ".\n";
+            // Rcout << "LENGTH OF LIST SUM_OF_TREES_MAT_TAU = " << sum_of_trees_mat_tau.size() << ".\n";
             
             if(count==(size_mat-1)){												// If list size is too small
               size_mat=size_mat*2;												// double the size
               sum_of_trees_mu=resize_bigger_bcf(sum_of_trees_mu,size_mat);					// double the length of sum_of_trees
               //sum_of_trees_tau=resize_bigger_bcf(sum_of_trees_tau,size_mat);					// double the length of sum_of_trees
-              sum_of_tree_resids=resize_bigger_bcf(sum_of_tree_resids,size_mat);		// double the length of sum_of_tree_resids
+              sum_of_tree_resids_mu=resize_bigger_bcf(sum_of_tree_resids_mu,size_mat);		// double the length of sum_of_tree_resids
+              sum_of_tree_resids_tau=resize_bigger_bcf(sum_of_tree_resids_tau,size_mat);		// double the length of sum_of_tree_resids
               sum_of_trees_mat_mu=resize_bigger_bcf(sum_of_trees_mat_mu,size_mat);			// double the length of sum_of_trees_mat
               //sum_of_trees_mat_tau=resize_bigger_bcf(sum_of_trees_mat_tau,size_mat);			// double the length of sum_of_trees_mat
             }
-            //Rcout << "on  line 4578 LENGTH OF LIST SUM_OF_TREES_TAU = " << sum_of_trees_tau.size() << ".\n";
-            //Rcout << "on  line 4578 LENGTH OF LIST SUM_OF_TREES_MAT_TAU = " << sum_of_trees_mat_tau.size() << ".\n";
-            //Rcout << "loop number" << j << "\n,";
+            // Rcout << "on  line 5490 LENGTH OF LIST SUM_OF_TREES_TAU = " << sum_of_trees_tau.size() << ".\n";
+            // Rcout << "on  line 5491 LENGTH OF LIST SUM_OF_TREES_MAT_TAU = " << sum_of_trees_mat_tau.size() << ".\n";
+            // Rcout << "loop number" << j << "\n,";
           }else{
             List other_tree_mu=prev_sum_trees_mu[curr_round_parent[k]];					// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
-            //List other_tree_tau=prev_sum_trees_tau[curr_round_parent[k]];					// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
-            List other_tree_resids=prev_sum_tree_resids[curr_round_parent[k]];		// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? vector equal to the curr_round_parent[k]+1^th element of the list prev_sum_tree_resids.
+            List other_tree_tau=prev_sum_trees_tau[curr_round_parent[k]];					// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
+            List other_tree_resids_mu=prev_sum_tree_resids_mu[curr_round_parent[k]];		// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? vector equal to the curr_round_parent[k]+1^th element of the list prev_sum_tree_resids.
+            List other_tree_resids_tau=prev_sum_tree_resids_tau[curr_round_parent[k]];		// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? vector equal to the curr_round_parent[k]+1^th element of the list prev_sum_tree_resids.
             List other_mat_mu=prev_sum_trees_mat_mu[curr_round_parent[k]];				// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? matrix equal to the curr_round_parent[k]+1^th element of the matrix prev_sum_trees_mat.
             //List other_mat_tau=prev_sum_trees_mat_tau[curr_round_parent[k]];				// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? matrix equal to the curr_round_parent[k]+1^th element of the matrix prev_sum_trees_mat.
             for(int f=0;f<other_tree_mu.size();f++){									// for-loop of length equal to that of other_tree?? length is one if list??
@@ -5481,13 +5505,13 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                 throw std::range_error(" tree is not a numeric matrix!");		// throw an error
               }
               NumericMatrix treetoadd_mu=other_tree_mu[f];								// create matrix treetoadd equal to f+1^th element of other_tree
-              if(is<NumericVector>(other_tree_resids[f])){						// if f+1^th element of other_tree_resids is a NumericVector, do nothing
+              if(is<NumericVector>(other_tree_resids_mu[f])){						// if f+1^th element of other_tree_resids is a NumericVector, do nothing
               }else{																// if f+1^th element of other_tree_resids is not a NumericVector
               	throw std::range_error("other resids not a numeric matrix!");	// throw an error
               }
               
-              NumericVector resids_prevroundtemp=other_tree_resids[f];
-              NumericVector residstoadd=resids_prevroundtemp-curr_round_preds_mu(_,k);						// create vector residstoadd equal to f+1^th element of other_tree_resids
+              NumericVector resids_prevroundtemp_mu=other_tree_resids_mu[f];
+              NumericVector residstoadd_mu=resids_prevroundtemp_mu-curr_round_preds_mu(_,k);						// create vector residstoadd equal to f+1^th element of other_tree_resids
               if(is<NumericMatrix>(other_mat_mu[f])){								// if f+1^th element of other_mat is a NumericMatrix, do nothing
                 
               }else{																// if f+1^th element of other_mat is not a NumericMatrix
@@ -5496,17 +5520,30 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
               NumericMatrix mattoadd_mu=other_mat_mu[f];								// create matrix mattoadd equal to f+1^th element of other_mat
               
               sum_of_trees_mu[count]=treetoadd_mu;										// add treetoadd to sum_of_trees
-              sum_of_tree_resids[count]=residstoadd;								// add residstoadd to sum_of_tree_resids
+              sum_of_tree_resids_mu[count]=residstoadd_mu;								// add residstoadd to sum_of_tree_resids
               sum_of_trees_mat_mu[count]=mattoadd_mu;									// add mattoadd to sum_of_trees_mat
               count++;															// inremet the count variable.
               
               if(count==(size_mat-1)){											// If list size is too small
                 size_mat=size_mat*2;											// double the size
                 sum_of_trees_mu=resize_bigger_bcf(sum_of_trees_mu,size_mat);				// double the length of sum_of_trees
-                sum_of_tree_resids=resize_bigger_bcf(sum_of_tree_resids,size_mat);	// double the length of sum_of_tree_resids
+                sum_of_tree_resids_mu=resize_bigger_bcf(sum_of_tree_resids_mu,size_mat);	// double the length of sum_of_tree_resids
                 sum_of_trees_mat_mu=resize_bigger_bcf(sum_of_trees_mat_mu,size_mat);		// double the length of sum_of_trees_mat
               }
             }
+            
+            if(other_tree_tau.size()>size_mat){											// If list size is too small
+              sum_of_tree_resids_tau=resize_bigger_bcf(sum_of_tree_resids_tau,other_tree_tau.size());	// increase the length of sum_of_tree_resids
+            }
+            for(int f=0;f<other_tree_tau.size();f++){									// for-loop of length equal to that of other_tree?? length is one if list??
+              NumericVector resids_prevroundtemp_tau=other_tree_resids_tau[f];
+              NumericVector residstoadd_tau=resids_prevroundtemp_tau-curr_round_preds_mu(_,k);						// create vector residstoadd equal to f+1^th element of other_tree_resids
+
+              sum_of_tree_resids_tau[f]=residstoadd_tau;								// add residstoadd to sum_of_tree_resids
+            }
+            
+            
+            
             
             List temp1_prev_sum_tree = prev_sum_trees_tau[curr_round_parent[k]];
             List temp1_prev_sum_tree_mat = prev_sum_trees_tau[curr_round_parent[k]];
@@ -5515,20 +5552,20 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
             sum_of_trees_mat_tau = resize_bcf(sum_of_trees_mat_tau,temp1_prev_sum_tree_mat.size());		// create a list of length 300.
             sum_of_trees_tau = prev_sum_trees_tau[curr_round_parent[k]];
             sum_of_trees_mat_tau = prev_sum_trees_mat_tau[curr_round_parent[k]];
-            //Rcout << "on  line 4620 LENGTH OF LIST SUM_OF_TREES_TAU = " << sum_of_trees_tau.size() << ".\n";
+            // Rcout << "on  line 5553 LENGTH OF LIST SUM_OF_TREES_TAU = " << sum_of_trees_tau.size() << ".\n";
             
           }
-          //Rcout << "on  line 4620 LENGTH OF LIST SUM_OF_TREES_TAU = " << sum_of_trees_tau.size() << ".\n";
-          //Rcout << "on  line 4620 LENGTH OF LIST SUM_OF_TREES_MAT_TAU = " << sum_of_trees_mat_tau.size() << ".\n";
-          //Rcout << "loop number" << j << "\n,";
+          // Rcout << "on  line 5556 LENGTH OF LIST SUM_OF_TREES_TAU = " << sum_of_trees_tau.size() << ".\n";
+          // Rcout << "on  line 5557 LENGTH OF LIST SUM_OF_TREES_MAT_TAU = " << sum_of_trees_mat_tau.size() << ".\n";
+          // Rcout << "loop number" << j << "\n,";
           
           sum_of_trees_mu[count]=temp_sum_trees_mu[k];										// add k+1^th element of temp_sum_trees to sum_of_trees
-          sum_of_tree_resids[count]=temp_sum_tree_resids[k];							// add k+1^th element of temp_sum_tree_resids to sum_of_tree_resids
+          sum_of_tree_resids_mu[count]=temp_sum_tree_resids_mu[k];							// add k+1^th element of temp_sum_tree_resids to sum_of_tree_resids
           sum_of_trees_mat_mu[count]=temp_sum_trees_mat_mu[k];								// add k+1^th element of temp_sum_trees_mat to sum_of_trees_mat
           count++;																	// increment the count variable
           
-          //Rcout << "LENGTH OF LIST SUM_OF_TREES_TAU = " << sum_of_trees_tau.size() << ".\n";
-          //Rcout << "LENGTH OF LIST SUM_OF_TREES_MAT_TAU = " << sum_of_trees_mat_tau.size() << ".\n";
+          // Rcout << "LENGTH OF LIST SUM_OF_TREES_TAU = " << sum_of_trees_tau.size() << ".\n";
+          // Rcout << "LENGTH OF LIST SUM_OF_TREES_MAT_TAU = " << sum_of_trees_mat_tau.size() << ".\n";
           
           
           if(count==(size_mat-1)){													// If list size is too small
@@ -5536,23 +5573,30 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
             sum_of_trees_mu=resize_bigger_bcf(sum_of_trees_mu,size_mat);						// double the length of sum_of_trees
             if(j==0) sum_of_trees_tau=resize_bigger_bcf(sum_of_trees_tau,size_mat);						// double the length of sum_of_trees
             
-            sum_of_trees_mat_mu=resize_bigger_bcf(sum_of_trees_mat_mu,size_mat);				// double the length of sum_of_tree_resids
-            if(j==0) sum_of_trees_mat_tau=resize_bigger_bcf(sum_of_trees_mat_tau,size_mat);				// double the length of sum_of_tree_resids
-            sum_of_tree_resids=resize_bigger_bcf(sum_of_tree_resids,size_mat);			// double the length of sum_of_trees_mat
+            sum_of_trees_mat_mu=resize_bigger_bcf(sum_of_trees_mat_mu,size_mat);				// double the length of sum_of_trees_mat_mu
+            if(j==0) sum_of_trees_mat_tau=resize_bigger_bcf(sum_of_trees_mat_tau,size_mat);				// double the length of sum_of_trees_mat_tau
+            sum_of_tree_resids_mu=resize_bigger_bcf(sum_of_tree_resids_mu,size_mat);			// double the length of sum_of_trees_mat
           }
         }
+        // Rcout << "Get to line 5581 in loop j = " << j << " and inner loop k = "<< k <<".\n";
         sum_of_trees_mu=resize_bcf(sum_of_trees_mu,count);										// remove spaces that are not filled in.
         if(j==0) sum_of_trees_tau=resize_bcf(sum_of_trees_tau,count);
         									// remove spaces that are not filled in.
         sum_of_trees_mat_mu=resize_bcf(sum_of_trees_mat_mu,count);								// remove spaces that are not filled in.
         if(j==0) sum_of_trees_mat_tau=resize_bcf(sum_of_trees_mat_tau,count);								// remove spaces that are not filled in.
-        sum_of_tree_resids=resize_bcf(sum_of_tree_resids,count);							// remove spaces that are not filled in.
-        
+        sum_of_tree_resids_mu=resize_bcf(sum_of_tree_resids_mu,count);							// remove spaces that are not filled in.
+        // Rcout << "Get to line 5587 in loop j = " << j << " and inner loop k = "<< k <<".\n";
+        if(j>0){
+          List other_tree_tau=prev_sum_trees_tau[curr_round_parent[k]];					// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
+          sum_of_tree_resids_tau=resize_bcf(sum_of_tree_resids_tau,other_tree_tau.size());							// remove spaces that are not filled in.
+        }
+        // Rcout << "Get to line 5591 in loop j = " << j << " and inner loop k = "<< k <<".\n";
         if(curr_round_parent[k]!=-1){															// If the k+1^th element of curr_round_parent is -1, (-1 is a terminal node?)
           overall_sum_trees_mu[overall_count]=sum_of_trees_mu;								// overall_count+1^th element of overall_sum_trees is sum_of_trees (which is itself a list... therefore have a list of lists?)
           overall_sum_trees_tau[overall_count]=sum_of_trees_tau;								// overall_count+1^th element of overall_sum_trees is sum_of_trees (which is itself a list... therefore have a list of lists?)
-          //Rcout <<"ADD ELEMENT TO LIST OF SUM TREE LISTS OF LENGTH"<< sum_of_trees_tau.size() << ".\n";
-          overall_sum_tree_resids[overall_count]=sum_of_tree_resids;						// overall_count+1^th element of overall_sum_tree_resids is sum_of_tree_resids (which is itself a list... therefore have a list of lists?)
+          // Rcout <<"ADD ELEMENT TO LIST OF SUM TREE LISTS OF LENGTH"<< sum_of_trees_tau.size() << ".\n";
+          overall_sum_tree_resids_mu[overall_count]=sum_of_tree_resids_mu;						// overall_count+1^th element of overall_sum_tree_resids is sum_of_tree_resids (which is itself a list... therefore have a list of lists?)
+          overall_sum_tree_resids_tau[overall_count]=sum_of_tree_resids_tau;						// overall_count+1^th element of overall_sum_tree_resids is sum_of_tree_resids (which is itself a list... therefore have a list of lists?)
           overall_sum_trees_mat_mu[overall_count]=sum_of_trees_mat_mu;						// overall_count+1^th element of overall_sum_trees_mat is sum_of_trees_mat (which is itself a list... therefore have a list of lists?)
           overall_sum_trees_mat_tau[overall_count]=sum_of_trees_mat_tau;						// overall_count+1^th element of overall_sum_trees_mat is sum_of_trees_mat (which is itself a list... therefore have a list of lists?)
           overall_sum_BIC=temp_BIC;															// Let overall_sum_BIC equal temp_BIC, the vector of BICs.
@@ -5569,13 +5613,14 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
             overall_size=overall_size*2;													// double the size
             overall_sum_trees_mu=resize_bigger_bcf(overall_sum_trees_mu,overall_size);				// double the length of overall_sum_trees
             overall_sum_trees_tau=resize_bigger_bcf(overall_sum_trees_tau,overall_size);				// double the length of overall_sum_trees
-            overall_sum_tree_resids=resize_bigger_bcf(overall_sum_tree_resids,overall_size);	// double the length of overall_sum_tree_resids
+            overall_sum_tree_resids_mu=resize_bigger_bcf(overall_sum_tree_resids_mu,overall_size);	// double the length of overall_sum_tree_resids
+            overall_sum_tree_resids_tau=resize_bigger_bcf(overall_sum_tree_resids_tau,overall_size);	// double the length of overall_sum_tree_resids
             overall_sum_trees_mat_mu=resize_bigger_bcf(overall_sum_trees_mat_mu,overall_size);		// double the length of overall_sum_trees_mat
             overall_sum_trees_mat_tau=resize_bigger_bcf(overall_sum_trees_mat_tau,overall_size);		// double the length of overall_sum_trees_mat
           }
         }  
       }
-      
+      // Rcout << "Get to line 5619 in loop j = " << j << ".\n";
       if(only_max_num_trees==0){
         
       //check if there were any trees from the previous round that didn't have daughter trees grown.
@@ -5595,12 +5640,14 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                   if(is<List>(s_tau)){
                     List tree_no_child_mu=prev_sum_trees_mu[h];								// create a list equal to prev_sum_trees[h]
                     List tree_no_child_tau=prev_sum_trees_tau[h];								// create a list equal to prev_sum_trees[h]
-                    List resids_no_child=prev_sum_tree_resids[h];						// create a list equal to prev_sum_tree_resids[h]
+                    List resids_no_child_mu=prev_sum_tree_resids_mu[h];						// create a list equal to prev_sum_tree_resids[h]
+                    List resids_no_child_tau=prev_sum_tree_resids_tau[h];						// create a list equal to prev_sum_tree_resids[h]
                     List treemat_no_child_mu=prev_sum_trees_mat_mu[h];						// create a list equal to prev_sum_trees_mat[h]
                     List treemat_no_child_tau=prev_sum_trees_mat_tau[h];						// create a list equal to prev_sum_trees_mat[h]
                     overall_sum_trees_mu[overall_count]=tree_no_child_mu;						// add prev_sum_trees[h] to overall_sum_trees
                     overall_sum_trees_tau[overall_count]=tree_no_child_tau;						// add prev_sum_trees[h] to overall_sum_trees
-                    overall_sum_tree_resids[overall_count]=resids_no_child;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
+                    overall_sum_tree_resids_mu[overall_count]=resids_no_child_mu;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
+                    overall_sum_tree_resids_tau[overall_count]=resids_no_child_tau;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
                     overall_sum_trees_mat_mu[overall_count]=treemat_no_child_mu;				// add  to overall_sum_trees_mat
                     overall_sum_trees_mat_tau[overall_count]=treemat_no_child_tau;				// add  to overall_sum_trees_mat
                     overall_count++;													// increment overall_count
@@ -5609,7 +5656,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                       overall_size=overall_size*2;													// double the size
                       overall_sum_trees_mu=resize_bigger_bcf(overall_sum_trees_mu,overall_size);				// double the length of overall_sum_trees
                       overall_sum_trees_tau=resize_bigger_bcf(overall_sum_trees_tau,overall_size);				// double the length of overall_sum_trees
-                      overall_sum_tree_resids=resize_bigger_bcf(overall_sum_tree_resids,overall_size);	// double the length of overall_sum_tree_resids
+                      overall_sum_tree_resids_mu=resize_bigger_bcf(overall_sum_tree_resids_mu,overall_size);	// double the length of overall_sum_tree_resids
+                      overall_sum_tree_resids_tau=resize_bigger_bcf(overall_sum_tree_resids_tau,overall_size);	// double the length of overall_sum_tree_resids
                       overall_sum_trees_mat_mu=resize_bigger_bcf(overall_sum_trees_mat_mu,overall_size);		// double the length of overall_sum_trees_mat
                       overall_sum_trees_mat_tau=resize_bigger_bcf(overall_sum_trees_mat_tau,overall_size);		// double the length of overall_sum_trees_mat
                     }
@@ -5626,12 +5674,14 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                   }else{
                     List tree_no_child_mu=prev_sum_trees_mu[h];								// create a list equal to prev_sum_trees[h]
                     NumericMatrix tree_no_child_tau=prev_sum_trees_tau[h];								// create a list equal to prev_sum_trees[h]
-                    List resids_no_child=prev_sum_tree_resids[h];						// create a list equal to prev_sum_tree_resids[h]
+                    List resids_no_child_mu=prev_sum_tree_resids_mu[h];						// create a list equal to prev_sum_tree_resids[h]
+                    List resids_no_child_tau=prev_sum_tree_resids_tau[h];						// create a list equal to prev_sum_tree_resids[h]
                     List treemat_no_child_mu=prev_sum_trees_mat_mu[h];						// create a list equal to prev_sum_trees_mat[h]
                     NumericMatrix treemat_no_child_tau=prev_sum_trees_mat_tau[h];						// create a list equal to prev_sum_trees_mat[h]
                     overall_sum_trees_mu[overall_count]=tree_no_child_mu;						// add prev_sum_trees[h] to overall_sum_trees
                     overall_sum_trees_tau[overall_count]=tree_no_child_tau;						// add prev_sum_trees[h] to overall_sum_trees
-                    overall_sum_tree_resids[overall_count]=resids_no_child;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
+                    overall_sum_tree_resids_mu[overall_count]=resids_no_child_mu;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
+                    overall_sum_tree_resids_tau[overall_count]=resids_no_child_tau;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
                     overall_sum_trees_mat_mu[overall_count]=treemat_no_child_mu;				// add  to overall_sum_trees_mat
                     overall_sum_trees_mat_tau[overall_count]=treemat_no_child_tau;				// add  to overall_sum_trees_mat
                     overall_count++;													// increment overall_count
@@ -5640,7 +5690,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                       overall_size=overall_size*2;													// double the size
                       overall_sum_trees_mu=resize_bigger_bcf(overall_sum_trees_mu,overall_size);				// double the length of overall_sum_trees
                       overall_sum_trees_tau=resize_bigger_bcf(overall_sum_trees_tau,overall_size);				// double the length of overall_sum_trees
-                      overall_sum_tree_resids=resize_bigger_bcf(overall_sum_tree_resids,overall_size);	// double the length of overall_sum_tree_resids
+                      overall_sum_tree_resids_mu=resize_bigger_bcf(overall_sum_tree_resids_mu,overall_size);	// double the length of overall_sum_tree_resids
+                      overall_sum_tree_resids_tau=resize_bigger_bcf(overall_sum_tree_resids_tau,overall_size);	// double the length of overall_sum_tree_resids
                       overall_sum_trees_mat_mu=resize_bigger_bcf(overall_sum_trees_mat_mu,overall_size);		// double the length of overall_sum_trees_mat
                       overall_sum_trees_mat_tau=resize_bigger_bcf(overall_sum_trees_mat_tau,overall_size);		// double the length of overall_sum_trees_mat
                     }
@@ -5663,12 +5714,14 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
 
                     NumericMatrix tree_no_child_mu=prev_sum_trees_mu[h];								// create a list equal to prev_sum_trees[h]
                     List tree_no_child_tau=prev_sum_trees_tau[h];								// create a list equal to prev_sum_trees[h]
-                    List resids_no_child=prev_sum_tree_resids[h];						// create a list equal to prev_sum_tree_resids[h]
+                    List resids_no_child_mu=prev_sum_tree_resids_mu[h];						// create a list equal to prev_sum_tree_resids[h]
+                    List resids_no_child_tau=prev_sum_tree_resids_tau[h];						// create a list equal to prev_sum_tree_resids[h]
                     NumericMatrix treemat_no_child_mu=prev_sum_trees_mat_mu[h];						// create a list equal to prev_sum_trees_mat[h]
                     List treemat_no_child_tau=prev_sum_trees_mat_tau[h];						// create a list equal to prev_sum_trees_mat[h]
                     overall_sum_trees_mu[overall_count]=tree_no_child_mu;						// add prev_sum_trees[h] to overall_sum_trees
                     overall_sum_trees_tau[overall_count]=tree_no_child_tau;						// add prev_sum_trees[h] to overall_sum_trees
-                    overall_sum_tree_resids[overall_count]=resids_no_child;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
+                    overall_sum_tree_resids_mu[overall_count]=resids_no_child_mu;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
+                    overall_sum_tree_resids_tau[overall_count]=resids_no_child_tau;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
                     overall_sum_trees_mat_mu[overall_count]=treemat_no_child_mu;				// add  to overall_sum_trees_mat
                     overall_sum_trees_mat_tau[overall_count]=treemat_no_child_tau;				// add  to overall_sum_trees_mat
                     overall_count++;													// increment overall_count
@@ -5677,7 +5730,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                       overall_size=overall_size*2;													// double the size
                       overall_sum_trees_mu=resize_bigger_bcf(overall_sum_trees_mu,overall_size);				// double the length of overall_sum_trees
                       overall_sum_trees_tau=resize_bigger_bcf(overall_sum_trees_tau,overall_size);				// double the length of overall_sum_trees
-                      overall_sum_tree_resids=resize_bigger_bcf(overall_sum_tree_resids,overall_size);	// double the length of overall_sum_tree_resids
+                      overall_sum_tree_resids_mu=resize_bigger_bcf(overall_sum_tree_resids_mu,overall_size);	// double the length of overall_sum_tree_resids
+                      overall_sum_tree_resids_tau=resize_bigger_bcf(overall_sum_tree_resids_tau,overall_size);	// double the length of overall_sum_tree_resids
                       overall_sum_trees_mat_mu=resize_bigger_bcf(overall_sum_trees_mat_mu,overall_size);		// double the length of overall_sum_trees_mat
                       overall_sum_trees_mat_tau=resize_bigger_bcf(overall_sum_trees_mat_tau,overall_size);		// double the length of overall_sum_trees_mat
                     }
@@ -5694,12 +5748,14 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                   }else{
                     NumericMatrix tree_no_child_mu=prev_sum_trees_mu[h];								// create a list equal to prev_sum_trees[h]
                     NumericMatrix tree_no_child_tau=prev_sum_trees_tau[h];								// create a list equal to prev_sum_trees[h]
-                    List resids_no_child=prev_sum_tree_resids[h];						// create a list equal to prev_sum_tree_resids[h]
+                    List resids_no_child_mu=prev_sum_tree_resids_mu[h];						// create a list equal to prev_sum_tree_resids[h]
+                    List resids_no_child_tau=prev_sum_tree_resids_tau[h];						// create a list equal to prev_sum_tree_resids[h]
                     NumericMatrix treemat_no_child_mu=prev_sum_trees_mat_mu[h];						// create a list equal to prev_sum_trees_mat[h]
                     NumericMatrix treemat_no_child_tau=prev_sum_trees_mat_tau[h];						// create a list equal to prev_sum_trees_mat[h]
                     overall_sum_trees_mu[overall_count]=tree_no_child_mu;						// add prev_sum_trees[h] to overall_sum_trees
                     overall_sum_trees_tau[overall_count]=tree_no_child_tau;						// add prev_sum_trees[h] to overall_sum_trees
-                    overall_sum_tree_resids[overall_count]=resids_no_child;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
+                    overall_sum_tree_resids_mu[overall_count]=resids_no_child_mu;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
+                    overall_sum_tree_resids_tau[overall_count]=resids_no_child_tau;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
                     overall_sum_trees_mat_mu[overall_count]=treemat_no_child_mu;				// add  to overall_sum_trees_mat
                     overall_sum_trees_mat_tau[overall_count]=treemat_no_child_tau;				// add  to overall_sum_trees_mat
                     overall_count++;													// increment overall_count
@@ -5708,7 +5764,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                       overall_size=overall_size*2;													// double the size
                       overall_sum_trees_mu=resize_bigger_bcf(overall_sum_trees_mu,overall_size);				// double the length of overall_sum_trees
                       overall_sum_trees_tau=resize_bigger_bcf(overall_sum_trees_tau,overall_size);				// double the length of overall_sum_trees
-                      overall_sum_tree_resids=resize_bigger_bcf(overall_sum_tree_resids,overall_size);	// double the length of overall_sum_tree_resids
+                      overall_sum_tree_resids_mu=resize_bigger_bcf(overall_sum_tree_resids_mu,overall_size);	// double the length of overall_sum_tree_resids
+                      overall_sum_tree_resids_tau=resize_bigger_bcf(overall_sum_tree_resids_tau,overall_size);	// double the length of overall_sum_tree_resids
                       overall_sum_trees_mat_mu=resize_bigger_bcf(overall_sum_trees_mat_mu,overall_size);		// double the length of overall_sum_trees_mat
                       overall_sum_trees_mat_tau=resize_bigger_bcf(overall_sum_trees_mat_tau,overall_size);		// double the length of overall_sum_trees_mat
                     }
@@ -5753,7 +5810,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       parent=temp_parent;																		// let parent equal the parent vector
       overall_sum_trees_mu=resize_bcf(overall_sum_trees_mu,overall_count);								// remove spaces that are not filled in.
       overall_sum_trees_tau=resize_bcf(overall_sum_trees_tau,overall_count);								// remove spaces that are not filled in.
-      overall_sum_tree_resids=resize_bcf(overall_sum_tree_resids,overall_count);					// remove spaces that are not filled in.
+      overall_sum_tree_resids_mu=resize_bcf(overall_sum_tree_resids_mu,overall_count);					// remove spaces that are not filled in.
+      overall_sum_tree_resids_tau=resize_bcf(overall_sum_tree_resids_tau,overall_count);					// remove spaces that are not filled in.
       overall_sum_trees_mat_mu=resize_bcf(overall_sum_trees_mat_mu,overall_count);						// remove spaces that are not filled in.
       overall_sum_trees_mat_tau=resize_bcf(overall_sum_trees_mat_tau,overall_count);						// remove spaces that are not filled in.
       
@@ -5769,14 +5827,18 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
           prev_sum_trees_tau[p] = start_tree_bcf(0,0); // maybe should be empty list rather than list of empty trees?
           prev_sum_trees_mat_tau[p] = start_matrix_bcf(n); // maybe should be empty list? .. model shouldn't even have stub tree
         }
-        prev_sum_tree_resids=temp_sum_tree_resids;											// let prev_sum_tree_resids equal the list of residual vectors (from the current round)
+        prev_sum_tree_resids_mu=temp_sum_tree_resids_mu;											// let prev_sum_tree_resids equal the list of residual vectors (from the current round)
+        //prev_sum_tree_resids_tau=;											// let prev_sum_tree_resids equal the list of residual vectors (from the current round)
+        
         //NumericMatrix test=prev_sum_trees[0];												// create a matrix test equal to the first element of temp_sum_trees (first obtained tree table)
         overall_sum_trees_mu=resize_bcf(temp_sum_trees_mu,temp_sum_trees_mu.size());						// remove spaces that are not filled in.
         overall_sum_trees_tau=resize_bcf(prev_sum_trees_tau,temp_sum_trees_mu.size());// INTENTIONALLY USING SIZE OF MU						// remove spaces that are not filled in.
         overall_sum_trees_mu=temp_sum_trees_mu;													// let overall_sum_trees equal the RESIZED list of tree tables (from the current round)
         overall_sum_trees_tau=prev_sum_trees_tau; // not sure about this													// let overall_sum_trees equal the RESIZED list of tree tables (from the current round)
-        overall_sum_tree_resids=resize_bcf(temp_sum_tree_resids,temp_sum_tree_resids.size());	// remove spaces that are not filled in.
-        overall_sum_tree_resids=temp_sum_tree_resids;										// let overall_sum_tree_resids equal the RESIZED list of tree residual vectors (from the current round)
+        overall_sum_tree_resids_mu=resize_bcf(temp_sum_tree_resids_mu,temp_sum_tree_resids_mu.size());	// remove spaces that are not filled in.
+        overall_sum_tree_resids_mu=temp_sum_tree_resids_mu;										// let overall_sum_tree_resids equal the RESIZED list of tree residual vectors (from the current round)
+        overall_sum_tree_resids_tau=resize_bcf(prev_sum_tree_resids_tau,prev_sum_tree_resids_tau.size());	// remove spaces that are not filled in.
+        overall_sum_tree_resids_tau=prev_sum_tree_resids_tau;										// let overall_sum_tree_resids equal the RESIZED list of tree residual vectors (from the current round)
         overall_sum_trees_mat_mu=temp_sum_trees_mat_mu;											// let overall_sum_trees_mat equal the RESIZED list of tree matrice
         overall_sum_trees_mat_tau=prev_sum_trees_mat_tau;											// let overall_sum_trees_mat equal the RESIZED list of tree matrice
         overall_sum_trees_mat_mu=resize_bcf(temp_sum_trees_mat_mu,temp_sum_trees_mat_mu.size());				// remove spaces that are not filled in.
@@ -5794,7 +5856,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
         
         prev_sum_trees_mu=overall_sum_trees_mu;													// let prev_sum_trees equal the list of tree tables (up to the current round??)
         prev_sum_trees_tau=overall_sum_trees_tau;													// let prev_sum_trees equal the list of tree tables (up to the current round??)
-        prev_sum_tree_resids=overall_sum_tree_resids;										// let prev_sum_tree_resids equal the list of residual vectors (up tp the current round)
+        prev_sum_tree_resids_mu=overall_sum_tree_resids_mu;										// let prev_sum_tree_resids equal the list of residual vectors (up tp the current round)
+        prev_sum_tree_resids_tau=overall_sum_tree_resids_tau;										// let prev_sum_tree_resids equal the list of residual vectors (up tp the current round)
         prev_sum_trees_mat_mu=overall_sum_trees_mat_mu;											// let prev_sum_trees_mat equal the list of tree matrice (up to the current round??)
         prev_sum_trees_mat_tau=overall_sum_trees_mat_tau;											// let prev_sum_trees_mat equal the list of tree matrice (up to the current round??)
         
@@ -5811,7 +5874,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       }
       overall_overall_sum_trees_mu[oo_count]=overall_sum_trees_mu;									// Add the current outer loop's table list to overall_overall_sum_trees (list of lists?? OR list of lists of lists??)
       overall_overall_sum_trees_tau[oo_count]=overall_sum_trees_tau;									// Add the current outer loop's table list to overall_overall_sum_trees (list of lists?? OR list of lists of lists??)
-      overall_overall_sum_tree_resids[oo_count]=overall_sum_tree_resids;						// Add the current outer loop's list of residual vectors to the list overall_overall_sum_tree_resids (list of lists)
+      overall_overall_sum_tree_resids_mu[oo_count]=overall_sum_tree_resids_mu;						// Add the current outer loop's list of residual vectors to the list overall_overall_sum_tree_resids (list of lists)
+      overall_overall_sum_tree_resids_tau[oo_count]=overall_sum_tree_resids_tau;						// Add the current outer loop's list of residual vectors to the list overall_overall_sum_tree_resids (list of lists)
       overall_overall_sum_trees_mat_mu[oo_count]=overall_sum_trees_mat_mu;							// Add the current outer loop's list of matrices to the list overall_overall_sum_trees_mat (list of lists)
       overall_overall_sum_trees_mat_tau[oo_count]=overall_sum_trees_mat_tau;							// Add the current outer loop's list of matrices to the list overall_overall_sum_trees_mat (list of lists)
       overall_overall_sum_BIC[oo_count]=overall_sum_BIC;										// Add the vector of BICs to the list overall_overall_sum_BIC. (list of vectors?)
@@ -5820,7 +5884,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
         oo_size=oo_size*2;																			// double the size.
         overall_overall_sum_trees_mu=resize_bigger_bcf(overall_overall_sum_trees_mu,oo_size);					// double the length of overall_overall_sum_trees
         overall_overall_sum_trees_tau=resize_bigger_bcf(overall_overall_sum_trees_tau,oo_size);					// double the length of overall_overall_sum_trees
-        overall_overall_sum_tree_resids=resize_bigger_bcf(overall_overall_sum_tree_resids,oo_size);		// double the length of overall_overall_sum_tree_resids
+        overall_overall_sum_tree_resids_mu=resize_bigger_bcf(overall_overall_sum_tree_resids_mu,oo_size);		// double the length of overall_overall_sum_tree_resids
+        overall_overall_sum_tree_resids_tau=resize_bigger_bcf(overall_overall_sum_tree_resids_tau,oo_size);		// double the length of overall_overall_sum_tree_resids
         overall_overall_sum_trees_mat_mu=resize_bigger_bcf(overall_overall_sum_trees_mat_mu,oo_size);			// double the length of overall_overall_sum_trees_mat
         overall_overall_sum_trees_mat_tau=resize_bigger_bcf(overall_overall_sum_trees_mat_tau,oo_size);			// double the length of overall_overall_sum_trees_mat
         overall_overall_sum_BIC=resize_bigger_bcf(overall_overall_sum_BIC,oo_size);						// double the length of overall_overall_sum_BIC
@@ -5855,7 +5920,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
         }
         }
       int overall_size=300;						// create a variable overall_size. Initialized equal to 0.
-      List overall_sum_tree_resids(overall_size);	// create a list of length 300
+      List overall_sum_tree_resids_mu(overall_size);	// create a list of length 300
+      List overall_sum_tree_resids_tau(overall_size);	// create a list of length 300
       
       List overall_sum_trees_mu(overall_size);		// create a list of length 300
       List overall_sum_trees_mat_mu(overall_size);	// create a list of length 300
@@ -5920,7 +5986,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
           throw std::range_error("No Tau trees can be grown for the number of iterations desired, as no splits were found.Please try fewer iterations.");
         }
       }
-      //Rcout << "Get to 4961 in tau round in loop j = " << j << ".\n";
+      // Rcout << "Get to 5984 in tau round in loop j = " << j << ".\n";
       
       //get current set of trees.
       if(j==0){						// If in the first round of the for-loop.
@@ -5959,7 +6025,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                                             prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,y_scaled,
                                             num_splits_mu,num_splits_tau,gridsize_tau,zero_split);	// function defined on line 1953.
       }
-      //Rcout << "Get to 5000 in tau round in loop j = " << j << ".\n";
+      // Rcout << "Get to 6023 in tau round in loop j = " << j << ".\n";
       
       curr_round_lik=CART_BMA_tau[0];							// vector of BICs (for whole sum-of tree-models after suggested trees added). Should be ordered ascending
       //curr_round_trees_mu=CART_BMA_tau[1];						// list of tree tables
@@ -5971,7 +6037,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       curr_BIC=CART_BMA_tau[5];								// lowest BIC among trees?
       NumericMatrix curr_round_test_preds_tau=CART_BMA_tau[6];	// (out-of-sample tree predictions?) matrix rows correspond to different units/individuals, columns correspond to predictions from different (single or sums-of?) trees.
       if(curr_round_lik.size()==0) {						// If number of sum of tree models is zero?
-        Rcout << "curr_round_lik.size()==0 BREAK in tau round in loop j = " << j << ".\n";
+        // Rcout << "curr_round_lik.size()==0 BREAK in tau round in loop j = " << j << ".\n";
         //REMOVE THIS ERROR IF WANT TO ALLOW LESS THAN MAX NUMBER OF TREES
         //throw std::range_error("No tau trees chosen in round");
         break;											// break out of for-loop
@@ -6005,6 +6071,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       List temp_sum_trees_tau(lsize);							// create a list of length equal to the number of sum of tree models returned by get_best_trees_sum
       
       List temp_sum_tree_resids(lsize);					// create a list of length equal to the number of sum of tree models returned by get_best_trees_sum
+      List temp_sum_tree_resids_mu(lsize);					// create a list of length equal to the number of sum of tree models returned by get_best_trees_sum
+      List temp_sum_tree_resids_tau(lsize);					// create a list of length equal to the number of sum of tree models returned by get_best_trees_sum
       
       List temp_sum_trees_mat_mu(lsize);						// create a list of length equal to the number of sum of tree models returned by get_best_trees_sum
       List temp_sum_trees_mat_tau(lsize);						// create a list of length equal to the number of sum of tree models returned by get_best_trees_sum
@@ -6033,8 +6101,12 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
           
           //temp_sum_trees_mat_mu[count]=curr_round_mat_mu[k];	// Add the tree matrix to temp_sum_trees_mat
           temp_sum_trees_mat_tau[count]=curr_round_mat_tau[k];	// Add the tree matrix to temp_sum_trees_mat
-          //NOT SURE ABIUT THE FOLLOWING LINE
-          temp_sum_tree_resids[count]=resids(_,0);	// Add to the list temp_sum_tree_resids the first column of resids from the start of the loop. (which, for j=0, is empty? No dimensions?)
+          //NOT SURE ABOUT THE FOLLOWING LINE
+          //temp_sum_tree_resids[count]=resids(_,0);	// Add to the list temp_sum_tree_resids the first column of resids from the start of the loop. (which, for j=0, is empty? No dimensions?)
+          //temp_sum_tree_resids_mu[count]=y_scaled-z*curr_round_preds_tau(_,k);	// Add to the list temp_sum_tree_resids the first column of resids from the start of the loop. (which, for j=0, is empty? No dimensions?)
+          temp_sum_tree_resids_tau[count]=resids(_,curr_round_parent[k]);	// Add to the list temp_sum_tree_resids the first column of resids from the start of the loop. (which, for j=0, is empty? No dimensions?)
+          
+          
         }else{											// If not in the first round of the for-loop.
           NumericVector curr_temp_pred_outcome=prev_round_preds_mu(_,curr_round_parent[k]) + 
             z*prev_round_preds_tau(_,curr_round_parent[k]) + 
@@ -6060,7 +6132,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
             
           }
           temp_BIC[k]=curr_round_lik[k];									// Let the k+1^th element of temp_BIC be the BIC of the k+1^th model.
-          Rcout << "TEST LINE 6052 temp_BIC[k]=  "<< temp_BIC[k] << " .\n";
+          // Rcout << "TEST LINE 6052 temp_BIC[k]=  "<< temp_BIC[k] << " .\n";
           
           
           temp_preds_outcome(_,k)=curr_temp_pred_outcome;									// Let the k+1^th column of temp_preds be the in-samle predictions from adding the k+1^th tree
@@ -6074,20 +6146,21 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
           
           //temp_sum_trees_mat[count]=curr_round_mat_mu[k];					// Add the tree matrix to temp_sum_trees_mat.
           temp_sum_trees_mat_tau[count]=curr_round_mat_tau[k];					// Add the tree matrix to temp_sum_trees_mat.
-          temp_sum_tree_resids[count]=resids(_,curr_round_parent[k]);		// Add the curr_round_parent[k]+1^th column of resids to temp_sum_tree_resids. resids contains predictions from previous rounds?
+          temp_sum_tree_resids_tau[count]=resids(_,curr_round_parent[k]);		// Add the curr_round_parent[k]+1^th column of resids to temp_sum_tree_resids. resids contains predictions from previous rounds?
         }
         count++;													// Increment the count by 1.(Note this is within the innermost for-loop).
       }  
       if(curr_round_lik.size()==0){									// if no new trees outputted in current round (by get_best_trees_sum? Why not throw this error earlier, at line 2350)
         throw std::range_error("No trees chosen in last round");
       }
-      //Rcout << "GET TO LINE 5182 .\n";
+      // Rcout << "GET TO LINE 6151 .\n";
       
       for(int k=0;k<curr_round_lik.size();k++){	// create a for-loop of length equal to the number of sum of tree models returned by get_best_trees_sum
         int size_mat=300;						// create a variable, Initializd equal to 300.
         List sum_of_trees_mu(size_mat);			// create a list of length 300.
         List sum_of_trees_tau(size_mat);			// create a list of length 300.
-        List sum_of_tree_resids(size_mat);		// create a list of length 300.
+        List sum_of_tree_resids_mu(size_mat);		// create a list of length 300.
+        List sum_of_tree_resids_tau(size_mat);		// create a list of length 300.
         List sum_of_trees_mat_mu(size_mat);		// create a list of length 300.
         List sum_of_trees_mat_tau(size_mat);		// create a list of length 300.
         int count=0;							// create a variable count equal to 0. (Count was already define, so could remove "int" at start of this line and just reset cound to 0).
@@ -6100,15 +6173,16 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
             sum_of_trees_mu = resize_bcf(sum_of_trees_mu,1);			// create a list of length 300.
             sum_of_trees_mat_mu = resize_bcf(sum_of_trees_mat_mu,1);		// create a list of length 300.
             
-            //Rcout << "LENGTH OF LIST SUM_OF_TREES_MU = " << sum_of_trees_mu.size() << ".\n";
-            //Rcout << "LENGTH OF LIST SUM_OF_TREES_MAT_MU = " << sum_of_trees_mat_mu.size() << ".\n";
+            // Rcout << "LENGTH OF LIST SUM_OF_TREES_MU = " << sum_of_trees_mu.size() << ".\n";
+            // Rcout << "LENGTH OF LIST SUM_OF_TREES_MAT_MU = " << sum_of_trees_mat_mu.size() << ".\n";
             
             NumericMatrix other_tree_mu=prev_sum_trees_mu[curr_round_parent[k]];			// create matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
             //NumericMatrix other_tree_tau=prev_sum_trees_tau[curr_round_parent[k]];			// create matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
-            NumericVector other_resids=prev_sum_tree_resids[curr_round_parent[k]];	// create vector equal to the curr_round_parent[k]+1^th element of the list prev_sum_tree_resids.
+            NumericVector other_resids_mu=prev_sum_tree_resids_mu[curr_round_parent[k]];	// create vector equal to the curr_round_parent[k]+1^th element of the list prev_sum_tree_resids.
+            // Rcout << "LENGTH OF LIST other_resids_mu = " << other_resids_mu.size() << ".\n";
             sum_of_trees_mu[count]= other_tree_mu;										// add other_tree to the list sum_of_trees
             //sum_of_trees_tau[count]= other_tree_tau;										// add other_tree to the list sum_of_trees
-            sum_of_tree_resids[count]=other_resids-z*curr_round_preds_tau(_,k);									// add other_resids to the list sum_of_tree_resids
+            sum_of_tree_resids_mu[count]=other_resids_mu-z*curr_round_preds_tau(_,k);									// add other_resids to the list sum_of_tree_resids
             NumericMatrix other_mat_mu=prev_sum_trees_mat_mu[curr_round_parent[k]];		// create a matrix equal to the curr_round_parent[k]+1^th element of the matrix prev_sum_trees_mat.
             //NumericMatrix other_mat_tau=prev_sum_trees_mat_tau[curr_round_parent[k]];		// create a matrix equal to the curr_round_parent[k]+1^th element of the matrix prev_sum_trees_mat.
             sum_of_trees_mat_mu[count]=other_mat_mu;										// create a add other_mat to the list sum_of_trees_mat
@@ -6125,9 +6199,10 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
             //}
           
             }else{
-              //List other_tree_mu=prev_sum_trees_mu[curr_round_parent[k]];					// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
+              List other_tree_mu=prev_sum_trees_mu[curr_round_parent[k]];					// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
               List other_tree_tau=prev_sum_trees_tau[curr_round_parent[k]];					// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
-              List other_tree_resids=prev_sum_tree_resids[curr_round_parent[k]];		// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? vector equal to the curr_round_parent[k]+1^th element of the list prev_sum_tree_resids.
+              List other_tree_resids_mu=prev_sum_tree_resids_mu[curr_round_parent[k]];		// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? vector equal to the curr_round_parent[k]+1^th element of the list prev_sum_tree_resids.
+              List other_tree_resids_tau=prev_sum_tree_resids_tau[curr_round_parent[k]];		// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? vector equal to the curr_round_parent[k]+1^th element of the list prev_sum_tree_resids.
               //List other_mat_mu=prev_sum_trees_mat_mu[curr_round_parent[k]];				// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? matrix equal to the curr_round_parent[k]+1^th element of the matrix prev_sum_trees_mat.
               List other_mat_tau=prev_sum_trees_mat_tau[curr_round_parent[k]];				// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? matrix equal to the curr_round_parent[k]+1^th element of the matrix prev_sum_trees_mat.
               for(int f=0;f<other_tree_tau.size();f++){									// for-loop of length equal to that of other_tree?? length is one if list??
@@ -6136,12 +6211,12 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                   throw std::range_error(" tree is not a numeric matrix!");		// throw an error
                 }
                 NumericMatrix treetoadd_tau=other_tree_tau[f];								// create matrix treetoadd equal to f+1^th element of other_tree
-                if(is<NumericVector>(other_tree_resids[f])){						// if f+1^th element of other_tree_resids is a NumericVector, do nothing
+                if(is<NumericVector>(other_tree_resids_tau[f])){						// if f+1^th element of other_tree_resids is a NumericVector, do nothing
                 }else{																// if f+1^th element of other_tree_resids is not a NumericVector
                 	throw std::range_error("other resids not a numeric matrix!");	// throw an error
                 }
-                NumericVector resids_prevroundtemp=other_tree_resids[f];						// create vector residstoadd equal to f+1^th element of other_tree_resids
-                NumericVector residstoadd=resids_prevroundtemp-z*curr_round_preds_tau(_,k);
+                NumericVector resids_prevroundtemp_tau=other_tree_resids_tau[f];						// create vector residstoadd equal to f+1^th element of other_tree_resids
+                NumericVector residstoadd_tau=resids_prevroundtemp_tau-z*curr_round_preds_tau(_,k);
                 
                 if(is<NumericMatrix>(other_mat_tau[f])){								// if f+1^th element of other_mat is a NumericMatrix, do nothing
                   
@@ -6151,17 +6226,31 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                 NumericMatrix mattoadd_tau=other_mat_tau[f];								// create matrix mattoadd equal to f+1^th element of other_mat
                 
                 sum_of_trees_tau[count]=treetoadd_tau;										// add treetoadd to sum_of_trees
-                sum_of_tree_resids[count]=residstoadd;								// add residstoadd to sum_of_tree_resids
+                sum_of_tree_resids_tau[count]=residstoadd_tau;								// add residstoadd to sum_of_tree_resids
                 sum_of_trees_mat_tau[count]=mattoadd_tau;									// add mattoadd to sum_of_trees_mat
                 count++;															// inremet the count variable.
                 
                 if(count==(size_mat-1)){											// If list size is too small
                   size_mat=size_mat*2;											// double the size
                   sum_of_trees_tau=resize_bigger_bcf(sum_of_trees_tau,size_mat);				// double the length of sum_of_trees
-                  sum_of_tree_resids=resize_bigger_bcf(sum_of_tree_resids,size_mat);	// double the length of sum_of_tree_resids
+                  sum_of_tree_resids_tau=resize_bigger_bcf(sum_of_tree_resids_tau,size_mat);	// double the length of sum_of_tree_resids
                   sum_of_trees_mat_tau=resize_bigger_bcf(sum_of_trees_mat_tau,size_mat);		// double the length of sum_of_trees_mat
                 }
               }
+              
+              if(other_tree_mu.size()>size_mat){											// If list size is too small
+                sum_of_tree_resids_mu=resize_bigger_bcf(sum_of_tree_resids_mu,other_tree_mu.size());	// increase the length of sum_of_tree_resids
+              }
+              for(int f=0;f<other_tree_mu.size();f++){									// for-loop of length equal to that of other_tree?? length is one if list??
+                NumericVector resids_prevroundtemp_mu=other_tree_resids_mu[f];
+                NumericVector residstoadd_mu=resids_prevroundtemp_mu-z*curr_round_preds_tau(_,k);						// create vector residstoadd equal to f+1^th element of other_tree_resids
+                
+                sum_of_tree_resids_mu[f]=residstoadd_mu;								// add residstoadd to sum_of_tree_resids
+              }
+              
+              
+              
+              
               List temp1_prev_sum_tree = prev_sum_trees_mu[curr_round_parent[k]];
               List temp1_prev_sum_tree_mat = prev_sum_trees_mat_mu[curr_round_parent[k]];
               
@@ -6172,16 +6261,16 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
               sum_of_trees_mat_mu = prev_sum_trees_mat_mu[curr_round_parent[k]];
             }
           
-          //Rcout << "GET TO LINE 5302 .\n";
+          // Rcout << "GET TO LINE 6258 .\n";
           
           sum_of_trees_tau[count]=temp_sum_trees_tau[k];										// add k+1^th element of temp_sum_trees to sum_of_trees
-          sum_of_tree_resids[count]=temp_sum_tree_resids[k];							// add k+1^th element of temp_sum_tree_resids to sum_of_tree_resids
+          sum_of_tree_resids_tau[count]=temp_sum_tree_resids_tau[k];							// add k+1^th element of temp_sum_tree_resids to sum_of_tree_resids
           sum_of_trees_mat_tau[count]=temp_sum_trees_mat_tau[k];								// add k+1^th element of temp_sum_trees_mat to sum_of_trees_mat
           count++;																	// increment the count variable
           
-          //Rcout << "GET TO LINE 5307 .\n";
-          //Rcout << "LENGTH OF LIST SUM_OF_TREES_MU = " << sum_of_trees_mu.size() << ".\n";
-          //Rcout << "LENGTH OF LIST SUM_OF_TREES_MAT_MU = " << sum_of_trees_mat_mu.size() << ".\n";
+          // Rcout << "GET TO LINE 6265 .\n";
+          // Rcout << "LENGTH OF LIST SUM_OF_TREES_MU = " << sum_of_trees_mu.size() << ".\n";
+          // Rcout << "LENGTH OF LIST SUM_OF_TREES_MAT_MU = " << sum_of_trees_mat_mu.size() << ".\n";
           
           if(count==(size_mat-1)){													// If list size is too small
             size_mat=size_mat*2;													// double the size
@@ -6190,24 +6279,30 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
             
             if(j==0) sum_of_trees_mat_mu=resize_bigger_bcf(sum_of_trees_mat_mu,size_mat);				// double the length of sum_of_tree_resids
             sum_of_trees_mat_tau=resize_bigger_bcf(sum_of_trees_mat_tau,size_mat);				// double the length of sum_of_tree_resids
-            sum_of_tree_resids=resize_bigger_bcf(sum_of_tree_resids,size_mat);			// double the length of sum_of_trees_mat
+            sum_of_tree_resids_tau=resize_bigger_bcf(sum_of_tree_resids_tau,size_mat);			// double the length of sum_of_trees_mat
           }
         }
-        //Rcout << "count=" << count << ".\n";
+        // Rcout << "count=" << count << ".\n";
         
         if(j==0) sum_of_trees_mu=resize_bcf(sum_of_trees_mu,count);										// remove spaces that are not filled in.
         sum_of_trees_tau=resize_bcf(sum_of_trees_tau,count);										// remove spaces that are not filled in.
         if(j==0) sum_of_trees_mat_mu=resize_bcf(sum_of_trees_mat_mu,count);								// remove spaces that are not filled in.
         sum_of_trees_mat_tau=resize_bcf(sum_of_trees_mat_tau,count);								// remove spaces that are not filled in.
-        sum_of_tree_resids=resize_bcf(sum_of_tree_resids,count);							// remove spaces that are not filled in.
-        //Rcout << "length of sum of trees = " << sum_of_trees_mu.size() << ".\n";
-        //Rcout << "count = " << count << ".\n";
-        //Rcout << "length of sum of treestau = " << sum_of_trees_tau.size() << ".\n";
+        sum_of_tree_resids_tau=resize_bcf(sum_of_tree_resids_tau,count);							// remove spaces that are not filled in.
+        
+        List other_tree_mu=prev_sum_trees_mu[curr_round_parent[k]];					// create List?? (Maybe curr_round_parent[k] is a vector/list of indices)?? matrix equal to the curr_round_parent[k]+1^th element of the list prev_sum_trees.
+        sum_of_tree_resids_mu=resize_bcf(sum_of_tree_resids_mu,other_tree_mu.size());							// remove spaces that are not filled in.
+        
+        
+        // Rcout << "length of sum of trees = " << sum_of_trees_mu.size() << ".\n";
+        // Rcout << "count = " << count << ".\n";
+        // Rcout << "length of sum of treestau = " << sum_of_trees_tau.size() << ".\n";
         
         if(curr_round_parent[k]!=-1){															// If the k+1^th element of curr_round_parent is -1, (-1 is a terminal node?)
           overall_sum_trees_mu[overall_count]=sum_of_trees_mu;								// overall_count+1^th element of overall_sum_trees is sum_of_trees (which is itself a list... therefore have a list of lists?)
           overall_sum_trees_tau[overall_count]=sum_of_trees_tau;								// overall_count+1^th element of overall_sum_trees is sum_of_trees (which is itself a list... therefore have a list of lists?)
-          overall_sum_tree_resids[overall_count]=sum_of_tree_resids;						// overall_count+1^th element of overall_sum_tree_resids is sum_of_tree_resids (which is itself a list... therefore have a list of lists?)
+          overall_sum_tree_resids_mu[overall_count]=sum_of_tree_resids_mu;						// overall_count+1^th element of overall_sum_tree_resids is sum_of_tree_resids (which is itself a list... therefore have a list of lists?)
+          overall_sum_tree_resids_tau[overall_count]=sum_of_tree_resids_tau;						// overall_count+1^th element of overall_sum_tree_resids is sum_of_tree_resids (which is itself a list... therefore have a list of lists?)
           overall_sum_trees_mat_mu[overall_count]=sum_of_trees_mat_mu;						// overall_count+1^th element of overall_sum_trees_mat is sum_of_trees_mat (which is itself a list... therefore have a list of lists?)
           overall_sum_trees_mat_tau[overall_count]=sum_of_trees_mat_tau;						// overall_count+1^th element of overall_sum_trees_mat is sum_of_trees_mat (which is itself a list... therefore have a list of lists?)
           overall_sum_BIC=temp_BIC;															// Let overall_sum_BIC equal temp_BIC, the vector of BICs.
@@ -6224,7 +6319,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
             overall_size=overall_size*2;													// double the size
             overall_sum_trees_mu=resize_bigger_bcf(overall_sum_trees_mu,overall_size);				// double the length of overall_sum_trees
             overall_sum_trees_tau=resize_bigger_bcf(overall_sum_trees_tau,overall_size);				// double the length of overall_sum_trees
-            overall_sum_tree_resids=resize_bigger_bcf(overall_sum_tree_resids,overall_size);	// double the length of overall_sum_tree_resids
+            overall_sum_tree_resids_mu=resize_bigger_bcf(overall_sum_tree_resids_mu,overall_size);	// double the length of overall_sum_tree_resids
+            overall_sum_tree_resids_tau=resize_bigger_bcf(overall_sum_tree_resids_tau,overall_size);	// double the length of overall_sum_tree_resids
             overall_sum_trees_mat_mu=resize_bigger_bcf(overall_sum_trees_mat_mu,overall_size);		// double the length of overall_sum_trees_mat
             overall_sum_trees_mat_tau=resize_bigger_bcf(overall_sum_trees_mat_tau,overall_size);		// double the length of overall_sum_trees_mat
           }
@@ -6232,11 +6328,11 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       }
     
       
-      //Rcout << "overall - length of list of sum of tree models = " << overall_sum_trees_mu.size() << ".\n";
+      // Rcout << "overall - length of list of sum of tree models = " << overall_sum_trees_mu.size() << ".\n";
       List example_tree_tab = overall_sum_trees_mu[0];
-      //Rcout << "overall - Length of input tree table list used to get best split sum = " << example_tree_tab.size() << ".\n";
+      // Rcout << "overall - Length of input tree table list used to get best split sum = " << example_tree_tab.size() << ".\n";
       List example_tree_mat = overall_sum_trees_mat_mu[0];
-      //Rcout << "overall - Length of input tree mat list used to get best split sum= " << example_tree_mat.size() << ".\n";
+      // Rcout << "overall - Length of input tree mat list used to get best split sum= " << example_tree_mat.size() << ".\n";
       
       //NumericMatrix example_tree_tab_mat = example_tree_tab[0];
       ////Rcout << "number of cols example mat = " << example_tree_tab_mat.ncol() << ".\n";
@@ -6263,12 +6359,14 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                   if(is<List>(s_tau)){
                     List tree_no_child_mu=prev_sum_trees_mu[h];								// create a list equal to prev_sum_trees[h]
                     List tree_no_child_tau=prev_sum_trees_tau[h];								// create a list equal to prev_sum_trees[h]
-                    List resids_no_child=prev_sum_tree_resids[h];						// create a list equal to prev_sum_tree_resids[h]
+                    List resids_no_child_mu=prev_sum_tree_resids_mu[h];						// create a list equal to prev_sum_tree_resids[h]
+                    List resids_no_child_tau=prev_sum_tree_resids_tau[h];						// create a list equal to prev_sum_tree_resids[h]
                     List treemat_no_child_mu=prev_sum_trees_mat_mu[h];						// create a list equal to prev_sum_trees_mat[h]
                     List treemat_no_child_tau=prev_sum_trees_mat_tau[h];						// create a list equal to prev_sum_trees_mat[h]
                     overall_sum_trees_mu[overall_count]=tree_no_child_mu;						// add prev_sum_trees[h] to overall_sum_trees
                     overall_sum_trees_tau[overall_count]=tree_no_child_tau;						// add prev_sum_trees[h] to overall_sum_trees
-                    overall_sum_tree_resids[overall_count]=resids_no_child;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
+                    overall_sum_tree_resids_mu[overall_count]=resids_no_child_mu;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
+                    overall_sum_tree_resids_tau[overall_count]=resids_no_child_tau;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
                     overall_sum_trees_mat_mu[overall_count]=treemat_no_child_mu;				// add  to overall_sum_trees_mat
                     overall_sum_trees_mat_tau[overall_count]=treemat_no_child_tau;				// add  to overall_sum_trees_mat
                     overall_count++;													// increment overall_count
@@ -6277,7 +6375,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                       overall_size=overall_size*2;													// double the size
                       overall_sum_trees_mu=resize_bigger_bcf(overall_sum_trees_mu,overall_size);				// double the length of overall_sum_trees
                       overall_sum_trees_tau=resize_bigger_bcf(overall_sum_trees_tau,overall_size);				// double the length of overall_sum_trees
-                      overall_sum_tree_resids=resize_bigger_bcf(overall_sum_tree_resids,overall_size);	// double the length of overall_sum_tree_resids
+                      overall_sum_tree_resids_mu=resize_bigger_bcf(overall_sum_tree_resids_mu,overall_size);	// double the length of overall_sum_tree_resids
+                      overall_sum_tree_resids_tau=resize_bigger_bcf(overall_sum_tree_resids_tau,overall_size);	// double the length of overall_sum_tree_resids
                       overall_sum_trees_mat_mu=resize_bigger_bcf(overall_sum_trees_mat_mu,overall_size);		// double the length of overall_sum_trees_mat
                       overall_sum_trees_mat_tau=resize_bigger_bcf(overall_sum_trees_mat_tau,overall_size);		// double the length of overall_sum_trees_mat
                     }
@@ -6294,12 +6393,14 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                   }else{
                     List tree_no_child_mu=prev_sum_trees_mu[h];								// create a list equal to prev_sum_trees[h]
                     NumericMatrix tree_no_child_tau=prev_sum_trees_tau[h];								// create a list equal to prev_sum_trees[h]
-                    List resids_no_child=prev_sum_tree_resids[h];						// create a list equal to prev_sum_tree_resids[h]
+                    List resids_no_child_mu=prev_sum_tree_resids_mu[h];						// create a list equal to prev_sum_tree_resids[h]
+                    List resids_no_child_tau=prev_sum_tree_resids_tau[h];						// create a list equal to prev_sum_tree_resids[h]
                     List treemat_no_child_mu=prev_sum_trees_mat_mu[h];						// create a list equal to prev_sum_trees_mat[h]
                     NumericMatrix treemat_no_child_tau=prev_sum_trees_mat_tau[h];						// create a list equal to prev_sum_trees_mat[h]
                     overall_sum_trees_mu[overall_count]=tree_no_child_mu;						// add prev_sum_trees[h] to overall_sum_trees
                     overall_sum_trees_tau[overall_count]=tree_no_child_tau;						// add prev_sum_trees[h] to overall_sum_trees
-                    overall_sum_tree_resids[overall_count]=resids_no_child;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
+                    overall_sum_tree_resids_mu[overall_count]=resids_no_child_mu;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
+                    overall_sum_tree_resids_tau[overall_count]=resids_no_child_tau;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
                     overall_sum_trees_mat_mu[overall_count]=treemat_no_child_mu;				// add  to overall_sum_trees_mat
                     overall_sum_trees_mat_tau[overall_count]=treemat_no_child_tau;				// add  to overall_sum_trees_mat
                     overall_count++;													// increment overall_count
@@ -6308,7 +6409,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                       overall_size=overall_size*2;													// double the size
                       overall_sum_trees_mu=resize_bigger_bcf(overall_sum_trees_mu,overall_size);				// double the length of overall_sum_trees
                       overall_sum_trees_tau=resize_bigger_bcf(overall_sum_trees_tau,overall_size);				// double the length of overall_sum_trees
-                      overall_sum_tree_resids=resize_bigger_bcf(overall_sum_tree_resids,overall_size);	// double the length of overall_sum_tree_resids
+                      overall_sum_tree_resids_mu=resize_bigger_bcf(overall_sum_tree_resids_mu,overall_size);	// double the length of overall_sum_tree_resids
+                      overall_sum_tree_resids_tau=resize_bigger_bcf(overall_sum_tree_resids_tau,overall_size);	// double the length of overall_sum_tree_resids
                       overall_sum_trees_mat_mu=resize_bigger_bcf(overall_sum_trees_mat_mu,overall_size);		// double the length of overall_sum_trees_mat
                       overall_sum_trees_mat_tau=resize_bigger_bcf(overall_sum_trees_mat_tau,overall_size);		// double the length of overall_sum_trees_mat
                     }
@@ -6331,12 +6433,14 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
 
                     NumericMatrix tree_no_child_mu=prev_sum_trees_mu[h];								// create a list equal to prev_sum_trees[h]
                     List tree_no_child_tau=prev_sum_trees_tau[h];								// create a list equal to prev_sum_trees[h]
-                    List resids_no_child=prev_sum_tree_resids[h];						// create a list equal to prev_sum_tree_resids[h]
+                    List resids_no_child_mu=prev_sum_tree_resids_mu[h];						// create a list equal to prev_sum_tree_resids[h]
+                    List resids_no_child_tau=prev_sum_tree_resids_tau[h];						// create a list equal to prev_sum_tree_resids[h]
                     NumericMatrix treemat_no_child_mu=prev_sum_trees_mat_mu[h];						// create a list equal to prev_sum_trees_mat[h]
                     List treemat_no_child_tau=prev_sum_trees_mat_tau[h];						// create a list equal to prev_sum_trees_mat[h]
                     overall_sum_trees_mu[overall_count]=tree_no_child_mu;						// add prev_sum_trees[h] to overall_sum_trees
                     overall_sum_trees_tau[overall_count]=tree_no_child_tau;						// add prev_sum_trees[h] to overall_sum_trees
-                    overall_sum_tree_resids[overall_count]=resids_no_child;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
+                    overall_sum_tree_resids_mu[overall_count]=resids_no_child_mu;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
+                    overall_sum_tree_resids_tau[overall_count]=resids_no_child_tau;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
                     overall_sum_trees_mat_mu[overall_count]=treemat_no_child_mu;				// add  to overall_sum_trees_mat
                     overall_sum_trees_mat_tau[overall_count]=treemat_no_child_tau;				// add  to overall_sum_trees_mat
                     overall_count++;													// increment overall_count
@@ -6345,7 +6449,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                       overall_size=overall_size*2;													// double the size
                       overall_sum_trees_mu=resize_bigger_bcf(overall_sum_trees_mu,overall_size);				// double the length of overall_sum_trees
                       overall_sum_trees_tau=resize_bigger_bcf(overall_sum_trees_tau,overall_size);				// double the length of overall_sum_trees
-                      overall_sum_tree_resids=resize_bigger_bcf(overall_sum_tree_resids,overall_size);	// double the length of overall_sum_tree_resids
+                      overall_sum_tree_resids_mu=resize_bigger_bcf(overall_sum_tree_resids_mu,overall_size);	// double the length of overall_sum_tree_resids
+                      overall_sum_tree_resids_tau=resize_bigger_bcf(overall_sum_tree_resids_tau,overall_size);	// double the length of overall_sum_tree_resids
                       overall_sum_trees_mat_mu=resize_bigger_bcf(overall_sum_trees_mat_mu,overall_size);		// double the length of overall_sum_trees_mat
                       overall_sum_trees_mat_tau=resize_bigger_bcf(overall_sum_trees_mat_tau,overall_size);		// double the length of overall_sum_trees_mat
                     }
@@ -6362,12 +6467,14 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                   }else{
                     NumericMatrix tree_no_child_mu=prev_sum_trees_mu[h];								// create a list equal to prev_sum_trees[h]
                     NumericMatrix tree_no_child_tau=prev_sum_trees_tau[h];								// create a list equal to prev_sum_trees[h]
-                    List resids_no_child=prev_sum_tree_resids[h];						// create a list equal to prev_sum_tree_resids[h]
+                    List resids_no_child_mu=prev_sum_tree_resids_mu[h];						// create a list equal to prev_sum_tree_resids[h]
+                    List resids_no_child_tau=prev_sum_tree_resids_tau[h];						// create a list equal to prev_sum_tree_resids[h]
                     NumericMatrix treemat_no_child_mu=prev_sum_trees_mat_mu[h];						// create a list equal to prev_sum_trees_mat[h]
                     NumericMatrix treemat_no_child_tau=prev_sum_trees_mat_tau[h];						// create a list equal to prev_sum_trees_mat[h]
                     overall_sum_trees_mu[overall_count]=tree_no_child_mu;						// add prev_sum_trees[h] to overall_sum_trees
                     overall_sum_trees_tau[overall_count]=tree_no_child_tau;						// add prev_sum_trees[h] to overall_sum_trees
-                    overall_sum_tree_resids[overall_count]=resids_no_child;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
+                    overall_sum_tree_resids_mu[overall_count]=resids_no_child_mu;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
+                    overall_sum_tree_resids_tau[overall_count]=resids_no_child_tau;				// add prev_sum_tree_resids[h] to overall_sum_tree_resids
                     overall_sum_trees_mat_mu[overall_count]=treemat_no_child_mu;				// add  to overall_sum_trees_mat
                     overall_sum_trees_mat_tau[overall_count]=treemat_no_child_tau;				// add  to overall_sum_trees_mat
                     overall_count++;													// increment overall_count
@@ -6376,7 +6483,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                       overall_size=overall_size*2;													// double the size
                       overall_sum_trees_mu=resize_bigger_bcf(overall_sum_trees_mu,overall_size);				// double the length of overall_sum_trees
                       overall_sum_trees_tau=resize_bigger_bcf(overall_sum_trees_tau,overall_size);				// double the length of overall_sum_trees
-                      overall_sum_tree_resids=resize_bigger_bcf(overall_sum_tree_resids,overall_size);	// double the length of overall_sum_tree_resids
+                      overall_sum_tree_resids_mu=resize_bigger_bcf(overall_sum_tree_resids_mu,overall_size);	// double the length of overall_sum_tree_resids
+                      overall_sum_tree_resids_tau=resize_bigger_bcf(overall_sum_tree_resids_tau,overall_size);	// double the length of overall_sum_tree_resids
                       overall_sum_trees_mat_mu=resize_bigger_bcf(overall_sum_trees_mat_mu,overall_size);		// double the length of overall_sum_trees_mat
                       overall_sum_trees_mat_tau=resize_bigger_bcf(overall_sum_trees_mat_tau,overall_size);		// double the length of overall_sum_trees_mat
                     }
@@ -6400,9 +6508,6 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       }
       }
       
-      bool test_temp_tau = NumericVector::is_na(temp_preds_tau[0]);
-      Rcout << "TEST LINE 6385 temp_preds_tau is na :  "<< test_temp_tau << " .\n";
-      
       prev_round_preds_outcome=temp_preds_outcome;															// let prev_round_preds equal to the matrix of predictions.
       prev_round_preds_mu=temp_preds_mu;															// let prev_round_preds equal to the matrix of predictions.
       prev_round_preds_tau=temp_preds_tau;															// let prev_round_preds equal to the matrix of predictions.
@@ -6425,15 +6530,16 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       parent=temp_parent;																		// let parent equal the parent vector
       overall_sum_trees_mu=resize_bcf(overall_sum_trees_mu,overall_count);								// remove spaces that are not filled in.
       overall_sum_trees_tau=resize_bcf(overall_sum_trees_tau,overall_count);								// remove spaces that are not filled in.
-      overall_sum_tree_resids=resize_bcf(overall_sum_tree_resids,overall_count);					// remove spaces that are not filled in.
+      overall_sum_tree_resids_mu=resize_bcf(overall_sum_tree_resids_mu,overall_count);					// remove spaces that are not filled in.
+      overall_sum_tree_resids_tau=resize_bcf(overall_sum_tree_resids_tau,overall_count);					// remove spaces that are not filled in.
       overall_sum_trees_mat_mu=resize_bcf(overall_sum_trees_mat_mu,overall_count);						// remove spaces that are not filled in.
       overall_sum_trees_mat_tau=resize_bcf(overall_sum_trees_mat_tau,overall_count);						// remove spaces that are not filled in.
       
-      //Rcout << "CHeck how far get in first round for tau. j = " << j <<" and first round = " << first_round << ".\n";
+      // Rcout << "Check how far get in first round for tau. j = " << j <<" and first round = " << first_round << ".\n";
       
       if(first_round==1){																		// if in the first round of the outer for-loop (j==0)
         
-        //Rcout << "INSIDE IF STATEMENT. j = " << j <<" and first round = " << first_round << ".\n";
+        // Rcout << "INSIDE IF STATEMENT. j = " << j <<" and first round = " << first_round << ".\n";
         
         prev_sum_trees_mu=overall_sum_trees_mu;														// let prev_sum_trees equal the list of tree tables (from the current round)
         //ADDING TO MU TREES, therefore nothing yet added to tau trees
@@ -6442,7 +6548,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
         prev_sum_trees_mat_tau = temp_sum_trees_mat_tau;
         
         
-        //Rcout << "length of list of sum of tree models = " << prev_sum_trees_mu.size() << ".\n";
+        // Rcout << "length of list of sum of tree models = " << prev_sum_trees_mu.size() << ".\n";
         //List example_tree_tab = prev_sum_trees_mu[0];
         //Rcout << "Length of input tree table list used to get best split sum = " << example_tree_tab.size() << ".\n";
         //List example_tree_mat = prev_sum_trees_mat_mu[0];
@@ -6455,15 +6561,17 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
         //Rcout << "number of cols example mat2 = " << example_tree_tab_mat2.ncol() << ".\n";
 
         
-        prev_sum_tree_resids=temp_sum_tree_resids;											// let prev_sum_tree_resids equal the list of residual vectors (from the current round)
+        prev_sum_tree_resids_tau=temp_sum_tree_resids_tau;											// let prev_sum_tree_resids equal the list of residual vectors (from the current round)
+        prev_sum_tree_resids_mu=overall_sum_tree_resids_mu;											// let prev_sum_tree_resids equal the list of residual vectors (from the current round)
         //NumericMatrix test=prev_sum_trees[0];												// create a matrix test equal to the first element of temp_sum_trees (first obtained tree table)
         overall_sum_trees_mu=resize_bcf(prev_sum_trees_mu,temp_sum_trees_tau.size());						// remove spaces that are not filled in.
         overall_sum_trees_tau=resize_bcf(temp_sum_trees_tau,temp_sum_trees_tau.size());// INTENTIONALLY USING SIZE OF MU						// remove spaces that are not filled in.
         overall_sum_trees_mu=prev_sum_trees_mu;		// not sure about this					// let overall_sum_trees equal the RESIZED list of tree tables (from the current round)
         overall_sum_trees_tau=temp_sum_trees_tau; // not sure about this													// let overall_sum_trees equal the RESIZED list of tree tables (from the current round)
-        overall_sum_tree_resids=resize_bcf(temp_sum_tree_resids,temp_sum_tree_resids.size());	// remove spaces that are not filled in.
-        overall_sum_tree_resids=temp_sum_tree_resids;										// let overall_sum_tree_resids equal the RESIZED list of tree residual vectors (from the current round)
-        overall_sum_trees_mat_mu=prev_sum_trees_mat_mu;										// let overall_sum_trees_mat equal the RESIZED list of tree matrice
+        overall_sum_tree_resids_mu=resize_bcf(prev_sum_tree_resids_tau,temp_sum_tree_resids_tau.size());	// remove spaces that are not filled in.
+        overall_sum_tree_resids_mu=prev_sum_tree_resids_mu;										// let overall_sum_tree_resids equal the RESIZED list of tree residual vectors (from the current round)
+        overall_sum_tree_resids_tau=resize_bcf(temp_sum_tree_resids_tau,temp_sum_tree_resids_tau.size());	// remove spaces that are not filled in.
+        overall_sum_tree_resids_tau=temp_sum_tree_resids_tau;										// let overall_sum_tree_resids equal the RESIZED list of tree residual vectors (from the current round)        overall_sum_trees_mat_mu=prev_sum_trees_mat_mu;										// let overall_sum_trees_mat equal the RESIZED list of tree matrice
         overall_sum_trees_mat_tau=temp_sum_trees_mat_tau;											// let overall_sum_trees_mat equal the RESIZED list of tree matrice
         overall_sum_trees_mat_mu=resize_bcf(prev_sum_trees_mat_mu,temp_sum_trees_mat_tau.size());				// remove spaces that are not filled in.
         overall_sum_trees_mat_tau=resize_bcf(temp_sum_trees_mat_tau,temp_sum_trees_mat_tau.size());				// remove spaces that are not filled in.
@@ -6479,7 +6587,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       }else{																					// if not in the first round of the outer for-loop. (i.e. j>0)
         prev_sum_trees_mu=overall_sum_trees_mu;													// let prev_sum_trees equal the list of tree tables (up to the current round??)
         prev_sum_trees_tau=overall_sum_trees_tau;													// let prev_sum_trees equal the list of tree tables (up to the current round??)
-        prev_sum_tree_resids=overall_sum_tree_resids;										// let prev_sum_tree_resids equal the list of residual vectors (up tp the current round)
+        prev_sum_tree_resids_mu=overall_sum_tree_resids_mu;										// let prev_sum_tree_resids equal the list of residual vectors (up tp the current round)
+        prev_sum_tree_resids_tau=overall_sum_tree_resids_tau;										// let prev_sum_tree_resids equal the list of residual vectors (up tp the current round)
         prev_sum_trees_mat_mu=overall_sum_trees_mat_mu;											// let prev_sum_trees_mat equal the list of tree matrice (up to the current round??)
         prev_sum_trees_mat_tau=overall_sum_trees_mat_tau;											// let prev_sum_trees_mat equal the list of tree matrice (up to the current round??)
         prev_round_BIC2=overall_sum_BIC;													// let prev_round_BIC2 equal the vector of BICs (up to the current round??)
@@ -6495,7 +6604,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       
       overall_overall_sum_trees_mu[oo_count]=overall_sum_trees_mu;									// Add the current outer loop's table list to overall_overall_sum_trees (list of lists?? OR list of lists of lists??)
       overall_overall_sum_trees_tau[oo_count]=overall_sum_trees_tau;									// Add the current outer loop's table list to overall_overall_sum_trees (list of lists?? OR list of lists of lists??)
-      overall_overall_sum_tree_resids[oo_count]=overall_sum_tree_resids;						// Add the current outer loop's list of residual vectors to the list overall_overall_sum_tree_resids (list of lists)
+      overall_overall_sum_tree_resids_mu[oo_count]=overall_sum_tree_resids_mu;						// Add the current outer loop's list of residual vectors to the list overall_overall_sum_tree_resids (list of lists)
+      overall_overall_sum_tree_resids_tau[oo_count]=overall_sum_tree_resids_tau;						// Add the current outer loop's list of residual vectors to the list overall_overall_sum_tree_resids (list of lists)
       overall_overall_sum_trees_mat_mu[oo_count]=overall_sum_trees_mat_mu;							// Add the current outer loop's list of matrices to the list overall_overall_sum_trees_mat (list of lists)
       overall_overall_sum_trees_mat_tau[oo_count]=overall_sum_trees_mat_tau;							// Add the current outer loop's list of matrices to the list overall_overall_sum_trees_mat (list of lists)
       overall_overall_sum_BIC[oo_count]=overall_sum_BIC;										// Add the vector of BICs to the list overall_overall_sum_BIC. (list of vectors?)
@@ -6504,7 +6614,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
         oo_size=oo_size*2;																			// double the size.
         overall_overall_sum_trees_mu=resize_bigger_bcf(overall_overall_sum_trees_mu,oo_size);					// double the length of overall_overall_sum_trees
         overall_overall_sum_trees_tau=resize_bigger_bcf(overall_overall_sum_trees_tau,oo_size);					// double the length of overall_overall_sum_trees
-        overall_overall_sum_tree_resids=resize_bigger_bcf(overall_overall_sum_tree_resids,oo_size);		// double the length of overall_overall_sum_tree_resids
+        overall_overall_sum_tree_resids_mu=resize_bigger_bcf(overall_overall_sum_tree_resids_mu,oo_size);		// double the length of overall_overall_sum_tree_resids
+        overall_overall_sum_tree_resids_tau=resize_bigger_bcf(overall_overall_sum_tree_resids_tau,oo_size);		// double the length of overall_overall_sum_tree_resids
         overall_overall_sum_trees_mat_mu=resize_bigger_bcf(overall_overall_sum_trees_mat_mu,oo_size);			// double the length of overall_overall_sum_trees_mat
         overall_overall_sum_trees_mat_tau=resize_bigger_bcf(overall_overall_sum_trees_mat_tau,oo_size);			// double the length of overall_overall_sum_trees_mat
         overall_overall_sum_BIC=resize_bigger_bcf(overall_overall_sum_BIC,oo_size);						// double the length of overall_overall_sum_BIC
@@ -6530,7 +6641,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
     }	// END OF tau(x) TREE CODE	(if-statement)
     
     
-    Rcout << "Get to end of loop j = " << j << ".\n";
+    // Rcout << "Get to end of loop j = " << j << ".\n";
     
   } //	END OF OUTER LOOP
   
@@ -6540,7 +6651,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
   
   overall_overall_sum_trees_mu=resize_bcf(overall_overall_sum_trees_mu,oo_count);						// remove spaces that are not filled in.
   overall_overall_sum_trees_tau=resize_bcf(overall_overall_sum_trees_tau,oo_count);						// remove spaces that are not filled in.
-  overall_overall_sum_tree_resids=resize_bcf(overall_overall_sum_tree_resids,oo_count);			// remove spaces that are not filled in.
+  overall_overall_sum_tree_resids_mu=resize_bcf(overall_overall_sum_tree_resids_mu,oo_count);			// remove spaces that are not filled in.
+  overall_overall_sum_tree_resids_tau=resize_bcf(overall_overall_sum_tree_resids_tau,oo_count);			// remove spaces that are not filled in.
   overall_overall_sum_trees_mat_mu=resize_bcf(overall_overall_sum_trees_mat_mu,oo_count);				// remove spaces that are not filled in.
   overall_overall_sum_trees_mat_tau=resize_bcf(overall_overall_sum_trees_mat_tau,oo_count);				// remove spaces that are not filled in.
   overall_overall_sum_BIC=resize_bcf(overall_overall_sum_BIC,oo_count);							// remove spaces that are not filled in.
@@ -6559,9 +6671,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
     NumericVector temp_preds_outcome=oosp_outcome(_,k);														// let temp_preds equal the predictions from the k+1^th model
     NumericVector temp_preds_mu=oosp_mu(_,k);														// let temp_preds equal the predictions from the k+1^th model
     NumericVector temp_preds_tau=oosp_tau(_,k);														// let temp_preds equal the predictions from the k+1^th model
-    bool test_temp_preds_tau2 = NumericVector::is_na(temp_preds_tau[0]);
-    Rcout << "TEST LINE 6544 test_temp_preds_tau2 is na :  "<< test_temp_preds_tau2 << " .\n";
-    
+
+        
     
     NumericVector temp_test_preds_outcome;															// create a vector called temp_test_preds
     NumericVector temp_test_preds_mu;															// create a vector called temp_test_preds
@@ -6578,17 +6689,13 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
     NumericVector orig_temp_preds_mu=get_original_bcf(min(y),max(y),-0.5,0.5,temp_preds_mu) ;			// Rescale the in-sample predictions back to the original scale of the outcome. Defined on line 2216
     NumericVector orig_temp_preds_tau=get_original_bcf(min(y),max(y),-0.5,0.5,temp_preds_tau) ;			// Rescale the in-sample predictions back to the original scale of the outcome. Defined on line 2216
     NumericVector BICi=-0.5*end_BIC;														// create a vector of the BICs multiplied by -0.5
-    Rcout << "end_BIC = "<< end_BIC << " .\n";
-    Rcout << "end_BIC[0] = "<< end_BIC[0] << " .\n";
+    //Rcout << "end_BIC = "<< end_BIC << " .\n";
+    // Rcout << "end_BIC[0] = "<< end_BIC[0] << " .\n";
     
-    //Rcout << "TEST LINE 6566 weight =  "<< weight << " .\n";
+    // Rcout << "TEST LINE 6689 weight =  "<< weight << " .\n";
     
     double max_BIC=max(BICi);																// set the variable max_BIC equal to the maximum of the (negative 0.5 times the) BICs
     double weight=exp(BICi[k]-(max_BIC+log(sum(exp(BICi-max_BIC)))));						// create the weight for the k+1^th model
-    bool test_weight = NumericVector::is_na(weight);
-    Rcout << "TEST LINE 6565 test_weight is na :  "<< test_weight << " .\n";
-    Rcout << "TEST LINE 6566 weight =  "<< weight << " .\n";
-    
     
     post_weights[k]=weight;																	// Let the k+1^th element of post_weights be the weight of the k+1^th model
     overallpreds_outcome(_,k) = temp_preds_outcome*weight;													// Let the k+1^th element of overallpreds be the predictions of the k+1^th model multiplied by the model's weight (i.e, the contributions of the k+1^th model to the predictions).
@@ -6600,18 +6707,12 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       overall_test_preds_tau(_,k) = temp_test_preds_tau*weight;											// Let the k+1^th element of overall_test_preds be the out-of-sample predictions of the k+1^th model multiplied by the model's weight (i.e, the contributions of the k+1^th model to the predictions).
     }
   }
-  bool test_overallpreds_tau = NumericVector::is_na(overallpreds_tau(0,0));
-  Rcout << "TEST LINE 6571 test_overallpreds_tau is na :  "<< test_overallpreds_tau << " .\n";
-  
   arma::mat M1_outcome(overallpreds_outcome.begin(), overallpreds_outcome.nrow(), overallpreds_outcome.ncol(), false);						// M1 is an arma mat copy of overallpreds (entry i,j gives contribution of j^th model to prediction of i^th observation)
   arma::mat M1_mu(overallpreds_mu.begin(), overallpreds_mu.nrow(), overallpreds_mu.ncol(), false);						// M1 is an arma mat copy of overallpreds (entry i,j gives contribution of j^th model to prediction of i^th observation)
   arma::mat M1_tau(overallpreds_tau.begin(), overallpreds_tau.nrow(), overallpreds_tau.ncol(), false);						// M1 is an arma mat copy of overallpreds (entry i,j gives contribution of j^th model to prediction of i^th observation)
   predicted_values_outcome=sum(M1_outcome,1);																					// predicted_values is a vector of predictions for each observation in the training data (before inverse scaling). (row sums of overallpreds)
   predicted_values_mu=sum(M1_mu,1);																					// predicted_values is a vector of predictions for each observation in the training data (before inverse scaling). (row sums of overallpreds)
   predicted_values_tau=sum(M1_tau,1);																					// predicted_values is a vector of predictions for each observation in the training data (before inverse scaling). (row sums of overallpreds)
- 
- bool test_predicted_values_tau = NumericVector::is_na(predicted_values_tau[0]);
- Rcout << "TEST LINE 6581 test_predicted_values_tau is na :  "<< test_predicted_values_tau << " .\n";
  
   arma::mat M2_outcome(overall_test_preds_outcome.begin(), overall_test_preds_outcome.nrow(), overall_test_preds_outcome.ncol(), false);		// M2 is arma copy of overall_test_preds (entry i,j gives contribution of j^th model to prediction of i^th test observation)
   arma::mat M2_mu(overall_test_preds_mu.begin(), overall_test_preds_mu.nrow(), overall_test_preds_mu.ncol(), false);		// M2 is arma copy of overall_test_preds (entry i,j gives contribution of j^th model to prediction of i^th test observation)
@@ -6639,7 +6740,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
     minmax[0]=min(y);							// set first element equal to min(y)
     minmax[1]=max(y);							// set first element equal to max(y)
     if(is_test_data==1){						// if there is test data
-      List ret(12);									// list of length 6.
+      List ret(13);									// list of length 6.
       ret[0] = orig_preds_outcome;							// The first element is a vector of in-sample predictions
       ret[1] = orig_preds_mu;							// The first element is a vector of in-sample predictions
       ret[2] = orig_preds_tau;							// The first element is a vector of in-sample predictions
@@ -6651,10 +6752,11 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       ret[8] = orig_test_preds_outcome;						// the fifth element is the vector of out-of-sample predictions
       ret[9] = orig_test_preds_mu;						// the fifth element is the vector of out-of-sample predictions
       ret[10] = orig_test_preds_tau;						// the fifth element is the vector of out-of-sample predictions
-      ret[11] =overall_overall_sum_tree_resids;		// the sixth element if a list of residual vectors
+      ret[11] =overall_overall_sum_tree_resids_mu;		// the sixth element if a list of residual vectors
+      ret[12] =overall_overall_sum_tree_resids_tau;		// the sixth element if a list of residual vectors
       return(ret);							// return the list
     }else{										// if there is no test data
-      List ret(9);									// list of length 5.
+      List ret(10);									// list of length 5.
       ret[0] = orig_preds_outcome;							// The first element is a vector of in-sample predictions
       ret[1] = orig_preds_mu;							// The first element is a vector of in-sample predictions
       ret[2] = orig_preds_tau;							// The first element is a vector of in-sample predictions
@@ -6663,7 +6765,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       ret[5] = overall_overall_sum_trees_mat_mu;			// the third element is a list of lists of tree matrices.
       ret[6] = overall_overall_sum_trees_mat_tau;			// the third element is a list of lists of tree matrices.
       ret[7] = end_BIC;								// the fourth element is the vector of BICs of sum-of-tree-models
-      ret[8] =overall_overall_sum_tree_resids;		// the sixth element if a list of residual vectors
+      ret[8] =overall_overall_sum_tree_resids_mu;		// the sixth element if a list of residual vectors
+      ret[9] =overall_overall_sum_tree_resids_tau;		// the sixth element if a list of residual vectors
       return(ret);									// return the list
     }
   }
@@ -7041,7 +7144,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
                                               prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
                                               y_scaled,num_splits_mu,num_splits_tau,gridsize_mu,zero_split);	// function defined on line 1953.
       }
-      Rcout << "Get to after get best trees in mu round in loop j = " << j << ".\n";
+      // Rcout << "Get to after get best trees in mu round in loop j = " << j << ".\n";
       
       curr_round_lik=CART_BMA_mu[0];							// vector of BICs (for whole sum-of tree-models after suggested trees added). Should be ordered ascending
       curr_round_trees_mu=CART_BMA_mu[1];						// list of tree tables
@@ -8265,7 +8368,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
     }	// END OF tau(x) TREE CODE	(if-statement)
     
     
-    Rcout << "Get to end of loop j = " << j << ".\n";
+    // Rcout << "Get to end of loop j = " << j << ".\n";
     
   } //	END OF OUTER LOOP
   

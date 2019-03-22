@@ -80,7 +80,9 @@ The following objects are returned by bcfbma:
 \item{sumoftrees_tau}{This is a list of lists of matrices. The outer list corresponds to a list of sum-of-tree models, and each element of the outer list is a list of matrices describing the structure of the tau(x) trees within a sum-of-tree model. See details.} 
 \item{obs_to_termNodesMatrix_mu}{This is a list of lists of matrices. The outer list corresponds to a list of sum-of-tree models, and each element of the outer list is a list of matrices describing to which node each of the observations is allocated to at all depths of each mu(x) trees within a sum-of-tree model. See details.} 
 \item{obs_to_termNodesMatrix_tau}{This is a list of lists of matrices. The outer list corresponds to a list of sum-of-tree models, and each element of the outer list is a list of matrices describing to which node each of the observations is allocated to at all depths of each tau(x) trees within a sum-of-tree model. See details.}
-\item{bic}{This is a vector of BICs for each sum-of-tree model.} 
+\item{bic}{This is a vector of BICs for each sum-of-tree model.}
+\item{sum_residuals_mu}{A list of lists (if more than one mu(x) tree) of vectors of partial residuals for each tree in mu(x) in each model.}
+\item{sum_residuals_tau}{A list of lists (if more than one tau(x) tree) of vectors of partial residuals for each tree in tau(x) in each model.}
 \item{numvars}{This is the total number of variables in the input training data matrix, excluding the pihat matrix.} 
 \item{call}{match.call returns a call in which all of the specified arguments are specified by their full names.} 
 \item{y_minmax}{Range of the input training data outcome vector.} 

@@ -44,7 +44,9 @@
 #' \item{sumoftrees_tau}{This is a list of lists of matrices. The outer list corresponds to a list of sum-of-tree models, and each element of the outer list is a list of matrices describing the structure of the tau(x) trees within a sum-of-tree model. See details.} 
 #' \item{obs_to_termNodesMatrix_mu}{This is a list of lists of matrices. The outer list corresponds to a list of sum-of-tree models, and each element of the outer list is a list of matrices describing to which node each of the observations is allocated to at all depths of each mu(x) trees within a sum-of-tree model. See details.} 
 #' \item{obs_to_termNodesMatrix_tau}{This is a list of lists of matrices. The outer list corresponds to a list of sum-of-tree models, and each element of the outer list is a list of matrices describing to which node each of the observations is allocated to at all depths of each tau(x) trees within a sum-of-tree model. See details.}
-#' \item{bic}{This is a vector of BICs for each sum-of-tree model.} 
+#' \item{bic}{This is a vector of BICs for each sum-of-tree model.}
+#' \item{sum_residuals_mu}{A list of lists (if more than one mu(x) tree) of vectors of partial residuals for each tree in mu(x) in each model.}
+#' \item{sum_residuals_tau}{A list of lists (if more than one tau(x) tree) of vectors of partial residuals for each tree in tau(x) in each model.}
 #' \item{numvars}{This is the total number of variables in the input training data matrix, excluding the pihat matrix.} 
 #' \item{call}{match.call returns a call in which all of the specified arguments are specified by their full names.} 
 #' \item{y_minmax}{Range of the input training data outcome vector.} 
@@ -169,21 +171,23 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                                     num_splits_mu,num_splits_tau,gridsize_mu, gridsize_tau,
                                     include_pi2,zero_split,only_max_num_trees)
   
-  if(length(bcfBMA_call)==12){
+  if(length(bcfBMA_call)==13){
     #length of bcfBMA_call is 11 if test data was included in the call
     names(bcfBMA_call)<-c("fitted.values_outcome","fitted.values_mu","fitted.values_tau",
                           "sumoftrees_mu","sumoftrees_tau",
                           "obs_to_termNodesMatrix_mu","obs_to_termNodesMatrix_tau",
                           "bic",
-                          "test.preds_outcome","test.preds_mu","test.preds_tau","sum_residuals")
+                          "test.preds_outcome","test.preds_mu","test.preds_tau","sum_residuals_mu","sum_residuals_tau")
     bcfBMA_call[[12]]<-bcfBMA_call[[12]][[length(bcfBMA_call[[12]])]]
+    bcfBMA_call[[13]]<-bcfBMA_call[[13]][[length(bcfBMA_call[[13]])]]
     bcfBMA_call$test_data<-x.test
   }else{
     names(bcfBMA_call)<-c("fitted.values_outcome","fitted.values_mu","fitted.values_tau",
                           "sumoftrees_mu","sumoftrees_tau",
                           "obs_to_termNodesMatrix_mu","obs_to_termNodesMatrix_tau",
-                          "bic","sum_residuals")
+                          "bic","sum_residuals_mu","sum_residuals_tau")
     bcfBMA_call[[9]]<-bcfBMA_call[[9]][[length(bcfBMA_call[[9]])]]
+    bcfBMA_call[[10]]<-bcfBMA_call[[10]][[length(bcfBMA_call[[10]])]]
   }
   
   bcfBMA_call$numvars<-ncol(x.train) #ncol(training)
