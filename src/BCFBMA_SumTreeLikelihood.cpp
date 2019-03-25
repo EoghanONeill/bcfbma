@@ -4992,7 +4992,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
     // Name the matrix without the estimated propensity scores x_moderate.[CAN REMOVE THE DUPLICATION AND ADD x_control, x_moderate, and include_pi as input parameters later]
     //NumericMatrix x_moderate = data;	// x_moderate matrix is the covariate data without the propensity scores
   arma::mat x_moderate_a=D1;			// create arma mat copy of x_moderate.
-  if(include_pi2==1 ){
+  if((include_pi2==1)| (include_pi2==2) ){
     if(pihat.nrow()>0 ){
       x_moderate_a.insert_cols(0,pihat_a);		// add propensity scores as new leftmost columns of x_control_a
     }
@@ -5012,7 +5012,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
     // Name the matrix without the estimated propensity scores x_moderate_test.[CAN REMOVE THE DUPLICATION AND ADD x_control_test, x_moderate_test, and include_pi as input parameters later]
     //NumericMatrix x_moderate_test = test_data;	// x_moderate_test matrix is the covariate test_data without the propensity scores
   arma::mat x_moderate_test_a=T1;			// create arma mat copy of x_moderate_test.
-  if(include_pi2==1 ){
+  if((include_pi2==1)| (include_pi2==2) ){
     if(pihat.nrow()>0 ){
       x_moderate_test_a.insert_cols(0,pihat_a);		// add propensity scores as new leftmost columns of x_control_a
     }
@@ -5502,7 +5502,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
             for(int f=0;f<other_tree_mu.size();f++){									// for-loop of length equal to that of other_tree?? length is one if list??
               if(is<NumericMatrix>(other_tree_mu[f])){								// if f+1^th element of other_tree is a matrix, do nothing
               }else{																// if f+1^th element of other_tree is not a matrix
-                throw std::range_error(" tree is not a numeric matrix!");		// throw an error
+                throw std::range_error("Line 5505 tree is not a numeric matrix!");		// throw an error
               }
               NumericMatrix treetoadd_mu=other_tree_mu[f];								// create matrix treetoadd equal to f+1^th element of other_tree
               if(is<NumericVector>(other_tree_resids_mu[f])){						// if f+1^th element of other_tree_resids is a NumericVector, do nothing
@@ -6208,7 +6208,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
               for(int f=0;f<other_tree_tau.size();f++){									// for-loop of length equal to that of other_tree?? length is one if list??
                 if(is<NumericMatrix>(other_tree_tau[f])){								// if f+1^th element of other_tree is a matrix, do nothing
                 }else{																// if f+1^th element of other_tree is not a matrix
-                  throw std::range_error(" tree is not a numeric matrix!");		// throw an error
+                  throw std::range_error("Line 6211 tree is not a numeric matrix!");		// throw an error
                 }
                 NumericMatrix treetoadd_tau=other_tree_tau[f];								// create matrix treetoadd equal to f+1^th element of other_tree
                 if(is<NumericVector>(other_tree_resids_tau[f])){						// if f+1^th element of other_tree_resids is a NumericVector, do nothing
@@ -6539,7 +6539,49 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       
       if(first_round==1){																		// if in the first round of the outer for-loop (j==0)
         
-        // Rcout << "INSIDE IF STATEMENT. j = " << j <<" and first round = " << first_round << ".\n";
+         //Rcout << "INSIDE IF STATEMENT. j = " << j <<" and first round = " << first_round << ".\n";
+        
+        if(ntree_control==1){
+
+          List temp_for_prev_tree(temp_sum_trees_tau.size());
+          List temp_for_prev_mat(temp_sum_trees_mat_tau.size());
+          List temp_for_prev_resids(temp_sum_trees_mat_tau.size());
+
+          for(int p=0;p<temp_sum_trees_tau.size();p++){															// for-loop of length equal to number of models outputted in final round.
+            List temp_tree_list(1);
+            List temp_mat_list(1);
+            List temp_resid_list(1);
+
+            temp_tree_list[0]= temp_sum_trees_tau[p];
+            temp_mat_list[0]=temp_sum_trees_mat_tau[p];
+            temp_resid_list[0]=temp_sum_tree_resids_tau[p];
+
+            temp_for_prev_tree[p] = temp_tree_list;
+            temp_for_prev_mat[p] = temp_mat_list;
+            temp_for_prev_resids[p] =temp_resid_list;
+
+          }
+
+            prev_sum_trees_tau = temp_for_prev_tree;
+            prev_sum_trees_mat_tau = temp_for_prev_mat;
+            prev_sum_tree_resids_tau = temp_for_prev_resids;
+
+            prev_sum_trees_mu=overall_sum_trees_mu;														// let prev_sum_trees equal the list of tree tables (from the current round)
+            prev_sum_trees_mat_mu= overall_sum_trees_mat_mu;												// let prev_sum_trees_mat equal the list of tree matrice
+            prev_sum_tree_resids_mu=overall_sum_tree_resids_mu;											// let prev_sum_tree_resids equal the list of residual vectors (from the current round)
+            
+            overall_sum_trees_mu=prev_sum_trees_mu;		// not sure about this					// let overall_sum_trees equal the RESIZED list of tree tables (from the current round)
+            overall_sum_trees_tau=prev_sum_trees_tau; // not sure about this													// let overall_sum_trees equal the RESIZED list of tree tables (from the current round)
+            overall_sum_tree_resids_mu=prev_sum_tree_resids_mu;										// let overall_sum_tree_resids equal the RESIZED list of tree residual vectors (from the current round)
+            overall_sum_tree_resids_tau=prev_sum_tree_resids_tau;										// let overall_sum_tree_resids equal the RESIZED list of tree residual vectors (from the current round)        overall_sum_trees_mat_mu=prev_sum_trees_mat_mu;										// let overall_sum_trees_mat equal the RESIZED list of tree matrice
+            overall_sum_trees_mat_mu=prev_sum_trees_mat_mu;
+            overall_sum_trees_mat_tau=prev_sum_trees_mat_tau;											// let overall_sum_trees_mat equal the RESIZED list of tree matrice
+            if(is_test_data==1){ // if there is test data, let overall_sum_test_preds be an arma mat copy of the test data predictions
+              overall_sum_test_preds_outcome= Rcpp::as<arma::mat>(temp_test_preds_outcome);
+              overall_sum_test_preds_mu= Rcpp::as<arma::mat>(temp_test_preds_mu);
+              overall_sum_test_preds_tau= Rcpp::as<arma::mat>(temp_test_preds_tau);
+            }
+        }else{
         
         prev_sum_trees_mu=overall_sum_trees_mu;														// let prev_sum_trees equal the list of tree tables (from the current round)
         //ADDING TO MU TREES, therefore nothing yet added to tau trees
@@ -6583,6 +6625,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
           overall_sum_test_preds_outcome= Rcpp::as<arma::mat>(temp_test_preds_outcome);
           overall_sum_test_preds_mu= Rcpp::as<arma::mat>(temp_test_preds_mu);
           overall_sum_test_preds_tau= Rcpp::as<arma::mat>(temp_test_preds_tau);
+        }
         }
       }else{																					// if not in the first round of the outer for-loop. (i.e. j>0)
         prev_sum_trees_mu=overall_sum_trees_mu;													// let prev_sum_trees equal the list of tree tables (up to the current round??)
@@ -6846,7 +6889,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
   // Name the matrix without the estimated propensity scores x_moderate.[CAN REMOVE THE DUPLICATION AND ADD x_control, x_moderate, and include_pi as input parameters later]
   //NumericMatrix x_moderate = data;	// x_moderate matrix is the covariate data without the propensity scores
   arma::mat x_moderate_a=D1;			// create arma mat copy of x_moderate.
-  if(include_pi2==1 ){
+  if((include_pi2==1) | (include_pi2==2)){
     if(pihat.nrow()>0 ){
       x_moderate_a.insert_cols(0,pihat_a);		// add propensity scores as new leftmost columns of x_control_a
     }
@@ -6866,7 +6909,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
   // Name the matrix without the estimated propensity scores x_moderate_test.[CAN REMOVE THE DUPLICATION AND ADD x_control_test, x_moderate_test, and include_pi as input parameters later]
   //NumericMatrix x_moderate_test = test_data;	// x_moderate_test matrix is the covariate test_data without the propensity scores
   arma::mat x_moderate_test_a=T1;			// create arma mat copy of x_moderate_test.
-  if(include_pi2==1 ){
+  if((include_pi2==1)| (include_pi2==2) ){
     if(pihat.nrow()>0 ){
       x_moderate_test_a.insert_cols(0,pihat_a);		// add propensity scores as new leftmost columns of x_control_a
     }

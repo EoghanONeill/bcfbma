@@ -58,6 +58,8 @@
 #' \item{nu}{input parameter} 
 #' \item{lambda}{parameter determined by the inputs sigma, sigquant, and nu} 
 #' \item{numPSmethods}{Number of columns of the input matrix pihat. This should be the number of different propoensity score estimates used.} 
+#' \item{include_pi2}{Equals 0 if input parameter include_pi is control, 1 if moderate, 2 if both, 4 if none.}
+#' \item{z}{Input training data treatment vector. This should be a binary vector, equal to one for treated individuals.}
 
 
 bcfBMA<-function(x,...)UseMethod("bcfBMA")
@@ -205,6 +207,8 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
   bcfBMA_call$nu<-nu
   bcfBMA_call$lambda<-lambda
   bcfBMA_call$numPSmethods<-ncol(pihat)
+  bcfBMA_call$include_pi2<-include_pi2
+  bcfBMA_call$z<-z
   
   class(bcfBMA_call)<-"bcfBMA"
   bcfBMA_call

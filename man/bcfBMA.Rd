@@ -93,7 +93,9 @@ The following objects are returned by bcfbma:
 \item{a_tau}{input parameter} 
 \item{nu}{input parameter} 
 \item{lambda}{parameter determined by the inputs sigma, sigquant, and nu} 
-\item{numPSmethods}{Number of columns of the input matrix pihat. This should be the number of different propoensity score estimates used.}
+\item{numPSmethods}{Number of columns of the input matrix pihat. This should be the number of different propoensity score estimates used.} 
+\item{include_pi2}{Equals 0 if input parameter include_pi is control, 1 if moderate, 2 if both, 4 if none.}
+\item{z}{Input training data treatment vector. This should be a binary vector, equal to one for treated individuals.}
 }
 \description{
 This is an implementation of Bayesian causal forests (Hahn et al. 2018) using Bayesian Model Averaging, following the approach used in BART-BMA (Hernandez et al. 2018). 
