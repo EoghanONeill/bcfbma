@@ -869,7 +869,6 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
     
     //NumericMatrix sum_test_predictions_mu;
     //NumericMatrix sum_test_predictions_tau;
-     Rcout << "Line 887. Round  i= " << i << " .\n";
     if(is<List>(s_mu)){
     if(is<List>(s_tau)){
       //if current set of trees contains more than one tree
@@ -913,7 +912,6 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
       NumericMatrix sum_new_TEs(sum_predictions_tau.nrow(),sum_predictions_tau.ncol());
       //NumericMatrix sum_new_test_TEs(sum_predictions_tau.nrow(),sum_predictions_tau.ncol());
       
-      Rcout << "Line 935. \n";
       for(int j=0;j<num_iter;j++){
         //NOW LOOP OVER MU TREES IN SUM OF TREE MODEL i
         for(int k =0;k<sum_tree_mu.size();k++){
