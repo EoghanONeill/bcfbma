@@ -313,17 +313,35 @@ get_tree_info_test_data <- function(test_data, tree_data) {
     .Call(`_bcfbma_get_tree_info_test_data`, test_data, tree_data)
 }
 
+get_tree_info_test_data_tau <- function(test_data, tree_data, z_test) {
+    .Call(`_bcfbma_get_tree_info_test_data_tau`, test_data, tree_data, z_test)
+}
+
 get_tree_info_testdata_overall <- function(overall_sum_trees, num_obs, test_data) {
     .Call(`_bcfbma_get_tree_info_testdata_overall`, overall_sum_trees, num_obs, test_data)
 }
 
+get_tree_info_testdata_overall_tau <- function(overall_sum_trees, num_obs, test_data, z_test) {
+    .Call(`_bcfbma_get_tree_info_testdata_overall_tau`, overall_sum_trees, num_obs, test_data, z_test)
+}
+
 #' @title Obtain draws from gibbs sampler
 #' @export
-gibbs_sampler <- function(overall_sum_trees, overall_sum_mat, y, BIC_weights, num_iter, burnin, num_obs, num_test_obs, a, sigma, mu_mu, nu, lambda, resids, test_data) {
-    .Call(`_bcfbma_gibbs_sampler`, overall_sum_trees, overall_sum_mat, y, BIC_weights, num_iter, burnin, num_obs, num_test_obs, a, sigma, mu_mu, nu, lambda, resids, test_data)
+gibbs_sampler <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, burnin, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, resids_mu, resids_tau, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs) {
+    .Call(`_bcfbma_gibbs_sampler`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, burnin, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, resids_mu, resids_tau, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs)
 }
 
 gibbs_sampler2 <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, burnin, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, resids_mu, resids_tau, z) {
     .Call(`_bcfbma_gibbs_sampler2`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, burnin, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, resids_mu, resids_tau, z)
+}
+
+#' @title Obtain draws from gibbs sampler
+#' @export
+gibbs_sampler_no_update <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, burnin, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, resids_mu, resids_tau, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs) {
+    .Call(`_bcfbma_gibbs_sampler_no_update`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, burnin, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, resids_mu, resids_tau, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs)
+}
+
+gibbs_sampler_no_update2 <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, burnin, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, resids_mu, resids_tau, z) {
+    .Call(`_bcfbma_gibbs_sampler_no_update2`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, burnin, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, resids_mu, resids_tau, z)
 }
 

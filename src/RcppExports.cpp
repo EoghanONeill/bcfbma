@@ -1377,6 +1377,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_tree_info_test_data_tau
+List get_tree_info_test_data_tau(NumericMatrix test_data, NumericMatrix tree_data, NumericVector z_test);
+RcppExport SEXP _bcfbma_get_tree_info_test_data_tau(SEXP test_dataSEXP, SEXP tree_dataSEXP, SEXP z_testSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type test_data(test_dataSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type tree_data(tree_dataSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type z_test(z_testSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_tree_info_test_data_tau(test_data, tree_data, z_test));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_tree_info_testdata_overall
 List get_tree_info_testdata_overall(List overall_sum_trees, int num_obs, NumericMatrix test_data);
 RcppExport SEXP _bcfbma_get_tree_info_testdata_overall(SEXP overall_sum_treesSEXP, SEXP num_obsSEXP, SEXP test_dataSEXP) {
@@ -1390,28 +1403,52 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// gibbs_sampler
-List gibbs_sampler(List overall_sum_trees, List overall_sum_mat, NumericVector y, NumericVector BIC_weights, int num_iter, int burnin, int num_obs, int num_test_obs, double a, double sigma, double mu_mu, double nu, double lambda, List resids, NumericMatrix test_data);
-RcppExport SEXP _bcfbma_gibbs_sampler(SEXP overall_sum_treesSEXP, SEXP overall_sum_matSEXP, SEXP ySEXP, SEXP BIC_weightsSEXP, SEXP num_iterSEXP, SEXP burninSEXP, SEXP num_obsSEXP, SEXP num_test_obsSEXP, SEXP aSEXP, SEXP sigmaSEXP, SEXP mu_muSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP residsSEXP, SEXP test_dataSEXP) {
+// get_tree_info_testdata_overall_tau
+List get_tree_info_testdata_overall_tau(List overall_sum_trees, int num_obs, NumericMatrix test_data, NumericVector z_test);
+RcppExport SEXP _bcfbma_get_tree_info_testdata_overall_tau(SEXP overall_sum_treesSEXP, SEXP num_obsSEXP, SEXP test_dataSEXP, SEXP z_testSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< List >::type overall_sum_trees(overall_sum_treesSEXP);
-    Rcpp::traits::input_parameter< List >::type overall_sum_mat(overall_sum_matSEXP);
+    Rcpp::traits::input_parameter< int >::type num_obs(num_obsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type test_data(test_dataSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type z_test(z_testSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_tree_info_testdata_overall_tau(overall_sum_trees, num_obs, test_data, z_test));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gibbs_sampler
+List gibbs_sampler(List overall_sum_trees_mu, List overall_sum_trees_tau, List overall_sum_mat_mu, List overall_sum_mat_tau, NumericVector y, NumericVector BIC_weights, int num_iter, int burnin, int num_obs, double a_mu, double a_tau, double sigma, double mu_mu_mu, double mu_mu_tau, double nu, double lambda, List resids_mu, List resids_tau, NumericVector z, NumericMatrix test_data, NumericMatrix test_pihat, NumericVector z_test, int include_pi2, int num_propscores, int num_test_obs);
+RcppExport SEXP _bcfbma_gibbs_sampler(SEXP overall_sum_trees_muSEXP, SEXP overall_sum_trees_tauSEXP, SEXP overall_sum_mat_muSEXP, SEXP overall_sum_mat_tauSEXP, SEXP ySEXP, SEXP BIC_weightsSEXP, SEXP num_iterSEXP, SEXP burninSEXP, SEXP num_obsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP sigmaSEXP, SEXP mu_mu_muSEXP, SEXP mu_mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP resids_muSEXP, SEXP resids_tauSEXP, SEXP zSEXP, SEXP test_dataSEXP, SEXP test_pihatSEXP, SEXP z_testSEXP, SEXP include_pi2SEXP, SEXP num_propscoresSEXP, SEXP num_test_obsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type overall_sum_trees_mu(overall_sum_trees_muSEXP);
+    Rcpp::traits::input_parameter< List >::type overall_sum_trees_tau(overall_sum_trees_tauSEXP);
+    Rcpp::traits::input_parameter< List >::type overall_sum_mat_mu(overall_sum_mat_muSEXP);
+    Rcpp::traits::input_parameter< List >::type overall_sum_mat_tau(overall_sum_mat_tauSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
     Rcpp::traits::input_parameter< NumericVector >::type BIC_weights(BIC_weightsSEXP);
     Rcpp::traits::input_parameter< int >::type num_iter(num_iterSEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
     Rcpp::traits::input_parameter< int >::type num_obs(num_obsSEXP);
-    Rcpp::traits::input_parameter< int >::type num_test_obs(num_test_obsSEXP);
-    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type a_mu(a_muSEXP);
+    Rcpp::traits::input_parameter< double >::type a_tau(a_tauSEXP);
     Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
-    Rcpp::traits::input_parameter< double >::type mu_mu(mu_muSEXP);
+    Rcpp::traits::input_parameter< double >::type mu_mu_mu(mu_mu_muSEXP);
+    Rcpp::traits::input_parameter< double >::type mu_mu_tau(mu_mu_tauSEXP);
     Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
     Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
-    Rcpp::traits::input_parameter< List >::type resids(residsSEXP);
+    Rcpp::traits::input_parameter< List >::type resids_mu(resids_muSEXP);
+    Rcpp::traits::input_parameter< List >::type resids_tau(resids_tauSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type z(zSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type test_data(test_dataSEXP);
-    rcpp_result_gen = Rcpp::wrap(gibbs_sampler(overall_sum_trees, overall_sum_mat, y, BIC_weights, num_iter, burnin, num_obs, num_test_obs, a, sigma, mu_mu, nu, lambda, resids, test_data));
+    Rcpp::traits::input_parameter< NumericMatrix >::type test_pihat(test_pihatSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type z_test(z_testSEXP);
+    Rcpp::traits::input_parameter< int >::type include_pi2(include_pi2SEXP);
+    Rcpp::traits::input_parameter< int >::type num_propscores(num_propscoresSEXP);
+    Rcpp::traits::input_parameter< int >::type num_test_obs(num_test_obsSEXP);
+    rcpp_result_gen = Rcpp::wrap(gibbs_sampler(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, burnin, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, resids_mu, resids_tau, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1441,6 +1478,70 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type resids_tau(resids_tauSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type z(zSEXP);
     rcpp_result_gen = Rcpp::wrap(gibbs_sampler2(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, burnin, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, resids_mu, resids_tau, z));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gibbs_sampler_no_update
+List gibbs_sampler_no_update(List overall_sum_trees_mu, List overall_sum_trees_tau, List overall_sum_mat_mu, List overall_sum_mat_tau, NumericVector y, NumericVector BIC_weights, int num_iter, int burnin, int num_obs, double a_mu, double a_tau, double sigma, double mu_mu_mu, double mu_mu_tau, double nu, double lambda, List resids_mu, List resids_tau, NumericVector z, NumericMatrix test_data, NumericMatrix test_pihat, NumericVector z_test, int include_pi2, int num_propscores, int num_test_obs);
+RcppExport SEXP _bcfbma_gibbs_sampler_no_update(SEXP overall_sum_trees_muSEXP, SEXP overall_sum_trees_tauSEXP, SEXP overall_sum_mat_muSEXP, SEXP overall_sum_mat_tauSEXP, SEXP ySEXP, SEXP BIC_weightsSEXP, SEXP num_iterSEXP, SEXP burninSEXP, SEXP num_obsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP sigmaSEXP, SEXP mu_mu_muSEXP, SEXP mu_mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP resids_muSEXP, SEXP resids_tauSEXP, SEXP zSEXP, SEXP test_dataSEXP, SEXP test_pihatSEXP, SEXP z_testSEXP, SEXP include_pi2SEXP, SEXP num_propscoresSEXP, SEXP num_test_obsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type overall_sum_trees_mu(overall_sum_trees_muSEXP);
+    Rcpp::traits::input_parameter< List >::type overall_sum_trees_tau(overall_sum_trees_tauSEXP);
+    Rcpp::traits::input_parameter< List >::type overall_sum_mat_mu(overall_sum_mat_muSEXP);
+    Rcpp::traits::input_parameter< List >::type overall_sum_mat_tau(overall_sum_mat_tauSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type BIC_weights(BIC_weightsSEXP);
+    Rcpp::traits::input_parameter< int >::type num_iter(num_iterSEXP);
+    Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
+    Rcpp::traits::input_parameter< int >::type num_obs(num_obsSEXP);
+    Rcpp::traits::input_parameter< double >::type a_mu(a_muSEXP);
+    Rcpp::traits::input_parameter< double >::type a_tau(a_tauSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< double >::type mu_mu_mu(mu_mu_muSEXP);
+    Rcpp::traits::input_parameter< double >::type mu_mu_tau(mu_mu_tauSEXP);
+    Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< List >::type resids_mu(resids_muSEXP);
+    Rcpp::traits::input_parameter< List >::type resids_tau(resids_tauSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type z(zSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type test_data(test_dataSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type test_pihat(test_pihatSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type z_test(z_testSEXP);
+    Rcpp::traits::input_parameter< int >::type include_pi2(include_pi2SEXP);
+    Rcpp::traits::input_parameter< int >::type num_propscores(num_propscoresSEXP);
+    Rcpp::traits::input_parameter< int >::type num_test_obs(num_test_obsSEXP);
+    rcpp_result_gen = Rcpp::wrap(gibbs_sampler_no_update(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, burnin, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, resids_mu, resids_tau, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gibbs_sampler_no_update2
+List gibbs_sampler_no_update2(List overall_sum_trees_mu, List overall_sum_trees_tau, List overall_sum_mat_mu, List overall_sum_mat_tau, NumericVector y, NumericVector BIC_weights, int num_iter, int burnin, int num_obs, double a_mu, double a_tau, double sigma, double mu_mu_mu, double mu_mu_tau, double nu, double lambda, List resids_mu, List resids_tau, NumericVector z);
+RcppExport SEXP _bcfbma_gibbs_sampler_no_update2(SEXP overall_sum_trees_muSEXP, SEXP overall_sum_trees_tauSEXP, SEXP overall_sum_mat_muSEXP, SEXP overall_sum_mat_tauSEXP, SEXP ySEXP, SEXP BIC_weightsSEXP, SEXP num_iterSEXP, SEXP burninSEXP, SEXP num_obsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP sigmaSEXP, SEXP mu_mu_muSEXP, SEXP mu_mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP resids_muSEXP, SEXP resids_tauSEXP, SEXP zSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type overall_sum_trees_mu(overall_sum_trees_muSEXP);
+    Rcpp::traits::input_parameter< List >::type overall_sum_trees_tau(overall_sum_trees_tauSEXP);
+    Rcpp::traits::input_parameter< List >::type overall_sum_mat_mu(overall_sum_mat_muSEXP);
+    Rcpp::traits::input_parameter< List >::type overall_sum_mat_tau(overall_sum_mat_tauSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type BIC_weights(BIC_weightsSEXP);
+    Rcpp::traits::input_parameter< int >::type num_iter(num_iterSEXP);
+    Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
+    Rcpp::traits::input_parameter< int >::type num_obs(num_obsSEXP);
+    Rcpp::traits::input_parameter< double >::type a_mu(a_muSEXP);
+    Rcpp::traits::input_parameter< double >::type a_tau(a_tauSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< double >::type mu_mu_mu(mu_mu_muSEXP);
+    Rcpp::traits::input_parameter< double >::type mu_mu_tau(mu_mu_tauSEXP);
+    Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< List >::type resids_mu(resids_muSEXP);
+    Rcpp::traits::input_parameter< List >::type resids_tau(resids_tauSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type z(zSEXP);
+    rcpp_result_gen = Rcpp::wrap(gibbs_sampler_no_update2(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, burnin, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, resids_mu, resids_tau, z));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1524,9 +1625,13 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bcfbma_get_original_gs", (DL_FUNC) &_bcfbma_get_original_gs, 5},
     {"_bcfbma_find_internal_nodes_gs", (DL_FUNC) &_bcfbma_find_internal_nodes_gs, 1},
     {"_bcfbma_get_tree_info_test_data", (DL_FUNC) &_bcfbma_get_tree_info_test_data, 2},
+    {"_bcfbma_get_tree_info_test_data_tau", (DL_FUNC) &_bcfbma_get_tree_info_test_data_tau, 3},
     {"_bcfbma_get_tree_info_testdata_overall", (DL_FUNC) &_bcfbma_get_tree_info_testdata_overall, 3},
-    {"_bcfbma_gibbs_sampler", (DL_FUNC) &_bcfbma_gibbs_sampler, 15},
+    {"_bcfbma_get_tree_info_testdata_overall_tau", (DL_FUNC) &_bcfbma_get_tree_info_testdata_overall_tau, 4},
+    {"_bcfbma_gibbs_sampler", (DL_FUNC) &_bcfbma_gibbs_sampler, 25},
     {"_bcfbma_gibbs_sampler2", (DL_FUNC) &_bcfbma_gibbs_sampler2, 19},
+    {"_bcfbma_gibbs_sampler_no_update", (DL_FUNC) &_bcfbma_gibbs_sampler_no_update, 25},
+    {"_bcfbma_gibbs_sampler_no_update2", (DL_FUNC) &_bcfbma_gibbs_sampler_no_update2, 19},
     {NULL, NULL, 0}
 };
 

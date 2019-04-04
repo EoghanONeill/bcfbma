@@ -183,6 +183,8 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
     bcfBMA_call[[12]]<-bcfBMA_call[[12]][[length(bcfBMA_call[[12]])]]
     bcfBMA_call[[13]]<-bcfBMA_call[[13]][[length(bcfBMA_call[[13]])]]
     bcfBMA_call$test_data<-x.test
+    bcfBMA_call$test_pihat <- test_pihat
+    bcfBMA_call$test_z <- test_z
   }else{
     names(bcfBMA_call)<-c("fitted.values_outcome","fitted.values_mu","fitted.values_tau",
                           "sumoftrees_mu","sumoftrees_tau",
@@ -209,7 +211,8 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
   bcfBMA_call$numPSmethods<-ncol(pihat)
   bcfBMA_call$include_pi2<-include_pi2
   bcfBMA_call$z<-z
-  
+  bcfBMA_call$num_propscores <- ncol(pihat)
+  bcfBMA_call$nrowtest<-nrow(x.test)
   class(bcfBMA_call)<-"bcfBMA"
   bcfBMA_call
 }
