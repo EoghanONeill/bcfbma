@@ -7,6 +7,7 @@
 #' @param l_quant Lower quartile of the prediction interval.
 #' @param u_quant Upper quartile of the prediction interval.
 #' @param newdata Test data for which predictions are to be produced. Default = NULL. If NULL, then produces prediction intervals for training data if no test data was used in producing the bartBMA object, or produces prediction intervals for the original test data if test data was used in producing the bartBMA object.
+#' @param update_resids Option for whether to update the partial residuals in the gibbs sampler. If equal to 1, updates partial residuals, if equal to zero, does not update partial residuals. The defaullt setting is to update the partial residua;s.
 #' @export 
 #' @return The output is a list of length one. The one element in this list is a vector of prediction intervals???
 
@@ -99,7 +100,7 @@ pred_means_TE<-function(object,num_iter,burnin,l_quant,u_quant,newdata=NULL,upda
       sigma_chains<-gs_chains[[3]]
     } 
     }
-  sum_of_tree_BIC<- object$bic
+  sum_of_tree_BIC<- -0.5*object$bic
   weights<-exp(sum_of_tree_BIC-(max(sum_of_tree_BIC)+log(sum(exp(sum_of_tree_BIC-max(sum_of_tree_BIC))))))
   #final_length<-num_iter-burnin
   num_its_to_sample<-round(weights*(num_iter-burnin))
