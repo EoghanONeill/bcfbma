@@ -1038,7 +1038,7 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
         TE_test_list_orig[i]=post_test_TEs_orig;
 
       }else{
-        throw std::range_error("MU IS A list AND TAU IS A LIST");
+        //throw std::range_error("MU IS A list AND TAU IS A MATRIX");
         
         Rcpp::warning("s_mu IS A LIST AND s_tau IS A MATRIX");
         
@@ -1079,11 +1079,11 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
         NumericMatrix sum_new_TEs(num_obs,1);
         NumericMatrix sum_new_test_TEs(num_test_obs,1);
         
-        NumericVector predictions_mu0=resids_mu[i];
-        NumericVector predictions_mu=clone(predictions_mu0);
+        //NumericVector predictions_mu0=resids_mu[i];
+        //NumericVector predictions_mu=clone(predictions_mu0);
         NumericVector predictions_tau0=resids_tau[i];
         NumericVector predictions_tau=clone(predictions_tau0);
-        NumericMatrix tree_predictions_tau=overall_predictions_tau[i];
+        //NumericMatrix tree_predictions_tau=overall_predictions_tau[i];
         
         for(int j=0;j<num_iter;j++){
           for(int k =0;k<sum_tree_mu.size();k++){
@@ -1120,10 +1120,10 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
             
             if(j==0){
               NumericVector temp_resids1_tau= predictions_tau;
-              predictions_tau=temp_resids1_tau+sum_predictions_mu(_,1)-temp_preds_mu;
+              predictions_tau=temp_resids1_tau+sum_predictions_mu(_,k)-temp_preds_mu;
             }else{
               NumericVector temp_resids1_tau= predictions_tau;
-              predictions_tau=temp_resids1_tau+sum_new_predictions_mu(_,1)-temp_preds_mu;
+              predictions_tau=temp_resids1_tau+sum_new_predictions_mu(_,k)-temp_preds_mu;
             }
             sum_new_predictions_mu(_,k)=temp_preds_mu;
             
@@ -1151,25 +1151,25 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
           NumericVector temp_preds_tau=updated_preds_tau[1];
           NumericVector temp_preds_tau_z=z*temp_preds_tau;
           
-          sum_predictions_tau(_,1)=temp_preds_tau;
+          sum_predictions_tau(_,0)=temp_preds_tau;
           //NOW UPDATE PARTIAL RESIDUALS
           //TAU IS UNAFFECTED, BUT MU SHOULD BE AFFECTED
           for(int l=0;l<sum_tree_mu.size();l++){
             if(j==0){
               NumericVector temp_resids1_mu= sum_resids_mu[l];
-              sum_resids_mu[l]=temp_resids1_mu+z*sum_predictions_tau(_,1)-temp_preds_tau_z;
+              sum_resids_mu[l]=temp_resids1_mu+z*sum_predictions_tau(_,0)-temp_preds_tau_z;
             }else{
               NumericVector temp_resids1_mu= sum_resids_mu[l];
-              sum_resids_mu[l]=temp_resids1_mu+sum_new_predictions_tau(_,1)-temp_preds_tau_z;
+              sum_resids_mu[l]=temp_resids1_mu+sum_new_predictions_tau(_,0)-temp_preds_tau_z;
             }
           }
-          sum_new_predictions_tau(_,1)=temp_preds_tau_z;
-          sum_new_TEs(_,1)=temp_preds_tau;
+          sum_new_predictions_tau(_,0)=temp_preds_tau_z;
+          sum_new_TEs(_,0)=temp_preds_tau;
           
           //get updated predictions for the test data
           List updated_test_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_test_obs,term_nodes_tau,term_test_obs_tau_ALL);
           NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
-          sum_test_predictions_tau(_,1)=z_test*temp_test_preds_tau;
+          sum_test_predictions_tau(_,0)=z_test*temp_test_preds_tau;
           
           
           //get overall predictions for current iteration and current sum of trees
@@ -1286,22 +1286,22 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
           NumericVector new_node_var_mu=new_node_mean_var_mu[1];
           List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
           NumericVector temp_preds_mu=updated_preds_mu[1];
-          sum_predictions_mu(_,1)=temp_preds_mu;
+          sum_predictions_mu(_,0)=temp_preds_mu;
           //NOW UPDATE PARTIAL RESIDUALS
           //MU IS UNAFFECTED, BUT TAU SHOULD BE AFFECTED
           if(j==0){
             NumericVector temp_resids1_tau= predictions_tau;
-            predictions_tau=temp_resids1_tau+sum_predictions_mu(_,1)-temp_preds_mu;
+            predictions_tau=temp_resids1_tau+sum_predictions_mu(_,0)-temp_preds_mu;
           }else{
             NumericVector temp_resids1_tau= predictions_tau;
-            predictions_tau=temp_resids1_tau+sum_new_predictions_mu(_,1)-temp_preds_mu;
+            predictions_tau=temp_resids1_tau+sum_new_predictions_mu(_,0)-temp_preds_mu;
           }
-          sum_new_predictions_mu(_,1)=temp_preds_mu;
+          sum_new_predictions_mu(_,0)=temp_preds_mu;
 
           //get updated predictions for the test data
           List updated_test_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_test_obs,term_nodes_mu,term_test_obs_mu);
           NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
-          sum_test_predictions_mu(_,1)=temp_test_preds_mu;
+          sum_test_predictions_mu(_,0)=temp_test_preds_mu;
           
           
           NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
@@ -1322,24 +1322,24 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
           NumericVector temp_preds_tau=updated_preds_tau[1];
           NumericVector temp_preds_tau_z=z*temp_preds_tau;
           
-          sum_predictions_tau(_,1)=temp_preds_tau;
+          sum_predictions_tau(_,0)=temp_preds_tau;
           //NOW UPDATE PARTIAL RESIDUALS
           //TAU IS UNAFFECTED, BUT MU SHOULD BE AFFECTED
           if(j==0){
             NumericVector temp_resids1_mu= predictions_mu;
-            predictions_mu=temp_resids1_mu+z*sum_predictions_tau(_,1)-temp_preds_tau_z;
+            predictions_mu=temp_resids1_mu+z*sum_predictions_tau(_,0)-temp_preds_tau_z;
           }else{
             NumericVector temp_resids1_mu= predictions_mu;
-            predictions_mu=temp_resids1_mu+sum_new_predictions_tau(_,1)-temp_preds_tau_z;
+            predictions_mu=temp_resids1_mu+sum_new_predictions_tau(_,0)-temp_preds_tau_z;
           }
-          sum_new_predictions_tau(_,1)=temp_preds_tau_z;
-          sum_new_TEs(_,1)=temp_preds_tau;
+          sum_new_predictions_tau(_,0)=temp_preds_tau_z;
+          sum_new_TEs(_,0)=temp_preds_tau;
           
           //get updated predictions for the test data
           List updated_test_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_test_obs,term_nodes_tau,term_test_obs_tau_ALL);
           NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
-          //sum_test_predictions_tau(_,1)=z_test*temp_test_preds_tau;
-          sum_new_test_TEs(_,1)=temp_test_preds_tau;
+          //sum_test_predictions_tau(_,0)=z_test*temp_test_preds_tau;
+          sum_new_test_TEs(_,0)=temp_test_preds_tau;
           
           
           // Rcout << "Line 1200. \n";
@@ -1707,7 +1707,7 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
       // Rcout << "Line 1152. \n";
       
     }else{
-      throw std::range_error("MU IS A list AND TAU IS A LIST");
+      //throw std::range_error("MU IS A list AND TAU IS A MATRIX");
       
       Rcpp::warning("s_mu IS A LIST AND s_tau IS A MATRIX");
       
@@ -1748,11 +1748,11 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
       NumericMatrix sum_new_TEs(num_obs,1);
       //NumericMatrix sum_new_test_TEs(num_test_obs,1);
       
-      NumericVector predictions_mu0=resids_mu[i];
-      NumericVector predictions_mu=clone(predictions_mu0);
+      //NumericVector predictions_mu0=resids_mu[i];
+      //NumericVector predictions_mu=clone(predictions_mu0);
       NumericVector predictions_tau0=resids_tau[i];
       NumericVector predictions_tau=clone(predictions_tau0);
-      NumericMatrix tree_predictions_tau=overall_predictions_tau[i];
+      //NumericMatrix tree_predictions_tau=overall_predictions_tau[i];
       
       for(int j=0;j<num_iter;j++){
         for(int k =0;k<sum_tree_mu.size();k++){
@@ -1789,17 +1789,17 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
         
         if(j==0){
           NumericVector temp_resids1_tau= predictions_tau;
-          predictions_tau=temp_resids1_tau+sum_predictions_mu(_,1)-temp_preds_mu;
+          predictions_tau=temp_resids1_tau+sum_predictions_mu(_,k)-temp_preds_mu;
         }else{
           NumericVector temp_resids1_tau= predictions_tau;
-          predictions_tau=temp_resids1_tau+sum_new_predictions_mu(_,1)-temp_preds_mu;
+          predictions_tau=temp_resids1_tau+sum_new_predictions_mu(_,k)-temp_preds_mu;
         }
         sum_new_predictions_mu(_,k)=temp_preds_mu;
 
         //get updated predictions for the test data
         //List updated_test_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_test_obs,term_nodes_mu,term_test_obs_mu);
         //NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
-        //sum_test_predictions_mu(_,1)=z*temp_test_preds_mu;
+        //sum_test_predictions_mu(_,k)=z*temp_test_preds_mu;
         }
         
         NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
@@ -1820,25 +1820,25 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
         NumericVector temp_preds_tau=updated_preds_tau[1];
         NumericVector temp_preds_tau_z=z*temp_preds_tau;
         
-        sum_predictions_tau(_,1)=temp_preds_tau;
+        sum_predictions_tau(_,0)=temp_preds_tau;
         //NOW UPDATE PARTIAL RESIDUALS
         //TAU IS UNAFFECTED, BUT MU SHOULD BE AFFECTED
         for(int l=0;l<sum_tree_mu.size();l++){
           if(j==0){
             NumericVector temp_resids1_mu= sum_resids_mu[l];
-            sum_resids_mu[l]=temp_resids1_mu+z*sum_predictions_tau(_,1)-temp_preds_tau_z;
+            sum_resids_mu[l]=temp_resids1_mu+z*sum_predictions_tau(_,0)-temp_preds_tau_z;
           }else{
             NumericVector temp_resids1_mu= sum_resids_mu[l];
-            sum_resids_mu[l]=temp_resids1_mu+sum_new_predictions_tau(_,1)-temp_preds_tau_z;
+            sum_resids_mu[l]=temp_resids1_mu+sum_new_predictions_tau(_,0)-temp_preds_tau_z;
           }
         }
-        sum_new_predictions_tau(_,1)=temp_preds_tau_z;
-        sum_new_TEs(_,1)=temp_preds_tau;
+        sum_new_predictions_tau(_,0)=temp_preds_tau_z;
+        sum_new_TEs(_,0)=temp_preds_tau;
         
         //get updated predictions for the test data
         //List updated_test_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_test_obs,term_nodes_tau,term_test_obs_tau);
         //NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
-        //sum_test_predictions_tau(_,1)=temp_test_preds_tau;
+        //sum_test_predictions_tau(_,0)=temp_test_preds_tau;
         
         
         //get overall predictions for current iteration and current sum of trees
@@ -1958,24 +1958,24 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
           NumericVector new_node_var_mu=new_node_mean_var_mu[1];
           List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
           NumericVector temp_preds_mu=updated_preds_mu[1];
-          sum_predictions_mu(_,1)=temp_preds_mu;
+          sum_predictions_mu(_,0)=temp_preds_mu;
           //NOW UPDATE PARTIAL RESIDUALS
           //MU IS UNAFFECTED, BUT TAU SHOULD BE AFFECTED
           if(j==0){
             NumericVector temp_resids1_tau= predictions_tau;
-            predictions_tau=temp_resids1_tau+sum_predictions_mu(_,1)-temp_preds_mu;
+            predictions_tau=temp_resids1_tau+sum_predictions_mu(_,0)-temp_preds_mu;
           }else{
             NumericVector temp_resids1_tau= predictions_tau;
-            predictions_tau=temp_resids1_tau+sum_new_predictions_mu(_,1)-temp_preds_mu;
+            predictions_tau=temp_resids1_tau+sum_new_predictions_mu(_,0)-temp_preds_mu;
           }
-          sum_new_predictions_mu(_,1)=temp_preds_mu;
+          sum_new_predictions_mu(_,0)=temp_preds_mu;
           // Rcout << "Line 1155. \n";
 
           //get updated predictions for the test data
           //List updated_test_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_test_obs,term_nodes_mu,term_test_obs_mu);
           //NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
-          //sum_test_predictions_mu(_,1)=z*temp_test_preds_mu;
-          //sum_new_test_TEs(_,1)=temp_test_preds_tau;
+          //sum_test_predictions_mu(_,0)=z*temp_test_preds_mu;
+          //sum_new_test_TEs(_,0)=temp_test_preds_tau;
 
 
           NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
@@ -1996,23 +1996,23 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
           NumericVector temp_preds_tau=updated_preds_tau[1];
           NumericVector temp_preds_tau_z=z*temp_preds_tau;
 
-          sum_predictions_tau(_,1)=temp_preds_tau;
+          sum_predictions_tau(_,0)=temp_preds_tau;
           //NOW UPDATE PARTIAL RESIDUALS
           //TAU IS UNAFFECTED, BUT MU SHOULD BE AFFECTED
           if(j==0){
             NumericVector temp_resids1_mu= predictions_mu;
-            predictions_mu=temp_resids1_mu+z*sum_predictions_tau(_,1)-temp_preds_tau_z;
+            predictions_mu=temp_resids1_mu+z*sum_predictions_tau(_,0)-temp_preds_tau_z;
           }else{
             NumericVector temp_resids1_mu= predictions_mu;
-            predictions_mu=temp_resids1_mu+sum_new_predictions_tau(_,1)-temp_preds_tau_z;
+            predictions_mu=temp_resids1_mu+sum_new_predictions_tau(_,0)-temp_preds_tau_z;
           }
-          sum_new_predictions_tau(_,1)=temp_preds_tau_z;
-          sum_new_TEs(_,1)=temp_preds_tau;
+          sum_new_predictions_tau(_,0)=temp_preds_tau_z;
+          sum_new_TEs(_,0)=temp_preds_tau;
 
           //get updated predictions for the test data
           //List updated_test_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_test_obs,term_nodes_tau,term_test_obs_tau);
           //NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
-          //sum_test_predictions_tau(_,1)=temp_test_preds_tau;
+          //sum_test_predictions_tau(_,0)=temp_test_preds_tau;
 
 
           // Rcout << "Line 1200. \n";
@@ -2391,7 +2391,7 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
         TE_test_list_orig[i]=post_test_TEs_orig;
         
       }else{
-        throw std::range_error("MU IS A list AND TAU IS A LIST");
+        //throw std::range_error("MU IS A list AND TAU IS A MATRIX");
         
         Rcpp::warning("s_mu IS A LIST AND s_tau IS A MATRIX");
         
@@ -2432,11 +2432,11 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
         NumericMatrix sum_new_TEs(num_obs,1);
         NumericMatrix sum_new_test_TEs(num_test_obs,1);
         
-        NumericVector predictions_mu0=resids_mu[i];
-        NumericVector predictions_mu=clone(predictions_mu0);
+        //NumericVector predictions_mu0=resids_mu[i];
+        //NumericVector predictions_mu=clone(predictions_mu0);
         NumericVector predictions_tau0=resids_tau[i];
         NumericVector predictions_tau=clone(predictions_tau0);
-        NumericMatrix tree_predictions_tau=overall_predictions_tau[i];
+        //NumericMatrix tree_predictions_tau=overall_predictions_tau[i];
         
         for(int j=0;j<num_iter;j++){
           for(int k =0;k<sum_tree_mu.size();k++){
@@ -2473,10 +2473,10 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
             // 
             // if(j==0){
             //   NumericVector temp_resids1_tau= predictions_tau;
-            //   predictions_tau=temp_resids1_tau+sum_predictions_mu(_,1)-temp_preds_mu;
+            //   predictions_tau=temp_resids1_tau+sum_predictions_mu(_,k)-temp_preds_mu;
             // }else{
             //   NumericVector temp_resids1_tau= predictions_tau;
-            //   predictions_tau=temp_resids1_tau+sum_new_predictions_mu(_,1)-temp_preds_mu;
+            //   predictions_tau=temp_resids1_tau+sum_new_predictions_mu(_,k)-temp_preds_mu;
             // }
             sum_new_predictions_mu(_,k)=temp_preds_mu;
             
@@ -2504,25 +2504,25 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
           NumericVector temp_preds_tau=updated_preds_tau[1];
           NumericVector temp_preds_tau_z=z*temp_preds_tau;
           
-          sum_predictions_tau(_,1)=temp_preds_tau;
+          sum_predictions_tau(_,0)=temp_preds_tau;
           //NOW UPDATE PARTIAL RESIDUALS
           //TAU IS UNAFFECTED, BUT MU SHOULD BE AFFECTED
           // for(int l=0;l<sum_tree_mu.size();l++){
           //   if(j==0){
           //     NumericVector temp_resids1_mu= sum_resids_mu[l];
-          //     sum_resids_mu[l]=temp_resids1_mu+z*sum_predictions_tau(_,1)-temp_preds_tau_z;
+          //     sum_resids_mu[l]=temp_resids1_mu+z*sum_predictions_tau(_,0)-temp_preds_tau_z;
           //   }else{
           //     NumericVector temp_resids1_mu= sum_resids_mu[l];
-          //     sum_resids_mu[l]=temp_resids1_mu+sum_new_predictions_tau(_,1)-temp_preds_tau_z;
+          //     sum_resids_mu[l]=temp_resids1_mu+sum_new_predictions_tau(_,0)-temp_preds_tau_z;
           //   }
           // }
-          sum_new_predictions_tau(_,1)=temp_preds_tau_z;
-          sum_new_TEs(_,1)=temp_preds_tau;
+          sum_new_predictions_tau(_,0)=temp_preds_tau_z;
+          sum_new_TEs(_,0)=temp_preds_tau;
           
           //get updated predictions for the test data
           List updated_test_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_test_obs,term_nodes_tau,term_test_obs_tau_ALL);
           NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
-          sum_test_predictions_tau(_,1)=z_test*temp_test_preds_tau;
+          sum_test_predictions_tau(_,0)=z_test*temp_test_preds_tau;
           
           
           //get overall predictions for current iteration and current sum of trees
@@ -2639,22 +2639,22 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
           NumericVector new_node_var_mu=new_node_mean_var_mu[1];
           List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
           NumericVector temp_preds_mu=updated_preds_mu[1];
-          sum_predictions_mu(_,1)=temp_preds_mu;
+          sum_predictions_mu(_,0)=temp_preds_mu;
           //NOW UPDATE PARTIAL RESIDUALS
           //MU IS UNAFFECTED, BUT TAU SHOULD BE AFFECTED
           // if(j==0){
           //   NumericVector temp_resids1_tau= predictions_tau;
-          //   predictions_tau=temp_resids1_tau+sum_predictions_mu(_,1)-temp_preds_mu;
+          //   predictions_tau=temp_resids1_tau+sum_predictions_mu(_,0)-temp_preds_mu;
           // }else{
           //   NumericVector temp_resids1_tau= predictions_tau;
-          //   predictions_tau=temp_resids1_tau+sum_new_predictions_mu(_,1)-temp_preds_mu;
+          //   predictions_tau=temp_resids1_tau+sum_new_predictions_mu(_,0)-temp_preds_mu;
           // }
-          sum_new_predictions_mu(_,1)=temp_preds_mu;
+          sum_new_predictions_mu(_,0)=temp_preds_mu;
           
           //get updated predictions for the test data
           List updated_test_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_test_obs,term_nodes_mu,term_test_obs_mu);
           NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
-          sum_test_predictions_mu(_,1)=temp_test_preds_mu;
+          sum_test_predictions_mu(_,0)=temp_test_preds_mu;
           
           
           NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
@@ -2675,24 +2675,24 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
           NumericVector temp_preds_tau=updated_preds_tau[1];
           NumericVector temp_preds_tau_z=z*temp_preds_tau;
           
-          sum_predictions_tau(_,1)=temp_preds_tau;
+          sum_predictions_tau(_,0)=temp_preds_tau;
           //NOW UPDATE PARTIAL RESIDUALS
           //TAU IS UNAFFECTED, BUT MU SHOULD BE AFFECTED
           // if(j==0){
           //   NumericVector temp_resids1_mu= predictions_mu;
-          //   predictions_mu=temp_resids1_mu+z*sum_predictions_tau(_,1)-temp_preds_tau_z;
+          //   predictions_mu=temp_resids1_mu+z*sum_predictions_tau(_,0)-temp_preds_tau_z;
           // }else{
           //   NumericVector temp_resids1_mu= predictions_mu;
-          //   predictions_mu=temp_resids1_mu+sum_new_predictions_tau(_,1)-temp_preds_tau_z;
+          //   predictions_mu=temp_resids1_mu+sum_new_predictions_tau(_,0)-temp_preds_tau_z;
           // }
-          sum_new_predictions_tau(_,1)=temp_preds_tau_z;
-          sum_new_TEs(_,1)=temp_preds_tau;
+          sum_new_predictions_tau(_,0)=temp_preds_tau_z;
+          sum_new_TEs(_,0)=temp_preds_tau;
           
           //get updated predictions for the test data
           List updated_test_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_test_obs,term_nodes_tau,term_test_obs_tau_ALL);
           NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
-          //sum_test_predictions_tau(_,1)=z_test*temp_test_preds_tau;
-          sum_new_test_TEs(_,1)=temp_test_preds_tau;
+          //sum_test_predictions_tau(_,0)=z_test*temp_test_preds_tau;
+          sum_new_test_TEs(_,0)=temp_test_preds_tau;
           
           
           // Rcout << "Line 1200. \n";
@@ -3060,11 +3060,11 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
         // Rcout << "Line 1152. \n";
         
       }else{
-        throw std::range_error("MU IS A list AND TAU IS A LIST");
+        //throw std::range_error("MU IS A list AND TAU IS A LIST");
         
         Rcpp::warning("s_mu IS A LIST AND s_tau IS A MATRIX");
         
-        
+
         //if current set of trees contains more than one tree
         List sum_tree_mu=overall_sum_trees1_mu[i];
         //List sum_tree_mat_mu=overall_sum_mat1_mu[i];
@@ -3079,7 +3079,6 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
         NumericMatrix sum_new_predictions_mu(sum_predictions_mu.nrow(),sum_predictions_mu.ncol());
         //NumericMatrix sum_new_test_predictions_mu(sum_predictions_mu.nrow(),sum_predictions_mu.ncol());
         //NumericMatrix sum_test_predictions_mu ??????????;
-        
         NumericVector sigma_its(num_iter);
         NumericMatrix post_predictions(num_iter,num_obs);
         NumericMatrix post_predictions_PI(num_iter,num_obs);
@@ -3091,7 +3090,7 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
         //NumericMatrix post_test_TEs(num_iter,num_test_obs);
         NumericMatrix post_TEs_orig(num_iter,num_obs);
         //NumericMatrix post_test_TEs_orig(num_iter,num_test_obs);
-        
+
         NumericMatrix sum_predictions_tau(num_obs,1);
         //NumericMatrix sum_test_predictions_tau(num_test_obs,1);
         
@@ -3101,12 +3100,12 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
         NumericMatrix sum_new_TEs(num_obs,1);
         //NumericMatrix sum_new_test_TEs(num_test_obs,1);
         
-        NumericVector predictions_mu0=resids_mu[i];
-        NumericVector predictions_mu=clone(predictions_mu0);
+        //NumericVector predictions_mu0=resids_mu[i];
+        //NumericVector predictions_mu=clone(predictions_mu0);
         NumericVector predictions_tau0=resids_tau[i];
         NumericVector predictions_tau=clone(predictions_tau0);
-        NumericMatrix tree_predictions_tau=overall_predictions_tau[i];
-        
+        //NumericVector tree_predictions_tau=overall_predictions_tau[i];
+
         for(int j=0;j<num_iter;j++){
           for(int k =0;k<sum_tree_mu.size();k++){
             
@@ -3119,14 +3118,13 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
             //  List term_test_obs=sum_term_test_obs[k];
             NumericVector predictions_mu=sum_resids_mu[k];
             //current predictions are the residuals for sum of trees!
-            
             //update the means and predictions for tree
             List new_node_mean_var_mu=update_Gibbs_mean_var(tree_table_mu,predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
             NumericVector new_node_mean_mu=get_new_mean(term_nodes_mu,new_node_mean_var_mu);
             NumericVector new_node_var_mu=new_node_mean_var_mu[1];
             List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
             NumericVector temp_preds_mu=updated_preds_mu[1];
-            
+
             //NOW UPDATE PARTIAL RESIDUALS
             // for(int l=0;l<sum_tree_mu.size();l++){
             //   if(l!=k){
@@ -3142,17 +3140,17 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
             // 
             // if(j==0){
             //   NumericVector temp_resids1_tau= predictions_tau;
-            //   predictions_tau=temp_resids1_tau+sum_predictions_mu(_,1)-temp_preds_mu;
+            //   predictions_tau=temp_resids1_tau+sum_predictions_mu(_,0)-temp_preds_mu;
             // }else{
             //   NumericVector temp_resids1_tau= predictions_tau;
-            //   predictions_tau=temp_resids1_tau+sum_new_predictions_mu(_,1)-temp_preds_mu;
+            //   predictions_tau=temp_resids1_tau+sum_new_predictions_mu(_,0)-temp_preds_mu;
             // }
             sum_new_predictions_mu(_,k)=temp_preds_mu;
             
             //get updated predictions for the test data
             //List updated_test_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_test_obs,term_nodes_mu,term_test_obs_mu);
             //NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
-            //sum_test_predictions_mu(_,1)=z*temp_test_preds_mu;
+            //sum_test_predictions_mu(_,0)=z*temp_test_preds_mu;
           }
           
           NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
@@ -3173,27 +3171,27 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
           NumericVector temp_preds_tau=updated_preds_tau[1];
           NumericVector temp_preds_tau_z=z*temp_preds_tau;
           
-          sum_predictions_tau(_,1)=temp_preds_tau;
+          sum_predictions_tau(_,0)=temp_preds_tau;
           //NOW UPDATE PARTIAL RESIDUALS
           //TAU IS UNAFFECTED, BUT MU SHOULD BE AFFECTED
           // for(int l=0;l<sum_tree_mu.size();l++){
           //   if(j==0){
           //     NumericVector temp_resids1_mu= sum_resids_mu[l];
-          //     sum_resids_mu[l]=temp_resids1_mu+z*sum_predictions_tau(_,1)-temp_preds_tau_z;
+          //     sum_resids_mu[l]=temp_resids1_mu+z*sum_predictions_tau(_,0)-temp_preds_tau_z;
           //   }else{
           //     NumericVector temp_resids1_mu= sum_resids_mu[l];
-          //     sum_resids_mu[l]=temp_resids1_mu+sum_new_predictions_tau(_,1)-temp_preds_tau_z;
+          //     sum_resids_mu[l]=temp_resids1_mu+sum_new_predictions_tau(_,0)-temp_preds_tau_z;
           //   }
           // }
-          sum_new_predictions_tau(_,1)=temp_preds_tau_z;
-          sum_new_TEs(_,1)=temp_preds_tau;
+          sum_new_predictions_tau(_,0)=temp_preds_tau_z;
+          sum_new_TEs(_,0)=temp_preds_tau;
           
           //get updated predictions for the test data
           //List updated_test_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_test_obs,term_nodes_tau,term_test_obs_tau);
           //NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
-          //sum_test_predictions_tau(_,1)=temp_test_preds_tau;
+          //sum_test_predictions_tau(_,0)=temp_test_preds_tau;
           
-          
+
           //get overall predictions for current iteration and current sum of trees
           NumericVector pred_obs_mu=calc_rowsums(sum_new_predictions_mu);
           NumericVector pred_obs_tau=temp_preds_tau;
@@ -3204,7 +3202,7 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
           
           post_predictions(j,_)=pred_obs;
           post_TEs(j,_)=temp_preds_tau;
-          
+
           //post_test_predictions(j,_)=pred_test_obs;
           //post_test_TEs(j,_)=temp_test_preds_tau;
           
@@ -3223,7 +3221,7 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
           //NumericVector original_test_TEs=get_original_gs(min(y),max(y),-0.5,0.5,temp_test_preds_tau);
           //post_test_TEs_orig(j,_)=original_TEs;
           
-          
+
           //prediction interval for training
           for(int g=0;g<pred_obs.size();g++){
             post_predictions_PI(j,g)=R::rnorm(pred_obs[g],sigma2);
@@ -3231,7 +3229,7 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
           
           NumericVector original_y_PI=get_original_gs(min(y),max(y),-0.5,0.5,post_predictions_PI(j,_));
           post_predictions_orig_PI(j,_)=original_y_PI;
-          
+
         }
         
         // Rcout << "Line 1243. \n";
@@ -3311,24 +3309,24 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
           NumericVector new_node_var_mu=new_node_mean_var_mu[1];
           List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
           NumericVector temp_preds_mu=updated_preds_mu[1];
-          sum_predictions_mu(_,1)=temp_preds_mu;
+          sum_predictions_mu(_,0)=temp_preds_mu;
           //NOW UPDATE PARTIAL RESIDUALS
           //MU IS UNAFFECTED, BUT TAU SHOULD BE AFFECTED
           // if(j==0){
           //   NumericVector temp_resids1_tau= predictions_tau;
-          //   predictions_tau=temp_resids1_tau+sum_predictions_mu(_,1)-temp_preds_mu;
+          //   predictions_tau=temp_resids1_tau+sum_predictions_mu(_,0)-temp_preds_mu;
           // }else{
           //   NumericVector temp_resids1_tau= predictions_tau;
-          //   predictions_tau=temp_resids1_tau+sum_new_predictions_mu(_,1)-temp_preds_mu;
+          //   predictions_tau=temp_resids1_tau+sum_new_predictions_mu(_,0)-temp_preds_mu;
           // }
-          sum_new_predictions_mu(_,1)=temp_preds_mu;
+          sum_new_predictions_mu(_,0)=temp_preds_mu;
           // Rcout << "Line 1155. \n";
           
           //get updated predictions for the test data
           //List updated_test_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_test_obs,term_nodes_mu,term_test_obs_mu);
           //NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
-          //sum_test_predictions_mu(_,1)=z*temp_test_preds_mu;
-          //sum_new_test_TEs(_,1)=temp_test_preds_tau;
+          //sum_test_predictions_mu(_,0)=z*temp_test_preds_mu;
+          //sum_new_test_TEs(_,0)=temp_test_preds_tau;
           
           
           NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
@@ -3349,23 +3347,23 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
           NumericVector temp_preds_tau=updated_preds_tau[1];
           NumericVector temp_preds_tau_z=z*temp_preds_tau;
           
-          sum_predictions_tau(_,1)=temp_preds_tau;
+          sum_predictions_tau(_,0)=temp_preds_tau;
           //NOW UPDATE PARTIAL RESIDUALS
           //TAU IS UNAFFECTED, BUT MU SHOULD BE AFFECTED
           // if(j==0){
           //   NumericVector temp_resids1_mu= predictions_mu;
-          //   predictions_mu=temp_resids1_mu+z*sum_predictions_tau(_,1)-temp_preds_tau_z;
+          //   predictions_mu=temp_resids1_mu+z*sum_predictions_tau(_,0)-temp_preds_tau_z;
           // }else{
           //   NumericVector temp_resids1_mu= predictions_mu;
-          //   predictions_mu=temp_resids1_mu+sum_new_predictions_tau(_,1)-temp_preds_tau_z;
+          //   predictions_mu=temp_resids1_mu+sum_new_predictions_tau(_,0)-temp_preds_tau_z;
           // }
-          sum_new_predictions_tau(_,1)=temp_preds_tau_z;
-          sum_new_TEs(_,1)=temp_preds_tau;
+          sum_new_predictions_tau(_,0)=temp_preds_tau_z;
+          sum_new_TEs(_,0)=temp_preds_tau;
           
           //get updated predictions for the test data
           //List updated_test_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_test_obs,term_nodes_tau,term_test_obs_tau);
           //NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
-          //sum_test_predictions_tau(_,1)=temp_test_preds_tau;
+          //sum_test_predictions_tau(_,0)=temp_test_preds_tau;
           
           
           // Rcout << "Line 1200. \n";
