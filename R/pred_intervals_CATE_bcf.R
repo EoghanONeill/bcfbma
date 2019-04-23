@@ -123,7 +123,7 @@ pred_intervals_CATE_bcf <-function(object,num_iter,burnin,l_quant,u_quant,newdat
   PI<-apply(final_yorig_chain,2,function(x)quantile(x,probs=c(l_quant,0.5,u_quant)))
   meanpreds<-apply(final_yorig_chain,2,mean)
   
-  
+  z_train2 <- object$z
   CATEs_across_iterations <- apply(final_yorig_chain,1,mean)
   CATE_est <- mean(CATEs_across_iterations)
   CATE_PI<-as.matrix(quantile(CATEs_across_iterations,probs=c(l_quant,0.5,u_quant)))
@@ -131,20 +131,20 @@ pred_intervals_CATE_bcf <-function(object,num_iter,burnin,l_quant,u_quant,newdat
   PATE_var<- mean(apply(final_yorig_chain,1:2,function(x){(x-CATE_est)^2}))
   PATE_PI <- as.matrix(c(CATE_est + qnorm(l_quant)*sqrt(PATE_var),CATE_est ,  CATE_est + qnorm(u_quant)*sqrt(PATE_var) ))
   
-  CATTs_across_iterations <- apply(final_yorig_chain[,z_train],1,mean)
+  CATTs_across_iterations <- apply(final_yorig_chain[,z_train2],1,mean)
   CATT_est <- mean(CATTs_across_iterations)
   CATT_PI<-as.matrix(quantile(CATTs_across_iterations,probs=c(l_quant,0.5,u_quant)))
   
-  PATT_var<- mean(apply(final_yorig_chain[,z_train],1:2,function(x){(x-CATT_est)^2}))
+  PATT_var<- mean(apply(final_yorig_chain[,z_train2],1:2,function(x){(x-CATT_est)^2}))
   PATT_PI <- as.matrix(c(CATT_est + qnorm(l_quant)*sqrt(PATT_var),CATT_est ,  CATT_est + qnorm(u_quant)*sqrt(PATT_var) ))
   
   
   
-  CATNTs_across_iterations <- apply(final_yorig_chain[,1-z_train],1,mean)
+  CATNTs_across_iterations <- apply(final_yorig_chain[,1-z_train2],1,mean)
   CATNT_est <- mean(CATNTs_across_iterations)
   CATNT_PI<-as.matrix(quantile(CATNTs_across_iterations,probs=c(l_quant,0.5,u_quant)))
   
-  PATNT_var<- mean(apply(final_yorig_chain[,1-z_train],1:2,function(x){(x-CATNT_est)^2}))
+  PATNT_var<- mean(apply(final_yorig_chain[,1-z_train2],1:2,function(x){(x-CATNT_est)^2}))
   PATNT_PI <- as.matrix(c(CATNT_est + qnorm(l_quant)*sqrt(PATNT_var),CATNT_est ,  CATNT_est + qnorm(u_quant)*sqrt(PATNT_var) ))
   
   
