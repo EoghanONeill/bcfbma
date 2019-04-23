@@ -160,10 +160,7 @@ pred_intervals_CATE_bcf <-function(object,num_iter,burnin,l_quant,u_quant,newdat
   ret$PATE_PI <- PATE_PI
   ret$PATT_PI <- PATT_PI
   ret$PATNT_PI <- PATNT_PI
-  ret$fitted.values <- trained_bart_BMA$fitted.values
-  
-  ret$PIPs <- varIncProb(trained_bart_BMA)
-  
+
 
   class(ret)<-"CATE_intervals.bcfBMA"  
   ret
