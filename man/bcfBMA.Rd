@@ -70,6 +70,10 @@ bcfBMA(x, ...)
 \item{zero_split}{Binary variable. If equals 1, then zero split trees can be included in a sum-of-trees model. If equals zero, then only trees with at least one split can be included in a sum-of-trees model.}
 
 \item{only_max_num_trees}{Binary variable. If equals 1, then only sum-of-trees models containing the maximum number of trees, num_rounds, are selected. If equals 0, then sum-of-trees models containing less than num_rounds trees can be selected. The default is only_max_num_trees=1.}
+
+\item{mu_or_tau_each_round}{Binary variable. If equals 1, then a mu tree or a tau tree is added in each round. If equals 0, then a mu tree is added, followed by a tau tree, followed by a mu tree, and so on.}
+
+\item{separate_tree_numbers}{Binary variable (irrelevant if mu_or_tau_each_round not equal to 1). If equals 1, and mu_or_tau_each_round equals 1, then num_splits_mu and num_splits_tau are the maximum numbers of mu and tau trees in the model. If equals zero, and mu_or_tau_each_round equals 1, then num_splits_mu + num_splits_tau is the maximum total number of trees, but there are not separate limits to the number of mu and tau trees.}
 }
 \value{
 The following objects are returned by bcfbma:

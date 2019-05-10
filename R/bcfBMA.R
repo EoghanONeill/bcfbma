@@ -35,6 +35,8 @@
 #' @param include_pi Takes values "control", "moderate", "both" or "none". Whether to include pihat in mu(x) ("control"), tau(x) ("moderate"), both or none. Values of "control" or "both" are HIGHLY recommended with observational data.
 #' @param zero_split Binary variable. If equals 1, then zero split trees can be included in a sum-of-trees model. If equals zero, then only trees with at least one split can be included in a sum-of-trees model.
 #' @param only_max_num_trees Binary variable. If equals 1, then only sum-of-trees models containing the maximum number of trees, num_rounds, are selected. If equals 0, then sum-of-trees models containing less than num_rounds trees can be selected. The default is only_max_num_trees=1.
+#' @param mu_or_tau_each_round Binary variable. If equals 1, then a mu tree or a tau tree is added in each round. If equals 0, then a mu tree is added, followed by a tau tree, followed by a mu tree, and so on.
+#' @param separate_tree_numbers Binary variable (irrelevant if mu_or_tau_each_round not equal to 1). If equals 1, and mu_or_tau_each_round equals 1, then num_splits_mu and num_splits_tau are the maximum numbers of mu and tau trees in the model. If equals zero, and mu_or_tau_each_round equals 1, then num_splits_mu + num_splits_tau is the maximum total number of trees, but there are not separate limits to the number of mu and tau trees. 
 #' @export 
 #' @return The following objects are returned by bcfbma:
 #' \item{fitted.values_outcome}{The vector of predictions of the outcome for all training observations.} 
@@ -71,7 +73,7 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                           ntree_control=5,ntree_moderate=5,
                           alpha_mu=0.95,alpha_tau=0.95,beta_mu=1,beta_tau=1,split_rule_node=0,
                           gridpoint=0,maxOWsize=100, num_splits_mu =5, num_splits_tau =5, gridsize_mu=10, gridsize_tau=10,
-                          include_pi= "control", zero_split=1, only_max_num_trees=1){
+                          include_pi= "control", zero_split=1, only_max_num_trees=1, mu_or_tau_each_round=1,separate_tree_numbers=1){
   binary=FALSE
   start_mean=0
   start_sd=1
@@ -163,6 +165,18 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
   if(num_cp_mu<0 || num_cp_mu>100)stop("Value of num_cp_mu should be a value between 1 and 100."); 
   if(num_cp_tau<0 || num_cp_tau>100)stop("Value of num_cp_tau should be a value between 1 and 100."); 
   
+  
+  if(mu_or_tau_each_round==1){
+  bcfBMA_call=BCF_BMA_sumLikelihood_add_mu_or_tau(x.train,y.train,z,pihat,
+                                                  a_mu,a_tau,mu_mu,mu_tau,
+                                                  nu,lambda,c,sigma_mu_mu,sigma_mu_tau,
+                                                  pen_mu,pen_tau,num_cp_mu,num_cp_tau,
+                                                  x.test,test_z,test_pihat,ntree_control,ntree_moderate,
+                                                  alpha_mu,alpha_tau,beta_mu,beta_tau,
+                                                  split_rule_node,gridpoint,maxOWsize,
+                                                  num_splits_mu,num_splits_tau,gridsize_mu, gridsize_tau,
+                                                  include_pi2,zero_split,only_max_num_trees,separate_tree_numbers)
+  }else{
   bcfBMA_call=BCF_BMA_sumLikelihood(x.train,y.train,z,pihat,
                                     a_mu,a_tau,mu_mu,mu_tau,
                                     nu,lambda,c,sigma_mu_mu,sigma_mu_tau,
@@ -172,6 +186,8 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                                     split_rule_node,gridpoint,maxOWsize,
                                     num_splits_mu,num_splits_tau,gridsize_mu, gridsize_tau,
                                     include_pi2,zero_split,only_max_num_trees)
+  }
+  
   
   if(length(bcfBMA_call)==13){
     #length of bcfBMA_call is 11 if test data was included in the call

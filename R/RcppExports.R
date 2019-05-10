@@ -141,8 +141,16 @@ W_bcf <- function(sum_treetable, sum_obs_to_nodes, n) {
     .Call(`_bcfbma_W_bcf`, sum_treetable, sum_obs_to_nodes, n)
 }
 
+W_tauround1_bcf <- function(treetable, obs_to_nodes, n) {
+    .Call(`_bcfbma_W_tauround1_bcf`, treetable, obs_to_nodes, n)
+}
+
 sumtree_likelihood_function_bcf_bcf <- function(y_temp, sum_treetable_mu, sum_treetable_tau, sum_obs_to_nodes_mu, sum_obs_to_nodes_tau, n, a_mu, a_tau, nu, lambda, z) {
     .Call(`_bcfbma_sumtree_likelihood_function_bcf_bcf`, y_temp, sum_treetable_mu, sum_treetable_tau, sum_obs_to_nodes_mu, sum_obs_to_nodes_tau, n, a_mu, a_tau, nu, lambda, z)
+}
+
+sumtree_likelihood_tau_round1_bcf <- function(y_temp, treetable_tau, obs_to_nodes_tau, n, a_mu, a_tau, nu, lambda, z) {
+    .Call(`_bcfbma_sumtree_likelihood_tau_round1_bcf`, y_temp, treetable_tau, obs_to_nodes_tau, n, a_mu, a_tau, nu, lambda, z)
 }
 
 get_best_split_mu_bcf <- function(resids, data, treetable, tree_mat, a, mu, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha, beta, maxOWsize, first_round) {
@@ -151,6 +159,10 @@ get_best_split_mu_bcf <- function(resids, data, treetable, tree_mat, a, mu, nu, 
 
 get_best_split_bcf <- function(resids, data, treetable, tree_mat, a, mu, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha, beta, maxOWsize, first_round) {
     .Call(`_bcfbma_get_best_split_bcf`, resids, data, treetable, tree_mat, a, mu, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha, beta, maxOWsize, first_round)
+}
+
+get_best_split_tau_bcf <- function(resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, first_round, z) {
+    .Call(`_bcfbma_get_best_split_tau_bcf`, resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, first_round, z)
 }
 
 get_best_split_tau_round1_bcf <- function(resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, first_round, prev_sum_trees_mu, prev_sum_trees_mat_mu, y_scaled, parent2, i, z) {
@@ -221,8 +233,20 @@ get_best_trees_mu_bcf <- function(x_control_a, x_moderate_a, z, resids, a_mu, a_
     .Call(`_bcfbma_get_best_trees_mu_bcf`, x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_mu, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, zero_split)
 }
 
+get_best_trees_mu_bcf_2 <- function(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_mu, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, zero_split, no_more_mu_trees) {
+    .Call(`_bcfbma_get_best_trees_mu_bcf_2`, x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_mu, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, zero_split, no_more_mu_trees)
+}
+
 get_best_trees_sum_mu_bcf <- function(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_mu, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, num_splits_mu, num_splits_tau, gridsize_mu, zero_split) {
     .Call(`_bcfbma_get_best_trees_sum_mu_bcf`, x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_mu, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, num_splits_mu, num_splits_tau, gridsize_mu, zero_split)
+}
+
+get_best_trees_sum_mu_bcf_2 <- function(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_mu, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, num_splits_mu, num_splits_tau, gridsize_mu, zero_split, no_more_mu_trees) {
+    .Call(`_bcfbma_get_best_trees_sum_mu_bcf_2`, x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_mu, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, num_splits_mu, num_splits_tau, gridsize_mu, zero_split, no_more_mu_trees)
+}
+
+get_best_trees_tau_bcf <- function(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_tau, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_tau, zero_split, no_more_tau_trees) {
+    .Call(`_bcfbma_get_best_trees_tau_bcf`, x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_tau, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_tau, zero_split, no_more_tau_trees)
 }
 
 get_best_trees_sum_tau_round1_bcf <- function(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_tau, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_mat_mu, y_scaled, num_splits_mu, num_splits_tau, gridsize_tau, zero_split) {
@@ -231,6 +255,10 @@ get_best_trees_sum_tau_round1_bcf <- function(x_control_a, x_moderate_a, z, resi
 
 get_best_trees_sum_tau_bcf <- function(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_tau, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, num_splits_mu, num_splits_tau, gridsize_tau, zero_split) {
     .Call(`_bcfbma_get_best_trees_sum_tau_bcf`, x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_tau, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, num_splits_mu, num_splits_tau, gridsize_tau, zero_split)
+}
+
+get_best_trees_sum_tau_bcf_2 <- function(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_tau, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, num_splits_mu, num_splits_tau, gridsize_tau, zero_split, no_more_tau_trees) {
+    .Call(`_bcfbma_get_best_trees_sum_tau_bcf_2`, x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_tau, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, num_splits_mu, num_splits_tau, gridsize_tau, zero_split, no_more_tau_trees)
 }
 
 scale_response_bcf <- function(a, b, c, d, y) {
@@ -245,8 +273,28 @@ BCF_BMA_sumLikelihood <- function(data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau,
     .Call(`_bcfbma_BCF_BMA_sumLikelihood`, data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2, zero_split, only_max_num_trees)
 }
 
-BCF_BMA_sumLikelihood_add_mu_or_tau <- function(data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2, zero_split, only_max_num_trees) {
-    .Call(`_bcfbma_BCF_BMA_sumLikelihood_add_mu_or_tau`, data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2, zero_split, only_max_num_trees)
+fuse_intvecs <- function(a, b) {
+    .Call(`_bcfbma_fuse_intvecs`, a, b)
+}
+
+fuse_numvecs <- function(a, b) {
+    .Call(`_bcfbma_fuse_numvecs`, a, b)
+}
+
+fuse_lists <- function(a, b) {
+    .Call(`_bcfbma_fuse_lists`, a, b)
+}
+
+fuse_listsof_intvecs <- function(a, b) {
+    .Call(`_bcfbma_fuse_listsof_intvecs`, a, b)
+}
+
+mmult1 <- function(a, b) {
+    .Call(`_bcfbma_mmult1`, a, b)
+}
+
+BCF_BMA_sumLikelihood_add_mu_or_tau <- function(data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2, zero_split, only_max_num_trees, separate_tree_numbers) {
+    .Call(`_bcfbma_BCF_BMA_sumLikelihood_add_mu_or_tau`, data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2, zero_split, only_max_num_trees, separate_tree_numbers)
 }
 
 find_term_nodes_gs <- function(tree_table) {
