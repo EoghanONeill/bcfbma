@@ -1115,26 +1115,26 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
   int best_sv;													// create a variable best_sv. Not initialized
   double best_sp;													// create a variable best_sp. Not initialized
   double tree_prior=0;											// create a variable tree_prior. Initialized equal to 0.
-  List changetree;												// create a list changetree
+  //List changetree;												// create a list changetree
   double BIC;														// create a variable BIC
   int p;															// create a variable p
   List eval_model;												// create a list eval_model
   NumericVector int_nodes;										// create a vector int_nodes
-  arma::colvec curr_col=data.col(0);										// Let the arma colvec, curr_col, equal the 1st column of the input matrix data
-  arma::uvec grow_obs=find_term_obs_bcf(treemat_c,terminal_nodes[0]);			// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of treemat_c that has elements equal to terminal_nodes[0]).
-  NumericVector d1=unique(find_term_cols_bcf(treemat_c,terminal_nodes[0]));	// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
-  arma::mat data_curr_node=data.rows(grow_obs);				// matrix consisting of first grow_obs rows of data. 
-  double d=d1[0];															// index of rightmost column of treemat_c with at least one element equal to terminal_nodes[0]
-  NumericVector get_min=get_grow_obs_bcf(data,wrap(grow_obs),cp_mat(0,0)+1);	// obtain the elements of the cp_mat(0,0)+1^th column of data that are indexed by grow_obs
+  //arma::colvec curr_col=data.col(0);										// Let the arma colvec, curr_col, equal the 1st column of the input matrix data
+  //arma::uvec grow_obs=find_term_obs_bcf(treemat_c,terminal_nodes[0]);			// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of treemat_c that has elements equal to terminal_nodes[0]).
+  //NumericVector d1=unique(find_term_cols_bcf(treemat_c,terminal_nodes[0]));	// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
+  //arma::mat data_curr_node=data.rows(grow_obs);				// matrix consisting of first grow_obs rows of data. 
+  //double d=d1[0];															// index of rightmost column of treemat_c with at least one element equal to terminal_nodes[0]
+  //NumericVector get_min=get_grow_obs_bcf(data,wrap(grow_obs),cp_mat(0,0)+1);	// obtain the elements of the cp_mat(0,0)+1^th column of data that are indexed by grow_obs
   double lik;																// create a variable called lik. Not initialized.
   
   for(int l=0;l<terminal_nodes.size();l++){										//	vector of length equal to that of terminal_nodes
     //loop over each terminal node												//
-    grow_obs=find_term_obs_bcf(treemat_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of treemat_c that has elements equal to terminal_nodes[l] (letter l)).
+    arma::uvec grow_obs=find_term_obs_bcf(treemat_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of treemat_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node									//
-    d1=unique(find_term_cols_bcf(treemat_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
-    data_curr_node=data.rows(grow_obs);								// matrix consisting of first grow_obs rows of data. Note grow_obs changed on line 926, therefore not duplicating line 919.
-    d=d1[0];																	// index of rightmost column of treemat_c with at least one element equal to terminal_nodes[l] (letter l)
+    NumericVector d1=unique(find_term_cols_bcf(treemat_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
+    arma::mat data_curr_node=data.rows(grow_obs);								// matrix consisting of first grow_obs rows of data. Note grow_obs changed on line 926, therefore not duplicating line 919.
+    double d=d1[0];																	// index of rightmost column of treemat_c with at least one element equal to terminal_nodes[l] (letter l)
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
     if(data_curr_node.n_rows<=min_num_obs_for_mu_split ){												// if data_curr_node has 2 rows or less.
       throw std::range_error("not enough obs in node to grow any further");	// throw an error message. Not enough observations.
@@ -1142,8 +1142,8 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
     }
     for(int k=0;k<w;k++){														// loop of length w, the number of rows of cp_mat
       split_var=cp_mat(k,0)+1;												// split_var is k+1^th row, 1st column, of cp_mat, +1
-      arma::colvec curr_cols=data.col(split_var-1);							// curr_cols is the split_var^tgh column of data
-      get_min=get_grow_obs_bcf(data,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of data that are indexed by grow_obs 
+      //arma::colvec curr_cols=data.col(split_var-1);							// curr_cols is the split_var^tgh column of data
+      NumericVector get_min=get_grow_obs_bcf(data,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of data that are indexed by grow_obs 
       
       //Removing unnecessary lines
       //if(get_min.size()<=2){													// If get_min has 2 or less observations. (too few variables to split on?)
@@ -1315,12 +1315,12 @@ List get_best_split_bcf(NumericVector resids,arma::mat& data,NumericMatrix treet
   int best_sv;													// create a variable best_sv. Not initialized
   double best_sp;													// create a variable best_sp. Not initialized
   double tree_prior=0;											// create a variable tree_prior. Initialized equal to 0.
-  List changetree;												// create a list changetree
+  //List changetree;												// create a list changetree
   double BIC;														// create a variable BIC
   int p;															// create a variable p
   List eval_model;												// create a list eval_model
   NumericVector int_nodes;										// create a vector int_nodes
-  arma::colvec curr_col=data.col(0);										// Let the arma colvec, curr_col, equal the 1st column of the input matrix data
+  //arma::colvec curr_col=data.col(0);										// Let the arma colvec, curr_col, equal the 1st column of the input matrix data
   arma::uvec grow_obs=find_term_obs_bcf(treemat_c,terminal_nodes[0]);			// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of treemat_c that has elements equal to terminal_nodes[0]).
   NumericVector d1=unique(find_term_cols_bcf(treemat_c,terminal_nodes[0]));	// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
   arma::mat data_curr_node=data.rows(grow_obs);				// matrix consisting of first grow_obs rows of data.
@@ -1342,7 +1342,7 @@ List get_best_split_bcf(NumericVector resids,arma::mat& data,NumericMatrix treet
     }
     for(int k=0;k<w;k++){														// loop of length w, the number of rows of cp_mat
       split_var=cp_mat(k,0)+1;												// split_var is k+1^th row, 1st column, of cp_mat, +1
-      arma::colvec curr_cols=data.col(split_var-1);							// curr_cols is the split_var^tgh column of data
+      //arma::colvec curr_cols=data.col(split_var-1);							// curr_cols is the split_var^tgh column of data
       get_min=get_grow_obs_bcf(data,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of data that are indexed by grow_obs 
       
       //Removing unnecessary lines
@@ -1524,7 +1524,7 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
   int best_sv;																// create an integer vector. Not initialized.
   double best_sp;																// create a double variable
   double tree_prior=1;														// create a double variable, initialized equal to 0.
-  List changetree;															// create an empty list.
+  //List changetree;															// create an empty list.
   double BIC;																	// create a double variable. Not initialized.
   int p;																		// create an integer variable. Not initialized.
   //int p_other_mu=0;
@@ -1533,22 +1533,25 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
   NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
   //NumericVector other_int_nodes_mu;
   //NumericVector other_int_nodes_tau;
-  arma::colvec curr_col=x_moderate_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_moderate_a.
-  arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[0]).
+  //arma::colvec curr_col=x_moderate_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_moderate_a.
+  //arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[0]).
   //Rcout << "length of grow_obs equals " << grow_obs.n_elem<< ".\n";
-  NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
-  arma::mat data_curr_node=x_moderate_a.rows(grow_obs);					// matrix consisting of first grow_obs rows of x_moderate_a.
-  double d=d1[0];																// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[0]
-  NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),cp_mat(0,0)+1);		// obtain the elements of the cp_mat(0,0)+1^th column of x_moderate_a that are indexed by grow_obs
+  //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
+  //arma::mat data_curr_node=x_moderate_a.rows(grow_obs);					// matrix consisting of first grow_obs rows of x_moderate_a.
+  //double d=d1[0];																// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[0]
+  //NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),cp_mat(0,0)+1);		// obtain the elements of the cp_mat(0,0)+1^th column of x_moderate_a that are indexed by grow_obs
   double lik;																	// create a variable called lik. Not initialized.
   
   for(int l=0;l<terminal_nodes.size();l++){										//	vector of length equal to that of terminal_nodes
     //loop over each terminal node
-    grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
+    arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node
-    d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
-    data_curr_node=x_moderate_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
-    d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
+    NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
+    NumericVector z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
+    arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
+    
+    arma::mat data_curr_node=x_moderate_a.rows(arma::find(z_growvec_a==1));								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
+    double d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
     if(data_curr_node.n_rows<= min_num_obs_for_tau_split){												// if data_curr_node has 2 rows or less.
       //Rcout << "terminal_nodes[l] equals " << terminal_nodes[l]<< ".\n" ;
@@ -1564,9 +1567,8 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
       //p_other_mu=0;
       //Rcout << "inner iteration number " << k<< ".\n" ;
       split_var=cp_mat(k,0)+1;												// split_var is k+1^th row, 1st column of cp_mat +1
-      arma::colvec curr_cols=x_moderate_a.col(split_var-1);							// curr_cols is the split_var^th column of x_moderate_a
-      get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of x_moderate_a that are indexed by grow_obs 
-      NumericVector z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
+      //arma::colvec curr_cols=x_moderate_a.col(split_var-1);							// curr_cols is the split_var^th column of x_moderate_a
+      NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of x_moderate_a that are indexed by grow_obs 
       
       //Removing unnecessary lines
       //if(get_min.size()<=2){													// If get_min has 2 or less observations. (too few variables to split on?)
@@ -1574,9 +1576,8 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
       //}
       
       double split_point=cp_mat(k,1);											// variable split_point equals element in k+1^th row 2nd column of cp_mat
-      arma::vec curr_cols2=data_curr_node.col(split_var-1);					// curr_cols2 is split_var^th column of data_curr_node
+      //arma::vec curr_cols2=data_curr_node.col(split_var-1);					// curr_cols2 is split_var^th column of data_curr_node
       arma::vec get_min_a=Rcpp::as<arma::vec>(get_min);		// converts to arma vec
-      arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
       arma::vec get_min_a_treated = get_min_a.elem(arma::find(z_growvec_a==1));	
       
       arma::vec ld_prop=get_min_a_treated.elem(arma::find(get_min_a_treated <= split_point));	// ld_prop is elements of curr_cols2 <= split_point
@@ -1759,7 +1760,7 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
   int best_sv;																// create an integer vector. Not initialized.
   double best_sp;																// create a double variable
   double tree_prior=1;														// create a double variable, initialized equal to 0.
-  List changetree;															// create an empty list.
+  //List changetree;															// create an empty list.
   double BIC;																	// create a double variable. Not initialized.
   int p;																		// create an integer variable. Not initialized.
   int p_other_mu=0;
@@ -1768,22 +1769,27 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
   NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
   NumericVector other_int_nodes_mu;
   NumericVector other_int_nodes_tau;
-  arma::colvec curr_col=x_moderate_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_moderate_a.
-  arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[0]).
+  //arma::colvec curr_col=x_moderate_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_moderate_a.
+  //arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[0]).
   //Rcout << "length of grow_obs equals " << grow_obs.n_elem<< ".\n";
-  NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
-  arma::mat data_curr_node=x_moderate_a.rows(grow_obs);					// matrix consisting of first grow_obs rows of x_moderate_a.
-  double d=d1[0];																// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[0]
-  NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),cp_mat(0,0)+1);		// obtain the elements of the cp_mat(0,0)+1^th column of x_moderate_a that are indexed by grow_obs
+  //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
+  //arma::mat data_curr_node=x_moderate_a.rows(grow_obs);					// matrix consisting of first grow_obs rows of x_moderate_a.
+  //double d=d1[0];																// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[0]
+  //NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),cp_mat(0,0)+1);		// obtain the elements of the cp_mat(0,0)+1^th column of x_moderate_a that are indexed by grow_obs
   double lik;																	// create a variable called lik. Not initialized.
   
   for(int l=0;l<terminal_nodes.size();l++){										//	vector of length equal to that of terminal_nodes
     //loop over each terminal node
-    grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
+    arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node
-    d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
-    data_curr_node=x_moderate_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
-    d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
+    NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
+    NumericVector z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
+    arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
+    
+    arma::mat data_curr_node=x_moderate_a.rows(arma::find(z_growvec_a==1));								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
+    
+    //arma::mat data_curr_node=x_moderate_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
+    double d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
     if(data_curr_node.n_rows<=min_num_obs_for_tau_split){												// if data_curr_node has 2 rows or less.
       //Rcout << "terminal_nodes[l] equals " << terminal_nodes[l]<< ".\n" ;
@@ -1799,9 +1805,8 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
       p_other_mu=0;
       //Rcout << "inner iteration number " << k<< ".\n" ;
       split_var=cp_mat(k,0)+1;												// split_var is k+1^th row, 1st column of cp_mat +1
-      arma::colvec curr_cols=x_moderate_a.col(split_var-1);							// curr_cols is the split_var^th column of x_moderate_a
-      get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of x_moderate_a that are indexed by grow_obs 
-      NumericVector z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
+      //arma::colvec curr_cols=x_moderate_a.col(split_var-1);							// curr_cols is the split_var^th column of x_moderate_a
+      NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of x_moderate_a that are indexed by grow_obs 
       
       //Removing unnecessary lines
       //if(get_min.size()<=2){													// If get_min has 2 or less observations. (too few variables to split on?)
@@ -1809,9 +1814,8 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
       //}
       
       double split_point=cp_mat(k,1);											// variable split_point equals element in k+1^th row 2nd column of cp_mat
-      arma::vec curr_cols2=data_curr_node.col(split_var-1);					// curr_cols2 is split_var^th column of data_curr_node
+      //arma::vec curr_cols2=data_curr_node.col(split_var-1);					// curr_cols2 is split_var^th column of data_curr_node
       arma::vec get_min_a=Rcpp::as<arma::vec>(get_min);		// converts to arma vec
-      arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
       arma::vec get_min_a_treated = get_min_a.elem(arma::find(z_growvec_a==1));	
       
       arma::vec ld_prop=get_min_a_treated.elem(arma::find(get_min_a_treated <= split_point));	// ld_prop is elements of curr_cols2 <= split_point
@@ -2043,7 +2047,7 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
   int best_sv;																// create an integer vector. Not initialized.
   double best_sp;																// create a double variable
   double tree_prior=1;														// create a double variable, initialized equal to 0.
-  List changetree;															// create an empty list.
+  //List changetree;															// create an empty list.
   double BIC;																	// create a double variable. Not initialized.
   //int p;																		// create an integer variable. Not initialized.
   int p_other_mu=0;
@@ -2052,21 +2056,26 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
   NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
   NumericVector other_int_nodes_mu;
   NumericVector other_int_nodes_tau;
-  arma::colvec curr_col=x_moderate_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_moderate_a.
-  arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[0]).
-  NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
-  arma::mat data_curr_node=x_moderate_a.rows(grow_obs);					// matrix consisting of first grow_obs rows of x_moderate_a.
-  double d=d1[0];																// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[0]
-  NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),cp_mat(0,0)+1);		// obtain the elements of the cp_mat(0,0)+1^th column of x_moderate_a that are indexed by grow_obs
+  //arma::colvec curr_col=x_moderate_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_moderate_a.
+  //arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[0]).
+  //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
+  //arma::mat data_curr_node=x_moderate_a.rows(grow_obs);					// matrix consisting of first grow_obs rows of x_moderate_a.
+  //double d=d1[0];																// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[0]
+  //NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),cp_mat(0,0)+1);		// obtain the elements of the cp_mat(0,0)+1^th column of x_moderate_a that are indexed by grow_obs
   double lik;																	// create a variable called lik. Not initialized.
   
   for(int l=0;l<terminal_nodes.size();l++){										//	vector of length equal to that of terminal_nodes
     //loop over each terminal node
-    grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
+    arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node
-    d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
-    data_curr_node=x_moderate_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
-    d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
+    NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
+    NumericVector z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
+    arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
+    
+    arma::mat data_curr_node=x_moderate_a.rows(arma::find(z_growvec_a==1));								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
+    
+    //arma::mat data_curr_node=x_moderate_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
+    double d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
     if(data_curr_node.n_rows<=min_num_obs_for_tau_split){												// if data_curr_node has 2 rows or less.
       throw std::range_error("not enough obs in node to grow any further Line 1602");	// throw an error message. Not enough observations.
@@ -2076,9 +2085,8 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
       p_other_mu=0;
       p_other_tau=0;
       split_var=cp_mat(k,0)+1;												// split_var is k+1^th row, 1st column of cp_mat +1
-      arma::colvec curr_cols=x_moderate_a.col(split_var-1);							// curr_cols is the split_var^th column of x_moderate_a
-      get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of x_moderate_a that are indexed by grow_obs 
-      NumericVector z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
+      //arma::colvec curr_cols=x_moderate_a.col(split_var-1);							// curr_cols is the split_var^th column of x_moderate_a
+      NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of x_moderate_a that are indexed by grow_obs 
       
       //Removing unnecessary lines
       //if(get_min.size()<=2){													// If get_min has 2 or less observations. (too few variables to split on?)
@@ -2086,9 +2094,8 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
       //}
       
       double split_point=cp_mat(k,1);											// variable split_point equals element in k+1^th row 2nd column of cp_mat
-      arma::vec curr_cols2=data_curr_node.col(split_var-1);					// curr_cols2 is split_var^th column of data_curr_node
+      //arma::vec curr_cols2=data_curr_node.col(split_var-1);					// curr_cols2 is split_var^th column of data_curr_node
       arma::vec get_min_a=Rcpp::as<arma::vec>(get_min);		// converts to arma vec
-      arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
       arma::vec get_min_a_treated = get_min_a.elem(arma::find(z_growvec_a==1));	
       
       arma::vec ld_prop=get_min_a_treated.elem(arma::find(get_min_a_treated <= split_point));	// ld_prop is elements of curr_cols2 <= split_point
@@ -2418,7 +2425,7 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
   int best_sv;																// create an integer vector. Not initialized.
   double best_sp;																// create a double variable
   double tree_prior=1;														// create a double avriable, initialized equal to 0.
-  List changetree;															// create an empty list.
+  //List changetree;															// create an empty list.
   double BIC;																	// create a double variable. Not initialized.
   //int p;																		// create an integer variable. Not initialized.
   int p_other_mu=0;
@@ -2427,23 +2434,23 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
   NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
   NumericVector other_int_nodes_mu;
   NumericVector other_int_nodes_tau;
-  arma::colvec curr_col=x_control_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_control_a.
-  arma::uvec grow_obs=find_term_obs_bcf(tree_mat_mu_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_mu_c that has elements equal to terminal_nodes[0]).
-  NumericVector d1=unique(find_term_cols_bcf(tree_mat_mu_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
-  arma::mat data_curr_node=x_control_a.rows(grow_obs);					// matrix consisting of first grow_obs rows of x_control_a.
-  double d=d1[0];																// index of rightmost column of tree_mat_mu_c with at least one element equal to terminal_nodes[0]
-  NumericVector get_min=get_grow_obs_bcf(x_control_a,wrap(grow_obs),cp_mat(0,0)+1);		// obtain the elements of the cp_mat(0,0)+1^th column of x_control_a that are indexed by grow_obs
+  //arma::colvec curr_col=x_control_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_control_a.
+  //arma::uvec grow_obs=find_term_obs_bcf(tree_mat_mu_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_mu_c that has elements equal to terminal_nodes[0]).
+  //NumericVector d1=unique(find_term_cols_bcf(tree_mat_mu_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
+  //arma::mat data_curr_node=x_control_a.rows(grow_obs);					// matrix consisting of first grow_obs rows of x_control_a.
+  //double d=d1[0];																// index of rightmost column of tree_mat_mu_c with at least one element equal to terminal_nodes[0]
+  //NumericVector get_min=get_grow_obs_bcf(x_control_a,wrap(grow_obs),cp_mat(0,0)+1);		// obtain the elements of the cp_mat(0,0)+1^th column of x_control_a that are indexed by grow_obs
   double lik;																	// create a variable called lik. Not initialized.
   // Rcout << "get to line 2383.\n";
   for(int l=0;l<terminal_nodes.size();l++){										//	vector of length equal to that of terminal_nodes
     // Rcout << "get to line 2383. l= " << l << ". \n";
     
     //loop over each terminal node
-    grow_obs=find_term_obs_bcf(tree_mat_mu_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_mu_c that has elements equal to terminal_nodes[l] (letter l)).
+    arma::uvec grow_obs=find_term_obs_bcf(tree_mat_mu_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_mu_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node
-    d1=unique(find_term_cols_bcf(tree_mat_mu_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
-    data_curr_node=x_control_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_control_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
-    d=d1[0];																	// index of rightmost column of tree_mat_mu_c with at least one element equal to terminal_nodes[l] (letter l)
+    NumericVector d1=unique(find_term_cols_bcf(tree_mat_mu_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
+    arma::mat data_curr_node=x_control_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_control_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
+    double d=d1[0];																	// index of rightmost column of tree_mat_mu_c with at least one element equal to terminal_nodes[l] (letter l)
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
     if(data_curr_node.n_rows<=min_num_obs_for_mu_split){												// if data_curr_node has 2 rows or less.
       throw std::range_error("not enough obs in node to grow any further Line 1919");	// throw an error message. Not enough observations.
@@ -2457,8 +2464,8 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
       p_other_mu=0;
       p_other_tau=0;
       split_var=cp_mat(k,0)+1;												// split_var is k+1^th row, 1st column of cp_mat +1
-      arma::colvec curr_cols=x_control_a.col(split_var-1);							// curr_cols is the split_var^th column of x_control_a
-      get_min=get_grow_obs_bcf(x_control_a,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of x_control_a that are indexed by grow_obs 
+      //arma::colvec curr_cols=x_control_a.col(split_var-1);							// curr_cols is the split_var^th column of x_control_a
+      NumericVector get_min=get_grow_obs_bcf(x_control_a,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of x_control_a that are indexed by grow_obs 
       
       //Removing unnecessary lines
       //if(get_min.size()<=2){													// If get_min has 2 or less observations. (too few variables to split on?)
