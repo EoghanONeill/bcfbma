@@ -74,6 +74,14 @@ bcfBMA(x, ...)
 \item{mu_or_tau_each_round}{Binary variable. If equals 1, then a mu tree or a tau tree is added in each round. If equals 0, then a mu tree is added, followed by a tau tree, followed by a mu tree, and so on.}
 
 \item{separate_tree_numbers}{Binary variable (irrelevant if mu_or_tau_each_round not equal to 1). If equals 1, and mu_or_tau_each_round equals 1, then num_splits_mu and num_splits_tau are the maximum numbers of mu and tau trees in the model. If equals zero, and mu_or_tau_each_round equals 1, then num_splits_mu + num_splits_tau is the maximum total number of trees, but there are not separate limits to the number of mu and tau trees.}
+
+\item{min_num_obs_for_mu_split}{This integer determines the minimum number of observations in a (parent) mu tree node for the algorithm to consider potential splits of the node.}
+
+\item{min_num_obs_after_mu_split}{This integer determines the minimum number of observations in a (mu tree) child node resulting from a split in order for a split to occur. If the left or right child node has less than this number of observations, then the split can not occur.}
+
+\item{min_num_obs_for_tau_split}{This integer determines the minimum number of treated observations in a (parent) tau tree node for the algorithm to consider potential splits of the node.}
+
+\item{min_num_obs_after_tau_split}{This integer determines the minimum number of treated observations in a (tau tree) child node resulting from a split in order for a split to occur. If the left or right child node has less than this number of observations, then the split can not occur.}
 }
 \value{
 The following objects are returned by bcfbma:

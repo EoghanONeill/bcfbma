@@ -36,7 +36,11 @@
 #' @param zero_split Binary variable. If equals 1, then zero split trees can be included in a sum-of-trees model. If equals zero, then only trees with at least one split can be included in a sum-of-trees model.
 #' @param only_max_num_trees Binary variable. If equals 1, then only sum-of-trees models containing the maximum number of trees, num_rounds, are selected. If equals 0, then sum-of-trees models containing less than num_rounds trees can be selected. The default is only_max_num_trees=1.
 #' @param mu_or_tau_each_round Binary variable. If equals 1, then a mu tree or a tau tree is added in each round. If equals 0, then a mu tree is added, followed by a tau tree, followed by a mu tree, and so on.
-#' @param separate_tree_numbers Binary variable (irrelevant if mu_or_tau_each_round not equal to 1). If equals 1, and mu_or_tau_each_round equals 1, then num_splits_mu and num_splits_tau are the maximum numbers of mu and tau trees in the model. If equals zero, and mu_or_tau_each_round equals 1, then num_splits_mu + num_splits_tau is the maximum total number of trees, but there are not separate limits to the number of mu and tau trees. 
+#' @param separate_tree_numbers Binary variable (irrelevant if mu_or_tau_each_round not equal to 1). If equals 1, and mu_or_tau_each_round equals 1, then num_splits_mu and num_splits_tau are the maximum numbers of mu and tau trees in the model. If equals zero, and mu_or_tau_each_round equals 1, then num_splits_mu + num_splits_tau is the maximum total number of trees, but there are not separate limits to the number of mu and tau trees.
+#' @param min_num_obs_for_mu_split This integer determines the minimum number of observations in a (parent) mu tree node for the algorithm to consider potential splits of the node.
+#' @param min_num_obs_after_mu_split This integer determines the minimum number of observations in a (mu tree) child node resulting from a split in order for a split to occur. If the left or right child node has less than this number of observations, then the split can not occur.
+#' @param min_num_obs_for_tau_split This integer determines the minimum number of treated observations in a (parent) tau tree node for the algorithm to consider potential splits of the node.
+#' @param min_num_obs_after_tau_split This integer determines the minimum number of treated observations in a (tau tree) child node resulting from a split in order for a split to occur. If the left or right child node has less than this number of observations, then the split can not occur.
 #' @export 
 #' @return The following objects are returned by bcfbma:
 #' \item{fitted.values_outcome}{The vector of predictions of the outcome for all training observations.} 
@@ -73,7 +77,9 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                           ntree_control=5,ntree_moderate=5,
                           alpha_mu=0.95,alpha_tau=0.95,beta_mu=1,beta_tau=1,split_rule_node=0,
                           gridpoint=0,maxOWsize=100, num_splits_mu =5, num_splits_tau =5, gridsize_mu=10, gridsize_tau=10,
-                          include_pi= "control", zero_split=1, only_max_num_trees=1, mu_or_tau_each_round=1,separate_tree_numbers=1){
+                          include_pi= "control", zero_split=1, only_max_num_trees=1, mu_or_tau_each_round=1,separate_tree_numbers=1,
+                         min_num_obs_for_mu_split=2, min_num_obs_after_mu_split=2,
+                         min_num_obs_for_tau_split=2, min_num_obs_after_tau_split=2){
   binary=FALSE
   start_mean=0
   start_sd=1
@@ -175,7 +181,9 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                                                   alpha_mu,alpha_tau,beta_mu,beta_tau,
                                                   split_rule_node,gridpoint,maxOWsize,
                                                   num_splits_mu,num_splits_tau,gridsize_mu, gridsize_tau,
-                                                  include_pi2,zero_split,only_max_num_trees,separate_tree_numbers)
+                                                  include_pi2,zero_split,only_max_num_trees,separate_tree_numbers,
+                                                  min_num_obs_for_mu_split, min_num_obs_after_mu_split,
+                                                  min_num_obs_for_tau_split, min_num_obs_after_tau_split)
   }else{
   bcfBMA_call=BCF_BMA_sumLikelihood(x.train,y.train,z,pihat,
                                     a_mu,a_tau,mu_mu,mu_tau,
@@ -185,7 +193,9 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                                     alpha_mu,alpha_tau,beta_mu,beta_tau,
                                     split_rule_node,gridpoint,maxOWsize,
                                     num_splits_mu,num_splits_tau,gridsize_mu, gridsize_tau,
-                                    include_pi2,zero_split,only_max_num_trees)
+                                    include_pi2,zero_split,only_max_num_trees,
+                                    min_num_obs_for_mu_split, min_num_obs_after_mu_split,
+                                    min_num_obs_for_tau_split, min_num_obs_after_tau_split)
   }
   
   

@@ -1092,7 +1092,8 @@ double sumtree_likelihood_tau_round1_bcf(NumericVector y_temp,NumericMatrix tree
 
 List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix treetable,NumericMatrix tree_mat,
                            double a,double mu,double nu,double lambda,double c,double lowest_BIC,
-                           int parent,NumericMatrix cp_mat,double alpha,double beta,int maxOWsize//,int first_round
+                           int parent,NumericMatrix cp_mat,double alpha,double beta,int maxOWsize,
+                           unsigned int min_num_obs_for_mu_split, unsigned int min_num_obs_after_mu_split//,int first_round
                              ){
   //this function will search through all predictive split points and return those within Occam's Window.
   int split_var;													// create integer variable (not initialized)
@@ -1135,7 +1136,7 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
     data_curr_node=data.rows(grow_obs);								// matrix consisting of first grow_obs rows of data. Note grow_obs changed on line 926, therefore not duplicating line 919.
     d=d1[0];																	// index of rightmost column of treemat_c with at least one element equal to terminal_nodes[l] (letter l)
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
-    if(data_curr_node.n_rows<=2){												// if data_curr_node has 2 rows or less.
+    if(data_curr_node.n_rows<=min_num_obs_for_mu_split ){												// if data_curr_node has 2 rows or less.
       throw std::range_error("not enough obs in node to grow any further");	// throw an error message. Not enough observations.
       //continue;
     }
@@ -1156,7 +1157,7 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
       arma::vec ld_prop=curr_cols2.elem(arma::find(curr_cols2 <= split_point));	// ld_prop is elements of curr_cols2 <= split_point
       arma::vec rd_prop=curr_cols2.elem(arma::find(curr_cols2 > split_point));		// rd_prop is elements of curr_cols2 > split_point
       
-      if(ld_prop.size()<=2 || rd_prop.size()<=2){									// if 2 or less observations in either ld_prop or rd_prop
+      if(ld_prop.size()<=min_num_obs_after_mu_split || rd_prop.size()<= min_num_obs_after_mu_split){									// if 2 or less observations in either ld_prop or rd_prop
         continue;																// skip to next iteration of the loop
       }
       proposal_tree=grow_tree_bcf(data,resids,treemat_c,terminal_nodes[l],treetable_c,split_var,split_point,terminal_nodes,wrap(grow_obs),d,get_min,data_curr_node); // elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
@@ -1497,7 +1498,7 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
                                    NumericMatrix cp_mat,
                                    double alpha_mu,double beta_mu,double alpha_tau,double beta_tau,
                                    int maxOWsize,//int first_round,
-                                   NumericVector z){
+                                   NumericVector z,unsigned int min_num_obs_for_tau_split, unsigned int min_num_obs_after_tau_split){
   
   //this function will search through all predictive split points and return those within Occam's Window.
   int split_var;																// create an integer split_var. Not initialized
@@ -1549,7 +1550,7 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
     data_curr_node=x_moderate_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
     d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
-    if(data_curr_node.n_rows<=2){												// if data_curr_node has 2 rows or less.
+    if(data_curr_node.n_rows<= min_num_obs_for_tau_split){												// if data_curr_node has 2 rows or less.
       //Rcout << "terminal_nodes[l] equals " << terminal_nodes[l]<< ".\n" ;
       //Rcout << "num obs in grow_obs" << grow_obs.n_elem<< ".\n" ;
       //Rcout << " num obs in data_curr_node" << data_curr_node.n_rows<< ".\n" ;
@@ -1581,7 +1582,7 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
       arma::vec ld_prop=get_min_a_treated.elem(arma::find(get_min_a_treated <= split_point));	// ld_prop is elements of curr_cols2 <= split_point
       arma::vec rd_prop=get_min_a_treated.elem(arma::find(get_min_a_treated > split_point));		// rd_prop is elements of curr_cols2 > split_point
       
-      if(ld_prop.size()<=2 || rd_prop.size()<=2){									// if 2 or less observations in either ld_prop or rd_prop
+      if(ld_prop.size()<=min_num_obs_after_tau_split || rd_prop.size()<=min_num_obs_after_tau_split){									// if 2 or less observations in either ld_prop or rd_prop
         continue;																// skip to next iteration of the loop
       }
       
@@ -1732,7 +1733,8 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
                                double alpha_mu,double beta_mu,double alpha_tau,double beta_tau,
                                int maxOWsize,//int first_round,
                                List prev_sum_trees_mu,List prev_sum_trees_mat_mu,
-                               NumericVector y_scaled,IntegerVector parent2,int i, NumericVector z){
+                               NumericVector y_scaled,IntegerVector parent2,int i, NumericVector z,
+                               unsigned int min_num_obs_for_tau_split, unsigned int min_num_obs_after_tau_split){
   //this function will search through all predictive split points and return those within Occam's Window.
   int split_var;																// create an integer split_var. Not initialized
   NumericMatrix tree_table_tau_c=tree_table_tau;										// create a matrix treetable_c equal to the input matrix.
@@ -1783,7 +1785,7 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
     data_curr_node=x_moderate_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
     d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
-    if(data_curr_node.n_rows<=2){												// if data_curr_node has 2 rows or less.
+    if(data_curr_node.n_rows<=min_num_obs_for_tau_split){												// if data_curr_node has 2 rows or less.
       //Rcout << "terminal_nodes[l] equals " << terminal_nodes[l]<< ".\n" ;
       //Rcout << "num obs in grow_obs" << grow_obs.n_elem<< ".\n" ;
       //Rcout << " num obs in data_curr_node" << data_curr_node.n_rows<< ".\n" ;
@@ -1815,7 +1817,7 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
       arma::vec ld_prop=get_min_a_treated.elem(arma::find(get_min_a_treated <= split_point));	// ld_prop is elements of curr_cols2 <= split_point
       arma::vec rd_prop=get_min_a_treated.elem(arma::find(get_min_a_treated > split_point));		// rd_prop is elements of curr_cols2 > split_point
       
-      if(ld_prop.size()<=2 || rd_prop.size()<=2){									// if 2 or less observations in either ld_prop or rd_prop
+      if(ld_prop.size()<=min_num_obs_after_tau_split || rd_prop.size()<=min_num_obs_after_tau_split){									// if 2 or less observations in either ld_prop or rd_prop
         continue;																// skip to next iteration of the loop
       }
       
@@ -2018,7 +2020,8 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
                             double alpha_mu,double beta_mu,double alpha_tau,double beta_tau,
                             int maxOWsize,//int first_round,
                             List prev_sum_trees_mu,List prev_sum_trees_tau,List prev_sum_trees_mat_mu,List prev_sum_trees_mat_tau,
-                            NumericVector y_scaled,IntegerVector parent2,int i,NumericVector z){
+                            NumericVector y_scaled,IntegerVector parent2,int i,NumericVector z,
+                            unsigned int min_num_obs_for_tau_split, unsigned int min_num_obs_after_tau_split){
   //this function will search through all predictive split points and return those within Occam's Window.
   int split_var;																// create an integer split_var. Not initialized
   NumericMatrix tree_table_tau_c=tree_table_tau;										// create a matrix treetable_c equal to the input matrix.
@@ -2065,7 +2068,7 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
     data_curr_node=x_moderate_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
     d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
-    if(data_curr_node.n_rows<=2){												// if data_curr_node has 2 rows or less.
+    if(data_curr_node.n_rows<=min_num_obs_for_tau_split){												// if data_curr_node has 2 rows or less.
       throw std::range_error("not enough obs in node to grow any further Line 1602");	// throw an error message. Not enough observations.
       //continue;
     }
@@ -2094,7 +2097,7 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
       //arma::vec ld_prop=curr_cols2.elem(arma::find(curr_cols2 <= split_point));	// ld_prop is elements of curr_cols2 <= split_point
       //arma::vec rd_prop=curr_cols2.elem(arma::find(curr_cols2> split_point));		// rd_prop is elements of curr_cols2 > split_point
       
-      if(ld_prop.size()<=2 || rd_prop.size()<=2){									// if 2 or less observations in either ld_prop or rd_prop
+      if(ld_prop.size()<=min_num_obs_after_tau_split || rd_prop.size()<=min_num_obs_after_tau_split){									// if 2 or less observations in either ld_prop or rd_prop
         continue;																// skip to next iteration of the loop
       }
       proposal_tree=grow_tree_bcf(x_moderate_a,resids,tree_mat_tau_c,terminal_nodes[l],tree_table_tau_c,split_var,split_point,terminal_nodes,wrap(grow_obs),d,get_min,data_curr_node);	// elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
@@ -2388,7 +2391,8 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
                            double alpha_mu,double beta_mu,double alpha_tau,double beta_tau,
                            int maxOWsize,//int first_round,
                            List prev_sum_trees_mu,List prev_sum_trees_tau,List prev_sum_trees_mat_mu,List prev_sum_trees_mat_tau,
-                           NumericVector y_scaled,IntegerVector parent2,int i,NumericVector z){
+                           NumericVector y_scaled,IntegerVector parent2,int i,NumericVector z,
+                           unsigned int min_num_obs_for_mu_split, unsigned int min_num_obs_after_mu_split){
   //this function will search through all predictive split points and return those within Occam's Window.
   List example_tree_tab = prev_sum_trees_mu[parent2[i]];
   List example_tree_mat = prev_sum_trees_mu[parent2[i]];
@@ -2441,7 +2445,7 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
     data_curr_node=x_control_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_control_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
     d=d1[0];																	// index of rightmost column of tree_mat_mu_c with at least one element equal to terminal_nodes[l] (letter l)
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
-    if(data_curr_node.n_rows<=2){												// if data_curr_node has 2 rows or less.
+    if(data_curr_node.n_rows<=min_num_obs_for_mu_split){												// if data_curr_node has 2 rows or less.
       throw std::range_error("not enough obs in node to grow any further Line 1919");	// throw an error message. Not enough observations.
       //continue;
     }
@@ -2467,7 +2471,7 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
       arma::vec ld_prop=curr_cols2.elem(arma::find(curr_cols2 <= split_point));	// ld_prop is elements of curr_cols2 <= split_point
       arma::vec rd_prop=curr_cols2.elem(arma::find(curr_cols2> split_point));		// rd_prop is elements of curr_cols2 > split_point
       
-      if(ld_prop.size()<=2 || rd_prop.size()<=2){									// if 2 or less observations in either ld_prop or rd_prop
+      if(ld_prop.size()<=min_num_obs_after_mu_split || rd_prop.size()<=min_num_obs_after_mu_split){									// if 2 or less observations in either ld_prop or rd_prop
         continue;																// skip to next iteration of the loop
       }
       proposal_tree=grow_tree_bcf(x_control_a,resids,tree_mat_mu_c,terminal_nodes[l],tree_table_mu_c,split_var,split_point,terminal_nodes,wrap(grow_obs),d,get_min,data_curr_node);	// elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
@@ -3414,7 +3418,8 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
                        List resids_cp_mat_mu,IntegerVector err_list,NumericMatrix x_control_test,NumericMatrix x_moderate_test,NumericVector test_z,
                        double alpha_mu,double alpha_tau,double beta_mu,double beta_tau,bool is_test_data,
                        double pen_mu,int num_cp_mu,double pen_tau,int num_cp_tau,
-                       bool split_rule_node,bool gridpoint,int maxOWsize, int num_splits_mu,int num_splits_tau,int gridsize_mu, bool zero_split
+                       bool split_rule_node,bool gridpoint,int maxOWsize, int num_splits_mu,int num_splits_tau,int gridsize_mu, bool zero_split,
+                       unsigned int min_num_obs_for_mu_split, unsigned int min_num_obs_after_mu_split
 ){
   List eval_model;										// create a list. Length not given.
   NumericVector lik_list;									// create a vector. Length not givem
@@ -3470,7 +3475,8 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
         best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                       a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
                                       parent[0],cp_mat_list[0],
-                                                           alpha_mu,beta_mu,maxOWsize//,first_round
+                                      alpha_mu,beta_mu,maxOWsize,
+                                      min_num_obs_for_mu_split, min_num_obs_after_mu_split//,first_round
                                             ); // defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
         if(best_subset.size()==1){						// if get_best_split_bcf resulted in a (?no tree?) error.
           continue;									// skip to the next iteration of the iner for-loop.
@@ -3687,7 +3693,8 @@ List get_best_trees_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,Nume
                            double alpha_mu,double alpha_tau,double beta_mu,double beta_tau,bool is_test_data,
                            double pen_mu,int num_cp_mu,double pen_tau,int num_cp_tau,
                            bool split_rule_node,bool gridpoint,int maxOWsize, int num_splits_mu,int num_splits_tau,int gridsize_mu, bool zero_split,
-                           IntegerVector no_more_mu_trees
+                           IntegerVector no_more_mu_trees,
+                           unsigned int min_num_obs_for_mu_split, unsigned int min_num_obs_after_mu_split
 ){
   List eval_model;										// create a list. Length not given.
   NumericVector lik_list;									// create a vector. Length not givem
@@ -3743,7 +3750,8 @@ List get_best_trees_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,Nume
       best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                         a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
                                         parent[0],cp_mat_list[0],
-                                                             alpha_mu,beta_mu,maxOWsize//,first_round
+                                        alpha_mu,beta_mu,maxOWsize,
+                                        min_num_obs_for_mu_split, min_num_obs_after_mu_split//,first_round
                                           ); // defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
       if(best_subset.size()==1){						// if get_best_split_bcf resulted in a (?no tree?) error.
         continue;									// skip to the next iteration of the iner for-loop.
@@ -3961,7 +3969,8 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
                            bool is_test_data,double pen_mu,int num_cp_mu,double pen_tau,int num_cp_tau,
                            bool split_rule_node,bool gridpoint,int maxOWsize,
                            List prev_sum_trees_mu,List prev_sum_trees_tau,List prev_sum_trees_mat_mu,List prev_sum_trees_mat_tau,
-                           NumericVector y_scaled,int num_splits_mu,int num_splits_tau,int gridsize_mu,bool zero_split
+                           NumericVector y_scaled,int num_splits_mu,int num_splits_tau,int gridsize_mu,bool zero_split,
+                           unsigned int min_num_obs_for_mu_split, unsigned int min_num_obs_after_mu_split
 ){
   List example_tree_tab2 = prev_sum_trees_mu[parent[0]];
   List example_tree_mat2 = prev_sum_trees_mu[parent[0]];
@@ -4277,6 +4286,9 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
   // Rcout << "Get to Line 3931 in get_best_trees_sum_mu_bcf.\n";
 
   
+  
+  
+  
   for(int j=0;j<num_splits_mu;j++){									// create a for-loop of length 5.
     // Rcout << "Get to Line 3935 in get_best_trees_sum_mu_bcf.\n";
     int lsize=1000;										// create a variable initialized equal to 1000.
@@ -4316,7 +4328,8 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
                                             alpha_mu,beta_mu,alpha_tau,beta_tau,
                                             maxOWsize,//first_round,
                                             prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
-                                            y_scaled,parent,i,z);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+                                            y_scaled,parent,i,z,
+                                            min_num_obs_for_mu_split, min_num_obs_after_mu_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
           
           // Rcout << "Get to Line 3968 in get_best_trees_sum_mu_bcf.\n";
           
@@ -4563,7 +4576,8 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
                                bool split_rule_node,bool gridpoint,int maxOWsize,
                                List prev_sum_trees_mu,List prev_sum_trees_tau,List prev_sum_trees_mat_mu,List prev_sum_trees_mat_tau,
                                NumericVector y_scaled,int num_splits_mu,int num_splits_tau,int gridsize_mu,bool zero_split,
-                               IntegerVector no_more_mu_trees
+                               IntegerVector no_more_mu_trees,
+                               unsigned int min_num_obs_for_mu_split, unsigned int min_num_obs_after_mu_split
 ){
   List example_tree_tab2 = prev_sum_trees_mu[parent[0]];
   List example_tree_mat2 = prev_sum_trees_mu[parent[0]];
@@ -4926,7 +4940,8 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
                                                 alpha_mu,beta_mu,alpha_tau,beta_tau,
                                                 maxOWsize,//first_round,
                                                 prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
-                                                y_scaled,parent,i,z);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+                                                y_scaled,parent,i,z,
+                                                min_num_obs_for_mu_split, min_num_obs_after_mu_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
           
           // Rcout << "Get to Line 3968 in get_best_trees_sum_mu_bcf.\n";
           
@@ -5170,7 +5185,8 @@ List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numer
                                        double alpha_mu,double alpha_tau,double beta_mu,double beta_tau,bool is_test_data,
                                        double pen_mu,int num_cp_mu,double pen_tau,int num_cp_tau,
                                        bool split_rule_node,bool gridpoint,int maxOWsize,
-                                       int num_splits_mu,int num_splits_tau,int gridsize_tau,bool zero_split,IntegerVector no_more_tau_trees
+                                       int num_splits_mu,int num_splits_tau,int gridsize_tau,bool zero_split,IntegerVector no_more_tau_trees,
+                                       unsigned int min_num_obs_for_tau_split, unsigned int min_num_obs_after_tau_split
 ){
   List eval_model;										// create a list
   NumericVector lik_list;								// create a vector
@@ -5231,7 +5247,8 @@ List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numer
                                          cp_mat_list[0],
                                          alpha_mu,beta_mu,alpha_tau,beta_tau,
                                          maxOWsize,//first_round,
-                                         z); // defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
+                                         z,
+                                         min_num_obs_for_tau_split, min_num_obs_after_tau_split); // defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
       if(best_subset.size()==1){						// if get_best_split_bcf resulted in a (?no tree?) error.
         continue;									// skip to the next iteration of the iner for-loop.
       }
@@ -5480,7 +5497,8 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
                                    bool split_rule_node,bool gridpoint,int maxOWsize,
                                    List prev_sum_trees_mu,
                                    List prev_sum_trees_mat_mu,
-                                   NumericVector y_scaled,int num_splits_mu,int num_splits_tau,int gridsize_tau,bool zero_split
+                                   NumericVector y_scaled,int num_splits_mu,int num_splits_tau,int gridsize_tau,bool zero_split,
+                                   unsigned int min_num_obs_for_tau_split, unsigned int min_num_obs_after_tau_split
 ){
   List eval_model;										// create a list
   NumericVector lik_list;								// create a vector
@@ -5675,7 +5693,8 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
                                               alpha_mu,beta_mu,alpha_tau,beta_tau,
                                               maxOWsize,//first_round,
                                               prev_sum_trees_mu,prev_sum_trees_mat_mu,
-                                              y_scaled,parent,i,z);
+                                              y_scaled,parent,i,z,
+                                              min_num_obs_for_tau_split, min_num_obs_after_tau_split);
         
         //something between the following two functions should be used
         //best_subset=get_best_split_bcf(resids(_,0),D1,tree_table[i],tree_mat[i],a,mu,nu,lambda,log(c),lowest_BIC,parent[0],cp_mat_list[0],alpha,beta,maxOWsize,first_round);	// defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
@@ -5942,7 +5961,8 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
                             bool split_rule_node,bool gridpoint,int maxOWsize,
                             List prev_sum_trees_mu,List prev_sum_trees_tau,List prev_sum_trees_mat_mu,List prev_sum_trees_mat_tau,
                             NumericVector y_scaled,
-                            int num_splits_mu,int num_splits_tau, int gridsize_tau,bool zero_split
+                            int num_splits_mu,int num_splits_tau, int gridsize_tau,bool zero_split,
+                            unsigned int min_num_obs_for_tau_split, unsigned int min_num_obs_after_tau_split
 ){
   List eval_model;										// create a list
   NumericVector lik_list;								// create a vector
@@ -6305,7 +6325,8 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
                                              alpha_mu,beta_mu,alpha_tau,beta_tau,
                                              maxOWsize,//first_round,
                                              prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
-                                             y_scaled,parent,i,z);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+                                             y_scaled,parent,i,z,
+                                             min_num_obs_for_tau_split, min_num_obs_after_tau_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
           // return(best_subset);
         }else if(err_list[i]==1){		// if i+1^th element of input vector err_list equals one (no error?).
           continue;						// skip to next iteration of for-loop.
@@ -6556,7 +6577,8 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
                                 bool split_rule_node,bool gridpoint,int maxOWsize,
                                 List prev_sum_trees_mu,List prev_sum_trees_tau,List prev_sum_trees_mat_mu,List prev_sum_trees_mat_tau,
                                 NumericVector y_scaled,
-                                int num_splits_mu,int num_splits_tau, int gridsize_tau,bool zero_split,IntegerVector no_more_tau_trees
+                                int num_splits_mu,int num_splits_tau, int gridsize_tau,bool zero_split,IntegerVector no_more_tau_trees,
+                                unsigned int min_num_obs_for_tau_split, unsigned int min_num_obs_after_tau_split
 ){
   List eval_model;										// create a list
   NumericVector lik_list;								// create a vector
@@ -6937,7 +6959,8 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
                                                  alpha_mu,beta_mu,alpha_tau,beta_tau,
                                                  maxOWsize,//first_round,
                                                  prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
-                                                 y_scaled,parent,i,z);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+                                                 y_scaled,parent,i,z,
+                                                 min_num_obs_for_tau_split, min_num_obs_after_tau_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
           // return(best_subset);
         }else if(err_list[i]==1){		// if i+1^th element of input vector err_list equals one (no error?).
           continue;						// skip to next iteration of for-loop.
@@ -7203,7 +7226,9 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                            NumericMatrix test_data,NumericVector test_z,NumericMatrix test_pihat,
                            int ntree_control,int ntree_moderate,
                            double alpha_mu,double alpha_tau,double beta_mu,double beta_tau,bool split_rule_node,bool gridpoint,int maxOWsize,
-                           int num_splits_mu,int num_splits_tau,int gridsize_mu, int gridsize_tau, int include_pi2, bool zero_split, bool only_max_num_trees){
+                           int num_splits_mu,int num_splits_tau,int gridsize_mu, int gridsize_tau, int include_pi2, bool zero_split, bool only_max_num_trees,
+                           unsigned int min_num_obs_for_mu_split, unsigned int min_num_obs_after_mu_split,
+                           unsigned int min_num_obs_for_tau_split, unsigned int min_num_obs_after_tau_split){
   bool is_test_data=0;					// create bool is_test_data. Initialize equal to 0.
   if(test_data.nrow()>0){					// If test data has non-zero number of rows.
     is_test_data=1;						// set is_test_data equal to 1.
@@ -7551,7 +7576,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                                       x_control_test,x_moderate_test,test_z,
                                       alpha_mu,alpha_tau,beta_mu,beta_tau,
                                       is_test_data,pen_mu,num_cp_mu,pen_tau,num_cp_tau,	// some of these arguments are probably unnecessary
-                                      split_rule_node,gridpoint,maxOWsize,num_splits_mu,num_splits_tau,gridsize_mu,zero_split);
+                                      split_rule_node,gridpoint,maxOWsize,num_splits_mu,num_splits_tau,gridsize_mu,zero_split,
+                                      min_num_obs_for_mu_split, min_num_obs_after_mu_split);
         
       }else{							// If not in the first round of the for-loop.
         //if j >0 then sum of trees become a list so need to read in list and get likelihood for each split point and terminal node
@@ -7566,7 +7592,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                                           is_test_data,pen_mu,num_cp_mu,pen_tau,num_cp_tau,	// some of these arguments are probably unnecessary
                                           split_rule_node,gridpoint,maxOWsize,
                                           prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,
-                                          prev_sum_trees_mat_tau,y_scaled,num_splits_mu,num_splits_tau,gridsize_mu,zero_split);	// function defined on line 1953.
+                                          prev_sum_trees_mat_tau,y_scaled,num_splits_mu,num_splits_tau,gridsize_mu,zero_split,
+                                          min_num_obs_for_mu_split, min_num_obs_after_mu_split);	// function defined on line 1953.
       }
        //Rcout << "Get to after get best trees in mu round in loop j = " << j << ".\n";
       
@@ -8342,7 +8369,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                                                    //prev_sum_trees_tau,
                                                    prev_sum_trees_mat_mu,
                                                    //prev_sum_trees_mat_tau,
-                                                   y_scaled,num_splits_mu,num_splits_tau,gridsize_tau,zero_split);	// function defined on line 1953.
+                                                   y_scaled,num_splits_mu,num_splits_tau,gridsize_tau,zero_split,
+                                                   min_num_obs_for_tau_split, min_num_obs_after_tau_split);	// function defined on line 1953.
       }else{							// If not in the first round of the for-loop.
         //if j >0 then sum of trees become a list so need to read in list and get likelihood for each split point and terminal node
         CART_BMA_tau=get_best_trees_sum_tau_bcf(x_control_a, x_moderate_a,z,resids,
@@ -8356,7 +8384,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                                             split_rule_node,gridpoint,maxOWsize,
                                             prev_sum_trees_mu,prev_sum_trees_tau,
                                             prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,y_scaled,
-                                            num_splits_mu,num_splits_tau,gridsize_tau,zero_split);	// function defined on line 1953.
+                                            num_splits_mu,num_splits_tau,gridsize_tau,zero_split,
+                                            min_num_obs_for_tau_split, min_num_obs_after_tau_split);	// function defined on line 1953.
       }
       // Rcout << "Get to 6023 in tau round in loop j = " << j << ".\n";
       
@@ -9273,7 +9302,9 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
                            int ntree_control,int ntree_moderate,
                            double alpha_mu,double alpha_tau,double beta_mu,double beta_tau,bool split_rule_node,bool gridpoint,int maxOWsize,
                            int num_splits_mu,int num_splits_tau,int gridsize_mu, int gridsize_tau, int include_pi2,
-                           bool zero_split, bool only_max_num_trees,int separate_tree_numbers
+                           bool zero_split, bool only_max_num_trees,int separate_tree_numbers,
+                           unsigned int min_num_obs_for_mu_split, unsigned int min_num_obs_after_mu_split,
+                           unsigned int min_num_obs_for_tau_split, unsigned int min_num_obs_after_tau_split
                                            ){
   // Rcout << "LINE 9172.\n";
   
@@ -9735,7 +9766,8 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
                                           alpha_mu,alpha_tau,beta_mu,beta_tau,
                                           is_test_data,pen_mu,num_cp_mu,pen_tau,num_cp_tau,	// some of these arguments are probably unnecessary
                                           split_rule_node,gridpoint,maxOWsize,num_splits_mu,num_splits_tau,gridsize_mu,zero_split,
-                                          as<IntegerVector>(wrap(no_more_mu_trees)));
+                                          as<IntegerVector>(wrap(no_more_mu_trees)),
+                                          min_num_obs_for_mu_split, min_num_obs_after_mu_split);
         
 
       
@@ -9753,7 +9785,8 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
                                               split_rule_node,gridpoint,maxOWsize,
                                               prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,
                                               prev_sum_trees_mat_tau,y_scaled,num_splits_mu,num_splits_tau,gridsize_mu,zero_split,
-                                              as<IntegerVector>(wrap(no_more_mu_trees)));	// function defined on line 1953.
+                                              as<IntegerVector>(wrap(no_more_mu_trees)),
+                                              min_num_obs_for_mu_split, min_num_obs_after_mu_split);	// function defined on line 1953.
       }
        // Rcout << "Get to after get best trees in line 9650 in loop j = " << j << ".\n";
       
@@ -9878,7 +9911,8 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
                                             pen_mu,num_cp_mu,pen_tau,num_cp_tau,	// some of these arguments are probably unnecessary
                                             split_rule_node,gridpoint,maxOWsize,
                                             num_splits_mu,num_splits_tau,gridsize_tau,zero_split,
-                                            as<IntegerVector>(wrap(no_more_tau_trees)));	// function defined on line 1953.
+                                            as<IntegerVector>(wrap(no_more_tau_trees)),
+                                            min_num_obs_for_tau_split, min_num_obs_after_tau_split);	// function defined on line 1953.
       }else{							// If not in the first round of the for-loop.
         //if j >0 then sum of trees become a list so need to read in list and get likelihood for each split point and terminal node
         CART_BMA_tau=get_best_trees_sum_tau_bcf_2(x_control_a, x_moderate_a,z,resids,
@@ -9893,7 +9927,8 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
                                                 prev_sum_trees_mu,prev_sum_trees_tau,
                                                 prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,y_scaled,
                                                 num_splits_mu,num_splits_tau,gridsize_tau,zero_split,
-                                                as<IntegerVector>(wrap(no_more_tau_trees)));	// function defined on line 1953.
+                                                as<IntegerVector>(wrap(no_more_tau_trees)),
+                                                min_num_obs_for_tau_split, min_num_obs_after_tau_split);	// function defined on line 1953.
       }
         // Rcout << "Get to 9789 in loop j = " << j << ".\n";
       
