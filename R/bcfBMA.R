@@ -206,8 +206,8 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                           "obs_to_termNodesMatrix_mu","obs_to_termNodesMatrix_tau",
                           "bic",
                           "test.preds_outcome","test.preds_mu","test.preds_tau","sum_residuals_mu","sum_residuals_tau")
-    bcfBMA_call[[12]]<-bcfBMA_call[[12]][[length(bcfBMA_call[[12]])]]
-    bcfBMA_call[[13]]<-bcfBMA_call[[13]][[length(bcfBMA_call[[13]])]]
+    bcfBMA_call[[12]]<-bcfBMA_call[[12]]#[[length(bcfBMA_call[[12]])]]
+    bcfBMA_call[[13]]<-bcfBMA_call[[13]]#[[length(bcfBMA_call[[13]])]]
     bcfBMA_call$test_data<-x.test
     bcfBMA_call$test_pihat <- test_pihat
     bcfBMA_call$test_z <- test_z
@@ -216,16 +216,16 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                           "sumoftrees_mu","sumoftrees_tau",
                           "obs_to_termNodesMatrix_mu","obs_to_termNodesMatrix_tau",
                           "bic","sum_residuals_mu","sum_residuals_tau")
-    bcfBMA_call[[9]]<-bcfBMA_call[[9]][[length(bcfBMA_call[[9]])]]
-    bcfBMA_call[[10]]<-bcfBMA_call[[10]][[length(bcfBMA_call[[10]])]]
+    bcfBMA_call[[9]]<-bcfBMA_call[[9]]#[[length(bcfBMA_call[[9]])]]
+    bcfBMA_call[[10]]<-bcfBMA_call[[10]]#[[length(bcfBMA_call[[10]])]]
   }
   
   bcfBMA_call$numvars<-ncol(x.train) #ncol(training)
   bcfBMA_call$call<-match.call()
-  bcfBMA_call[[4]]<-bcfBMA_call[[4]][[length(bcfBMA_call[[4]])]]
-  bcfBMA_call[[5]]<-bcfBMA_call[[5]][[length(bcfBMA_call[[5]])]]
-  bcfBMA_call[[6]]<-bcfBMA_call[[6]][[length(bcfBMA_call[[6]])]]
-  bcfBMA_call[[7]]<-bcfBMA_call[[7]][[length(bcfBMA_call[[7]])]]
+  bcfBMA_call[[4]]<-bcfBMA_call[[4]]#[[length(bcfBMA_call[[4]])]]
+  bcfBMA_call[[5]]<-bcfBMA_call[[5]]#[[length(bcfBMA_call[[5]])]]
+  bcfBMA_call[[6]]<-bcfBMA_call[[6]]#[[length(bcfBMA_call[[6]])]]
+  bcfBMA_call[[7]]<-bcfBMA_call[[7]]#[[length(bcfBMA_call[[7]])]]
   bcfBMA_call$y_minmax<-range(y.train)
   bcfBMA_call$response<-y.train
   bcfBMA_call$nrowTrain<-nrow(x.train)
