@@ -212,14 +212,16 @@ double likelihood_function_mu_bcf(NumericVector y_temp,NumericMatrix treetable_t
     term2+=(sum_yksq+a*pow(mu,2)-b2+nu*lambda);	// iteratively add function of parameters and sum of squares
   }
   tree_log_lik=(b/2)*log(a)-0.5*term1-((y_temp.size()+nu)/2)*log(term2);	// function of paramters, number of observations, and term1 and term2 obtained in for loop
-  for(int i=0;i<b;i++){		// loop over the length of the terminal nodes vector
-    if(n[i]<=5){	// If the number of obs in term node i is less than 5
-      tree_log_lik=tree_log_lik-(100000);	// Then take 100000 from the tree_log_lik. (Should this 100000 be entered as a constant above?). Presumably it is an arbitrary large number
-    }
-    else{
-      tree_log_lik=tree_log_lik;	// otherwise keep the tree_log_lik the same. Over the loop, loglik is very negative if any term node has less than 5 obs
-    }
-  }
+  
+  // for(int i=0;i<b;i++){		// loop over the length of the terminal nodes vector
+  //   if(n[i]<=5){	// If the number of obs in term node i is less than 5
+  //     tree_log_lik=tree_log_lik-(100000);	// Then take 100000 from the tree_log_lik. (Should this 100000 be entered as a constant above?). Presumably it is an arbitrary large number
+  //   }
+  //   else{
+  //     tree_log_lik=tree_log_lik;	// otherwise keep the tree_log_lik the same. Over the loop, loglik is very negative if any term node has less than 5 obs
+  //   }
+  // }
+  
   return(tree_log_lik);		// returns the tree_log_lik
 }  
 
@@ -253,14 +255,16 @@ double likelihood_function_bcf(NumericVector y_temp,NumericMatrix treetable_temp
     term2+=(sum_yksq+a*pow(mu,2)-b2+nu*lambda);	// iteratively add function of parameters and sum of squares
   }
   tree_log_lik=(b/2)*log(a)-0.5*term1-((y_temp.size()+nu)/2)*log(term2);	// function of paramters, number of observations, and term1 and term2 obtained in for loop
-  for(int i=0;i<b;i++){		// loop over the length of the terminal nodes vector
-    if(n[i]<=5){	// If the number of obs in term node i is less than 5
-      tree_log_lik=tree_log_lik-(100000);	// Then take 100000 from the tree_log_lik. (Should this 100000 be entered as a constant above?). Presumably it is an arbitrary large number
-    }
-    else{
-      tree_log_lik=tree_log_lik;	// otherwise keep the tree_log_lik the same. Over the loop, loglik is very negative if any term node has less than 5 obs
-    }
-  }
+  
+  // for(int i=0;i<b;i++){		// loop over the length of the terminal nodes vector
+  //   if(n[i]<=5){	// If the number of obs in term node i is less than 5
+  //     tree_log_lik=tree_log_lik-(100000);	// Then take 100000 from the tree_log_lik. (Should this 100000 be entered as a constant above?). Presumably it is an arbitrary large number
+  //   }
+  //   else{
+  //     tree_log_lik=tree_log_lik;	// otherwise keep the tree_log_lik the same. Over the loop, loglik is very negative if any term node has less than 5 obs
+  //   }
+  // }
+  
   return(tree_log_lik);		// returns the tree_log_lik
 }
 
