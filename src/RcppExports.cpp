@@ -524,8 +524,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // get_best_split_mu_bcf
-List get_best_split_mu_bcf(NumericVector resids, arma::mat& data, NumericMatrix treetable, NumericMatrix tree_mat, double a, double mu, double nu, double lambda, double c, double lowest_BIC, int parent, NumericMatrix cp_mat, double alpha, double beta, int maxOWsize, int first_round);
-RcppExport SEXP _bcfbma_get_best_split_mu_bcf(SEXP residsSEXP, SEXP dataSEXP, SEXP treetableSEXP, SEXP tree_matSEXP, SEXP aSEXP, SEXP muSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP cp_matSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP maxOWsizeSEXP, SEXP first_roundSEXP) {
+List get_best_split_mu_bcf(NumericVector resids, arma::mat& data, NumericMatrix treetable, NumericMatrix tree_mat, double a, double mu, double nu, double lambda, double c, double lowest_BIC, int parent, NumericMatrix cp_mat, double alpha, double beta, int maxOWsize);
+RcppExport SEXP _bcfbma_get_best_split_mu_bcf(SEXP residsSEXP, SEXP dataSEXP, SEXP treetableSEXP, SEXP tree_matSEXP, SEXP aSEXP, SEXP muSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP cp_matSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP maxOWsizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -544,8 +544,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
     Rcpp::traits::input_parameter< int >::type maxOWsize(maxOWsizeSEXP);
-    Rcpp::traits::input_parameter< int >::type first_round(first_roundSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_best_split_mu_bcf(resids, data, treetable, tree_mat, a, mu, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha, beta, maxOWsize, first_round));
+    rcpp_result_gen = Rcpp::wrap(get_best_split_mu_bcf(resids, data, treetable, tree_mat, a, mu, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha, beta, maxOWsize));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -576,8 +575,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // get_best_split_tau_bcf
-List get_best_split_tau_bcf(NumericVector resids, arma::mat& x_moderate_a, NumericMatrix tree_table_tau, NumericMatrix tree_mat_tau, double a_mu, double a_tau, double mu_tau, double nu, double lambda, double c, double lowest_BIC, int parent, NumericMatrix cp_mat, double alpha_mu, double beta_mu, double alpha_tau, double beta_tau, int maxOWsize, int first_round, NumericVector z);
-RcppExport SEXP _bcfbma_get_best_split_tau_bcf(SEXP residsSEXP, SEXP x_moderate_aSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP cp_matSEXP, SEXP alpha_muSEXP, SEXP beta_muSEXP, SEXP alpha_tauSEXP, SEXP beta_tauSEXP, SEXP maxOWsizeSEXP, SEXP first_roundSEXP, SEXP zSEXP) {
+List get_best_split_tau_bcf(NumericVector resids, arma::mat& x_moderate_a, NumericMatrix tree_table_tau, NumericMatrix tree_mat_tau, double a_mu, double a_tau, double mu_tau, double nu, double lambda, double c, double lowest_BIC, int parent, NumericMatrix cp_mat, double alpha_mu, double beta_mu, double alpha_tau, double beta_tau, int maxOWsize, NumericVector z);
+RcppExport SEXP _bcfbma_get_best_split_tau_bcf(SEXP residsSEXP, SEXP x_moderate_aSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP cp_matSEXP, SEXP alpha_muSEXP, SEXP beta_muSEXP, SEXP alpha_tauSEXP, SEXP beta_tauSEXP, SEXP maxOWsizeSEXP, SEXP zSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -599,15 +598,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type alpha_tau(alpha_tauSEXP);
     Rcpp::traits::input_parameter< double >::type beta_tau(beta_tauSEXP);
     Rcpp::traits::input_parameter< int >::type maxOWsize(maxOWsizeSEXP);
-    Rcpp::traits::input_parameter< int >::type first_round(first_roundSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type z(zSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_best_split_tau_bcf(resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, first_round, z));
+    rcpp_result_gen = Rcpp::wrap(get_best_split_tau_bcf(resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, z));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_best_split_tau_round1_bcf
-List get_best_split_tau_round1_bcf(NumericVector resids, arma::mat& x_moderate_a, NumericMatrix tree_table_tau, NumericMatrix tree_mat_tau, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double lowest_BIC, int parent, NumericMatrix cp_mat, double alpha_mu, double beta_mu, double alpha_tau, double beta_tau, int maxOWsize, int first_round, List prev_sum_trees_mu, List prev_sum_trees_mat_mu, NumericVector y_scaled, IntegerVector parent2, int i, NumericVector z);
-RcppExport SEXP _bcfbma_get_best_split_tau_round1_bcf(SEXP residsSEXP, SEXP x_moderate_aSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP cp_matSEXP, SEXP alpha_muSEXP, SEXP beta_muSEXP, SEXP alpha_tauSEXP, SEXP beta_tauSEXP, SEXP maxOWsizeSEXP, SEXP first_roundSEXP, SEXP prev_sum_trees_muSEXP, SEXP prev_sum_trees_mat_muSEXP, SEXP y_scaledSEXP, SEXP parent2SEXP, SEXP iSEXP, SEXP zSEXP) {
+List get_best_split_tau_round1_bcf(NumericVector resids, arma::mat& x_moderate_a, NumericMatrix tree_table_tau, NumericMatrix tree_mat_tau, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double lowest_BIC, int parent, NumericMatrix cp_mat, double alpha_mu, double beta_mu, double alpha_tau, double beta_tau, int maxOWsize, List prev_sum_trees_mu, List prev_sum_trees_mat_mu, NumericVector y_scaled, IntegerVector parent2, int i, NumericVector z);
+RcppExport SEXP _bcfbma_get_best_split_tau_round1_bcf(SEXP residsSEXP, SEXP x_moderate_aSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP cp_matSEXP, SEXP alpha_muSEXP, SEXP beta_muSEXP, SEXP alpha_tauSEXP, SEXP beta_tauSEXP, SEXP maxOWsizeSEXP, SEXP prev_sum_trees_muSEXP, SEXP prev_sum_trees_mat_muSEXP, SEXP y_scaledSEXP, SEXP parent2SEXP, SEXP iSEXP, SEXP zSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -630,20 +628,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type alpha_tau(alpha_tauSEXP);
     Rcpp::traits::input_parameter< double >::type beta_tau(beta_tauSEXP);
     Rcpp::traits::input_parameter< int >::type maxOWsize(maxOWsizeSEXP);
-    Rcpp::traits::input_parameter< int >::type first_round(first_roundSEXP);
     Rcpp::traits::input_parameter< List >::type prev_sum_trees_mu(prev_sum_trees_muSEXP);
     Rcpp::traits::input_parameter< List >::type prev_sum_trees_mat_mu(prev_sum_trees_mat_muSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type y_scaled(y_scaledSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type parent2(parent2SEXP);
     Rcpp::traits::input_parameter< int >::type i(iSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type z(zSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_best_split_tau_round1_bcf(resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, first_round, prev_sum_trees_mu, prev_sum_trees_mat_mu, y_scaled, parent2, i, z));
+    rcpp_result_gen = Rcpp::wrap(get_best_split_tau_round1_bcf(resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, prev_sum_trees_mu, prev_sum_trees_mat_mu, y_scaled, parent2, i, z));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_best_split_sum_tau_bcf
-List get_best_split_sum_tau_bcf(NumericVector resids, arma::mat& x_moderate_a, NumericMatrix tree_table_tau, NumericMatrix tree_mat_tau, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double lowest_BIC, int parent, NumericMatrix cp_mat, double alpha_mu, double beta_mu, double alpha_tau, double beta_tau, int maxOWsize, int first_round, List prev_sum_trees_mu, List prev_sum_trees_tau, List prev_sum_trees_mat_mu, List prev_sum_trees_mat_tau, NumericVector y_scaled, IntegerVector parent2, int i, NumericVector z);
-RcppExport SEXP _bcfbma_get_best_split_sum_tau_bcf(SEXP residsSEXP, SEXP x_moderate_aSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP cp_matSEXP, SEXP alpha_muSEXP, SEXP beta_muSEXP, SEXP alpha_tauSEXP, SEXP beta_tauSEXP, SEXP maxOWsizeSEXP, SEXP first_roundSEXP, SEXP prev_sum_trees_muSEXP, SEXP prev_sum_trees_tauSEXP, SEXP prev_sum_trees_mat_muSEXP, SEXP prev_sum_trees_mat_tauSEXP, SEXP y_scaledSEXP, SEXP parent2SEXP, SEXP iSEXP, SEXP zSEXP) {
+List get_best_split_sum_tau_bcf(NumericVector resids, arma::mat& x_moderate_a, NumericMatrix tree_table_tau, NumericMatrix tree_mat_tau, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double lowest_BIC, int parent, NumericMatrix cp_mat, double alpha_mu, double beta_mu, double alpha_tau, double beta_tau, int maxOWsize, List prev_sum_trees_mu, List prev_sum_trees_tau, List prev_sum_trees_mat_mu, List prev_sum_trees_mat_tau, NumericVector y_scaled, IntegerVector parent2, int i, NumericVector z);
+RcppExport SEXP _bcfbma_get_best_split_sum_tau_bcf(SEXP residsSEXP, SEXP x_moderate_aSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP cp_matSEXP, SEXP alpha_muSEXP, SEXP beta_muSEXP, SEXP alpha_tauSEXP, SEXP beta_tauSEXP, SEXP maxOWsizeSEXP, SEXP prev_sum_trees_muSEXP, SEXP prev_sum_trees_tauSEXP, SEXP prev_sum_trees_mat_muSEXP, SEXP prev_sum_trees_mat_tauSEXP, SEXP y_scaledSEXP, SEXP parent2SEXP, SEXP iSEXP, SEXP zSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -666,7 +663,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type alpha_tau(alpha_tauSEXP);
     Rcpp::traits::input_parameter< double >::type beta_tau(beta_tauSEXP);
     Rcpp::traits::input_parameter< int >::type maxOWsize(maxOWsizeSEXP);
-    Rcpp::traits::input_parameter< int >::type first_round(first_roundSEXP);
     Rcpp::traits::input_parameter< List >::type prev_sum_trees_mu(prev_sum_trees_muSEXP);
     Rcpp::traits::input_parameter< List >::type prev_sum_trees_tau(prev_sum_trees_tauSEXP);
     Rcpp::traits::input_parameter< List >::type prev_sum_trees_mat_mu(prev_sum_trees_mat_muSEXP);
@@ -675,13 +671,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< IntegerVector >::type parent2(parent2SEXP);
     Rcpp::traits::input_parameter< int >::type i(iSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type z(zSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_best_split_sum_tau_bcf(resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, first_round, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, parent2, i, z));
+    rcpp_result_gen = Rcpp::wrap(get_best_split_sum_tau_bcf(resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, parent2, i, z));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_best_split_sum_mu_bcf
-List get_best_split_sum_mu_bcf(NumericVector resids, arma::mat& x_control_a, NumericMatrix tree_table_mu, NumericMatrix tree_mat_mu, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double lowest_BIC, int parent, NumericMatrix cp_mat, double alpha_mu, double beta_mu, double alpha_tau, double beta_tau, int maxOWsize, int first_round, List prev_sum_trees_mu, List prev_sum_trees_tau, List prev_sum_trees_mat_mu, List prev_sum_trees_mat_tau, NumericVector y_scaled, IntegerVector parent2, int i, NumericVector z);
-RcppExport SEXP _bcfbma_get_best_split_sum_mu_bcf(SEXP residsSEXP, SEXP x_control_aSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP cp_matSEXP, SEXP alpha_muSEXP, SEXP beta_muSEXP, SEXP alpha_tauSEXP, SEXP beta_tauSEXP, SEXP maxOWsizeSEXP, SEXP first_roundSEXP, SEXP prev_sum_trees_muSEXP, SEXP prev_sum_trees_tauSEXP, SEXP prev_sum_trees_mat_muSEXP, SEXP prev_sum_trees_mat_tauSEXP, SEXP y_scaledSEXP, SEXP parent2SEXP, SEXP iSEXP, SEXP zSEXP) {
+List get_best_split_sum_mu_bcf(NumericVector resids, arma::mat& x_control_a, NumericMatrix tree_table_mu, NumericMatrix tree_mat_mu, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double lowest_BIC, int parent, NumericMatrix cp_mat, double alpha_mu, double beta_mu, double alpha_tau, double beta_tau, int maxOWsize, List prev_sum_trees_mu, List prev_sum_trees_tau, List prev_sum_trees_mat_mu, List prev_sum_trees_mat_tau, NumericVector y_scaled, IntegerVector parent2, int i, NumericVector z);
+RcppExport SEXP _bcfbma_get_best_split_sum_mu_bcf(SEXP residsSEXP, SEXP x_control_aSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP cp_matSEXP, SEXP alpha_muSEXP, SEXP beta_muSEXP, SEXP alpha_tauSEXP, SEXP beta_tauSEXP, SEXP maxOWsizeSEXP, SEXP prev_sum_trees_muSEXP, SEXP prev_sum_trees_tauSEXP, SEXP prev_sum_trees_mat_muSEXP, SEXP prev_sum_trees_mat_tauSEXP, SEXP y_scaledSEXP, SEXP parent2SEXP, SEXP iSEXP, SEXP zSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -704,7 +700,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type alpha_tau(alpha_tauSEXP);
     Rcpp::traits::input_parameter< double >::type beta_tau(beta_tauSEXP);
     Rcpp::traits::input_parameter< int >::type maxOWsize(maxOWsizeSEXP);
-    Rcpp::traits::input_parameter< int >::type first_round(first_roundSEXP);
     Rcpp::traits::input_parameter< List >::type prev_sum_trees_mu(prev_sum_trees_muSEXP);
     Rcpp::traits::input_parameter< List >::type prev_sum_trees_tau(prev_sum_trees_tauSEXP);
     Rcpp::traits::input_parameter< List >::type prev_sum_trees_mat_mu(prev_sum_trees_mat_muSEXP);
@@ -713,7 +708,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< IntegerVector >::type parent2(parent2SEXP);
     Rcpp::traits::input_parameter< int >::type i(iSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type z(zSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_best_split_sum_mu_bcf(resids, x_control_a, tree_table_mu, tree_mat_mu, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, first_round, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, parent2, i, z));
+    rcpp_result_gen = Rcpp::wrap(get_best_split_sum_mu_bcf(resids, x_control_a, tree_table_mu, tree_mat_mu, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, parent2, i, z));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -892,8 +887,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // get_best_trees_mu_bcf
-List get_best_trees_mu_bcf(arma::mat& x_control_a, arma::mat& x_moderate_a, NumericVector z, NumericMatrix resids, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double sigma_mu_mu, double sigma_mu_tau, List tree_table_mu, List tree_mat_mu, List tree_table_tau, List tree_mat_tau, double lowest_BIC, int first_round, IntegerVector parent, List resids_cp_mat_mu, IntegerVector err_list, NumericMatrix x_control_test, NumericMatrix x_moderate_test, NumericVector test_z, double alpha_mu, double alpha_tau, double beta_mu, double beta_tau, bool is_test_data, double pen_mu, int num_cp_mu, double pen_tau, int num_cp_tau, bool split_rule_node, bool gridpoint, int maxOWsize, int num_splits_mu, int num_splits_tau, int gridsize_mu, bool zero_split);
-RcppExport SEXP _bcfbma_get_best_trees_mu_bcf(SEXP x_control_aSEXP, SEXP x_moderate_aSEXP, SEXP zSEXP, SEXP residsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP sigma_mu_muSEXP, SEXP sigma_mu_tauSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP lowest_BICSEXP, SEXP first_roundSEXP, SEXP parentSEXP, SEXP resids_cp_mat_muSEXP, SEXP err_listSEXP, SEXP x_control_testSEXP, SEXP x_moderate_testSEXP, SEXP test_zSEXP, SEXP alpha_muSEXP, SEXP alpha_tauSEXP, SEXP beta_muSEXP, SEXP beta_tauSEXP, SEXP is_test_dataSEXP, SEXP pen_muSEXP, SEXP num_cp_muSEXP, SEXP pen_tauSEXP, SEXP num_cp_tauSEXP, SEXP split_rule_nodeSEXP, SEXP gridpointSEXP, SEXP maxOWsizeSEXP, SEXP num_splits_muSEXP, SEXP num_splits_tauSEXP, SEXP gridsize_muSEXP, SEXP zero_splitSEXP) {
+List get_best_trees_mu_bcf(arma::mat& x_control_a, arma::mat& x_moderate_a, NumericVector z, NumericMatrix resids, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double sigma_mu_mu, double sigma_mu_tau, List tree_table_mu, List tree_mat_mu, List tree_table_tau, List tree_mat_tau, double lowest_BIC, IntegerVector parent, List resids_cp_mat_mu, IntegerVector err_list, NumericMatrix x_control_test, NumericMatrix x_moderate_test, NumericVector test_z, double alpha_mu, double alpha_tau, double beta_mu, double beta_tau, bool is_test_data, double pen_mu, int num_cp_mu, double pen_tau, int num_cp_tau, bool split_rule_node, bool gridpoint, int maxOWsize, int num_splits_mu, int num_splits_tau, int gridsize_mu, bool zero_split);
+RcppExport SEXP _bcfbma_get_best_trees_mu_bcf(SEXP x_control_aSEXP, SEXP x_moderate_aSEXP, SEXP zSEXP, SEXP residsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP sigma_mu_muSEXP, SEXP sigma_mu_tauSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP resids_cp_mat_muSEXP, SEXP err_listSEXP, SEXP x_control_testSEXP, SEXP x_moderate_testSEXP, SEXP test_zSEXP, SEXP alpha_muSEXP, SEXP alpha_tauSEXP, SEXP beta_muSEXP, SEXP beta_tauSEXP, SEXP is_test_dataSEXP, SEXP pen_muSEXP, SEXP num_cp_muSEXP, SEXP pen_tauSEXP, SEXP num_cp_tauSEXP, SEXP split_rule_nodeSEXP, SEXP gridpointSEXP, SEXP maxOWsizeSEXP, SEXP num_splits_muSEXP, SEXP num_splits_tauSEXP, SEXP gridsize_muSEXP, SEXP zero_splitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -915,7 +910,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type tree_table_tau(tree_table_tauSEXP);
     Rcpp::traits::input_parameter< List >::type tree_mat_tau(tree_mat_tauSEXP);
     Rcpp::traits::input_parameter< double >::type lowest_BIC(lowest_BICSEXP);
-    Rcpp::traits::input_parameter< int >::type first_round(first_roundSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type parent(parentSEXP);
     Rcpp::traits::input_parameter< List >::type resids_cp_mat_mu(resids_cp_mat_muSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type err_list(err_listSEXP);
@@ -938,13 +932,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type num_splits_tau(num_splits_tauSEXP);
     Rcpp::traits::input_parameter< int >::type gridsize_mu(gridsize_muSEXP);
     Rcpp::traits::input_parameter< bool >::type zero_split(zero_splitSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_best_trees_mu_bcf(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_mu, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, zero_split));
+    rcpp_result_gen = Rcpp::wrap(get_best_trees_mu_bcf(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, parent, resids_cp_mat_mu, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, zero_split));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_best_trees_mu_bcf_2
-List get_best_trees_mu_bcf_2(arma::mat& x_control_a, arma::mat& x_moderate_a, NumericVector z, NumericMatrix resids, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double sigma_mu_mu, double sigma_mu_tau, List tree_table_mu, List tree_mat_mu, List tree_table_tau, List tree_mat_tau, double lowest_BIC, int first_round, IntegerVector parent, List resids_cp_mat_mu, IntegerVector err_list, NumericMatrix x_control_test, NumericMatrix x_moderate_test, NumericVector test_z, double alpha_mu, double alpha_tau, double beta_mu, double beta_tau, bool is_test_data, double pen_mu, int num_cp_mu, double pen_tau, int num_cp_tau, bool split_rule_node, bool gridpoint, int maxOWsize, int num_splits_mu, int num_splits_tau, int gridsize_mu, bool zero_split, IntegerVector no_more_mu_trees);
-RcppExport SEXP _bcfbma_get_best_trees_mu_bcf_2(SEXP x_control_aSEXP, SEXP x_moderate_aSEXP, SEXP zSEXP, SEXP residsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP sigma_mu_muSEXP, SEXP sigma_mu_tauSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP lowest_BICSEXP, SEXP first_roundSEXP, SEXP parentSEXP, SEXP resids_cp_mat_muSEXP, SEXP err_listSEXP, SEXP x_control_testSEXP, SEXP x_moderate_testSEXP, SEXP test_zSEXP, SEXP alpha_muSEXP, SEXP alpha_tauSEXP, SEXP beta_muSEXP, SEXP beta_tauSEXP, SEXP is_test_dataSEXP, SEXP pen_muSEXP, SEXP num_cp_muSEXP, SEXP pen_tauSEXP, SEXP num_cp_tauSEXP, SEXP split_rule_nodeSEXP, SEXP gridpointSEXP, SEXP maxOWsizeSEXP, SEXP num_splits_muSEXP, SEXP num_splits_tauSEXP, SEXP gridsize_muSEXP, SEXP zero_splitSEXP, SEXP no_more_mu_treesSEXP) {
+List get_best_trees_mu_bcf_2(arma::mat& x_control_a, arma::mat& x_moderate_a, NumericVector z, NumericMatrix resids, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double sigma_mu_mu, double sigma_mu_tau, List tree_table_mu, List tree_mat_mu, List tree_table_tau, List tree_mat_tau, double lowest_BIC, IntegerVector parent, List resids_cp_mat_mu, IntegerVector err_list, NumericMatrix x_control_test, NumericMatrix x_moderate_test, NumericVector test_z, double alpha_mu, double alpha_tau, double beta_mu, double beta_tau, bool is_test_data, double pen_mu, int num_cp_mu, double pen_tau, int num_cp_tau, bool split_rule_node, bool gridpoint, int maxOWsize, int num_splits_mu, int num_splits_tau, int gridsize_mu, bool zero_split, IntegerVector no_more_mu_trees);
+RcppExport SEXP _bcfbma_get_best_trees_mu_bcf_2(SEXP x_control_aSEXP, SEXP x_moderate_aSEXP, SEXP zSEXP, SEXP residsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP sigma_mu_muSEXP, SEXP sigma_mu_tauSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP resids_cp_mat_muSEXP, SEXP err_listSEXP, SEXP x_control_testSEXP, SEXP x_moderate_testSEXP, SEXP test_zSEXP, SEXP alpha_muSEXP, SEXP alpha_tauSEXP, SEXP beta_muSEXP, SEXP beta_tauSEXP, SEXP is_test_dataSEXP, SEXP pen_muSEXP, SEXP num_cp_muSEXP, SEXP pen_tauSEXP, SEXP num_cp_tauSEXP, SEXP split_rule_nodeSEXP, SEXP gridpointSEXP, SEXP maxOWsizeSEXP, SEXP num_splits_muSEXP, SEXP num_splits_tauSEXP, SEXP gridsize_muSEXP, SEXP zero_splitSEXP, SEXP no_more_mu_treesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -966,7 +960,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type tree_table_tau(tree_table_tauSEXP);
     Rcpp::traits::input_parameter< List >::type tree_mat_tau(tree_mat_tauSEXP);
     Rcpp::traits::input_parameter< double >::type lowest_BIC(lowest_BICSEXP);
-    Rcpp::traits::input_parameter< int >::type first_round(first_roundSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type parent(parentSEXP);
     Rcpp::traits::input_parameter< List >::type resids_cp_mat_mu(resids_cp_mat_muSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type err_list(err_listSEXP);
@@ -990,13 +983,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type gridsize_mu(gridsize_muSEXP);
     Rcpp::traits::input_parameter< bool >::type zero_split(zero_splitSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type no_more_mu_trees(no_more_mu_treesSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_best_trees_mu_bcf_2(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_mu, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, zero_split, no_more_mu_trees));
+    rcpp_result_gen = Rcpp::wrap(get_best_trees_mu_bcf_2(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, parent, resids_cp_mat_mu, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, zero_split, no_more_mu_trees));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_best_trees_sum_mu_bcf
-List get_best_trees_sum_mu_bcf(arma::mat& x_control_a, arma::mat& x_moderate_a, NumericVector z, NumericMatrix resids, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double sigma_mu_mu, double sigma_mu_tau, List tree_table_mu, List tree_mat_mu, List tree_table_tau, List tree_mat_tau, double lowest_BIC, int first_round, IntegerVector parent, List resids_cp_mat_mu, IntegerVector err_list, NumericMatrix x_control_test, NumericMatrix x_moderate_test, NumericVector test_z, double alpha_mu, double alpha_tau, double beta_mu, double beta_tau, bool is_test_data, double pen_mu, int num_cp_mu, double pen_tau, int num_cp_tau, bool split_rule_node, bool gridpoint, int maxOWsize, List prev_sum_trees_mu, List prev_sum_trees_tau, List prev_sum_trees_mat_mu, List prev_sum_trees_mat_tau, NumericVector y_scaled, int num_splits_mu, int num_splits_tau, int gridsize_mu, bool zero_split);
-RcppExport SEXP _bcfbma_get_best_trees_sum_mu_bcf(SEXP x_control_aSEXP, SEXP x_moderate_aSEXP, SEXP zSEXP, SEXP residsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP sigma_mu_muSEXP, SEXP sigma_mu_tauSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP lowest_BICSEXP, SEXP first_roundSEXP, SEXP parentSEXP, SEXP resids_cp_mat_muSEXP, SEXP err_listSEXP, SEXP x_control_testSEXP, SEXP x_moderate_testSEXP, SEXP test_zSEXP, SEXP alpha_muSEXP, SEXP alpha_tauSEXP, SEXP beta_muSEXP, SEXP beta_tauSEXP, SEXP is_test_dataSEXP, SEXP pen_muSEXP, SEXP num_cp_muSEXP, SEXP pen_tauSEXP, SEXP num_cp_tauSEXP, SEXP split_rule_nodeSEXP, SEXP gridpointSEXP, SEXP maxOWsizeSEXP, SEXP prev_sum_trees_muSEXP, SEXP prev_sum_trees_tauSEXP, SEXP prev_sum_trees_mat_muSEXP, SEXP prev_sum_trees_mat_tauSEXP, SEXP y_scaledSEXP, SEXP num_splits_muSEXP, SEXP num_splits_tauSEXP, SEXP gridsize_muSEXP, SEXP zero_splitSEXP) {
+List get_best_trees_sum_mu_bcf(arma::mat& x_control_a, arma::mat& x_moderate_a, NumericVector z, NumericMatrix resids, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double sigma_mu_mu, double sigma_mu_tau, List tree_table_mu, List tree_mat_mu, List tree_table_tau, List tree_mat_tau, double lowest_BIC, IntegerVector parent, List resids_cp_mat_mu, IntegerVector err_list, NumericMatrix x_control_test, NumericMatrix x_moderate_test, NumericVector test_z, double alpha_mu, double alpha_tau, double beta_mu, double beta_tau, bool is_test_data, double pen_mu, int num_cp_mu, double pen_tau, int num_cp_tau, bool split_rule_node, bool gridpoint, int maxOWsize, List prev_sum_trees_mu, List prev_sum_trees_tau, List prev_sum_trees_mat_mu, List prev_sum_trees_mat_tau, NumericVector y_scaled, int num_splits_mu, int num_splits_tau, int gridsize_mu, bool zero_split);
+RcppExport SEXP _bcfbma_get_best_trees_sum_mu_bcf(SEXP x_control_aSEXP, SEXP x_moderate_aSEXP, SEXP zSEXP, SEXP residsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP sigma_mu_muSEXP, SEXP sigma_mu_tauSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP resids_cp_mat_muSEXP, SEXP err_listSEXP, SEXP x_control_testSEXP, SEXP x_moderate_testSEXP, SEXP test_zSEXP, SEXP alpha_muSEXP, SEXP alpha_tauSEXP, SEXP beta_muSEXP, SEXP beta_tauSEXP, SEXP is_test_dataSEXP, SEXP pen_muSEXP, SEXP num_cp_muSEXP, SEXP pen_tauSEXP, SEXP num_cp_tauSEXP, SEXP split_rule_nodeSEXP, SEXP gridpointSEXP, SEXP maxOWsizeSEXP, SEXP prev_sum_trees_muSEXP, SEXP prev_sum_trees_tauSEXP, SEXP prev_sum_trees_mat_muSEXP, SEXP prev_sum_trees_mat_tauSEXP, SEXP y_scaledSEXP, SEXP num_splits_muSEXP, SEXP num_splits_tauSEXP, SEXP gridsize_muSEXP, SEXP zero_splitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1018,7 +1011,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type tree_table_tau(tree_table_tauSEXP);
     Rcpp::traits::input_parameter< List >::type tree_mat_tau(tree_mat_tauSEXP);
     Rcpp::traits::input_parameter< double >::type lowest_BIC(lowest_BICSEXP);
-    Rcpp::traits::input_parameter< int >::type first_round(first_roundSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type parent(parentSEXP);
     Rcpp::traits::input_parameter< List >::type resids_cp_mat_mu(resids_cp_mat_muSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type err_list(err_listSEXP);
@@ -1046,13 +1038,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type num_splits_tau(num_splits_tauSEXP);
     Rcpp::traits::input_parameter< int >::type gridsize_mu(gridsize_muSEXP);
     Rcpp::traits::input_parameter< bool >::type zero_split(zero_splitSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_best_trees_sum_mu_bcf(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_mu, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, num_splits_mu, num_splits_tau, gridsize_mu, zero_split));
+    rcpp_result_gen = Rcpp::wrap(get_best_trees_sum_mu_bcf(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, parent, resids_cp_mat_mu, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, num_splits_mu, num_splits_tau, gridsize_mu, zero_split));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_best_trees_sum_mu_bcf_2
-List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a, arma::mat& x_moderate_a, NumericVector z, NumericMatrix resids, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double sigma_mu_mu, double sigma_mu_tau, List tree_table_mu, List tree_mat_mu, List tree_table_tau, List tree_mat_tau, double lowest_BIC, int first_round, IntegerVector parent, List resids_cp_mat_mu, IntegerVector err_list, NumericMatrix x_control_test, NumericMatrix x_moderate_test, NumericVector test_z, double alpha_mu, double alpha_tau, double beta_mu, double beta_tau, bool is_test_data, double pen_mu, int num_cp_mu, double pen_tau, int num_cp_tau, bool split_rule_node, bool gridpoint, int maxOWsize, List prev_sum_trees_mu, List prev_sum_trees_tau, List prev_sum_trees_mat_mu, List prev_sum_trees_mat_tau, NumericVector y_scaled, int num_splits_mu, int num_splits_tau, int gridsize_mu, bool zero_split, IntegerVector no_more_mu_trees);
-RcppExport SEXP _bcfbma_get_best_trees_sum_mu_bcf_2(SEXP x_control_aSEXP, SEXP x_moderate_aSEXP, SEXP zSEXP, SEXP residsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP sigma_mu_muSEXP, SEXP sigma_mu_tauSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP lowest_BICSEXP, SEXP first_roundSEXP, SEXP parentSEXP, SEXP resids_cp_mat_muSEXP, SEXP err_listSEXP, SEXP x_control_testSEXP, SEXP x_moderate_testSEXP, SEXP test_zSEXP, SEXP alpha_muSEXP, SEXP alpha_tauSEXP, SEXP beta_muSEXP, SEXP beta_tauSEXP, SEXP is_test_dataSEXP, SEXP pen_muSEXP, SEXP num_cp_muSEXP, SEXP pen_tauSEXP, SEXP num_cp_tauSEXP, SEXP split_rule_nodeSEXP, SEXP gridpointSEXP, SEXP maxOWsizeSEXP, SEXP prev_sum_trees_muSEXP, SEXP prev_sum_trees_tauSEXP, SEXP prev_sum_trees_mat_muSEXP, SEXP prev_sum_trees_mat_tauSEXP, SEXP y_scaledSEXP, SEXP num_splits_muSEXP, SEXP num_splits_tauSEXP, SEXP gridsize_muSEXP, SEXP zero_splitSEXP, SEXP no_more_mu_treesSEXP) {
+List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a, arma::mat& x_moderate_a, NumericVector z, NumericMatrix resids, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double sigma_mu_mu, double sigma_mu_tau, List tree_table_mu, List tree_mat_mu, List tree_table_tau, List tree_mat_tau, double lowest_BIC, IntegerVector parent, List resids_cp_mat_mu, IntegerVector err_list, NumericMatrix x_control_test, NumericMatrix x_moderate_test, NumericVector test_z, double alpha_mu, double alpha_tau, double beta_mu, double beta_tau, bool is_test_data, double pen_mu, int num_cp_mu, double pen_tau, int num_cp_tau, bool split_rule_node, bool gridpoint, int maxOWsize, List prev_sum_trees_mu, List prev_sum_trees_tau, List prev_sum_trees_mat_mu, List prev_sum_trees_mat_tau, NumericVector y_scaled, int num_splits_mu, int num_splits_tau, int gridsize_mu, bool zero_split, IntegerVector no_more_mu_trees);
+RcppExport SEXP _bcfbma_get_best_trees_sum_mu_bcf_2(SEXP x_control_aSEXP, SEXP x_moderate_aSEXP, SEXP zSEXP, SEXP residsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP sigma_mu_muSEXP, SEXP sigma_mu_tauSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP resids_cp_mat_muSEXP, SEXP err_listSEXP, SEXP x_control_testSEXP, SEXP x_moderate_testSEXP, SEXP test_zSEXP, SEXP alpha_muSEXP, SEXP alpha_tauSEXP, SEXP beta_muSEXP, SEXP beta_tauSEXP, SEXP is_test_dataSEXP, SEXP pen_muSEXP, SEXP num_cp_muSEXP, SEXP pen_tauSEXP, SEXP num_cp_tauSEXP, SEXP split_rule_nodeSEXP, SEXP gridpointSEXP, SEXP maxOWsizeSEXP, SEXP prev_sum_trees_muSEXP, SEXP prev_sum_trees_tauSEXP, SEXP prev_sum_trees_mat_muSEXP, SEXP prev_sum_trees_mat_tauSEXP, SEXP y_scaledSEXP, SEXP num_splits_muSEXP, SEXP num_splits_tauSEXP, SEXP gridsize_muSEXP, SEXP zero_splitSEXP, SEXP no_more_mu_treesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1074,7 +1066,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type tree_table_tau(tree_table_tauSEXP);
     Rcpp::traits::input_parameter< List >::type tree_mat_tau(tree_mat_tauSEXP);
     Rcpp::traits::input_parameter< double >::type lowest_BIC(lowest_BICSEXP);
-    Rcpp::traits::input_parameter< int >::type first_round(first_roundSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type parent(parentSEXP);
     Rcpp::traits::input_parameter< List >::type resids_cp_mat_mu(resids_cp_mat_muSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type err_list(err_listSEXP);
@@ -1103,13 +1094,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type gridsize_mu(gridsize_muSEXP);
     Rcpp::traits::input_parameter< bool >::type zero_split(zero_splitSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type no_more_mu_trees(no_more_mu_treesSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_best_trees_sum_mu_bcf_2(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_mu, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, num_splits_mu, num_splits_tau, gridsize_mu, zero_split, no_more_mu_trees));
+    rcpp_result_gen = Rcpp::wrap(get_best_trees_sum_mu_bcf_2(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, parent, resids_cp_mat_mu, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, num_splits_mu, num_splits_tau, gridsize_mu, zero_split, no_more_mu_trees));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_best_trees_tau_bcf
-List get_best_trees_tau_bcf(arma::mat& x_control_a, arma::mat& x_moderate_a, NumericVector z, NumericMatrix resids, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double sigma_mu_mu, double sigma_mu_tau, List tree_table_mu, List tree_mat_mu, List tree_table_tau, List tree_mat_tau, double lowest_BIC, int first_round, IntegerVector parent, List resids_cp_mat_tau, IntegerVector err_list, NumericMatrix x_control_test, NumericMatrix x_moderate_test, NumericVector test_z, double alpha_mu, double alpha_tau, double beta_mu, double beta_tau, bool is_test_data, double pen_mu, int num_cp_mu, double pen_tau, int num_cp_tau, bool split_rule_node, bool gridpoint, int maxOWsize, int num_splits_mu, int num_splits_tau, int gridsize_tau, bool zero_split, IntegerVector no_more_tau_trees);
-RcppExport SEXP _bcfbma_get_best_trees_tau_bcf(SEXP x_control_aSEXP, SEXP x_moderate_aSEXP, SEXP zSEXP, SEXP residsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP sigma_mu_muSEXP, SEXP sigma_mu_tauSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP lowest_BICSEXP, SEXP first_roundSEXP, SEXP parentSEXP, SEXP resids_cp_mat_tauSEXP, SEXP err_listSEXP, SEXP x_control_testSEXP, SEXP x_moderate_testSEXP, SEXP test_zSEXP, SEXP alpha_muSEXP, SEXP alpha_tauSEXP, SEXP beta_muSEXP, SEXP beta_tauSEXP, SEXP is_test_dataSEXP, SEXP pen_muSEXP, SEXP num_cp_muSEXP, SEXP pen_tauSEXP, SEXP num_cp_tauSEXP, SEXP split_rule_nodeSEXP, SEXP gridpointSEXP, SEXP maxOWsizeSEXP, SEXP num_splits_muSEXP, SEXP num_splits_tauSEXP, SEXP gridsize_tauSEXP, SEXP zero_splitSEXP, SEXP no_more_tau_treesSEXP) {
+List get_best_trees_tau_bcf(arma::mat& x_control_a, arma::mat& x_moderate_a, NumericVector z, NumericMatrix resids, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double sigma_mu_mu, double sigma_mu_tau, List tree_table_mu, List tree_mat_mu, List tree_table_tau, List tree_mat_tau, double lowest_BIC, IntegerVector parent, List resids_cp_mat_tau, IntegerVector err_list, NumericMatrix x_control_test, NumericMatrix x_moderate_test, NumericVector test_z, double alpha_mu, double alpha_tau, double beta_mu, double beta_tau, bool is_test_data, double pen_mu, int num_cp_mu, double pen_tau, int num_cp_tau, bool split_rule_node, bool gridpoint, int maxOWsize, int num_splits_mu, int num_splits_tau, int gridsize_tau, bool zero_split, IntegerVector no_more_tau_trees);
+RcppExport SEXP _bcfbma_get_best_trees_tau_bcf(SEXP x_control_aSEXP, SEXP x_moderate_aSEXP, SEXP zSEXP, SEXP residsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP sigma_mu_muSEXP, SEXP sigma_mu_tauSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP resids_cp_mat_tauSEXP, SEXP err_listSEXP, SEXP x_control_testSEXP, SEXP x_moderate_testSEXP, SEXP test_zSEXP, SEXP alpha_muSEXP, SEXP alpha_tauSEXP, SEXP beta_muSEXP, SEXP beta_tauSEXP, SEXP is_test_dataSEXP, SEXP pen_muSEXP, SEXP num_cp_muSEXP, SEXP pen_tauSEXP, SEXP num_cp_tauSEXP, SEXP split_rule_nodeSEXP, SEXP gridpointSEXP, SEXP maxOWsizeSEXP, SEXP num_splits_muSEXP, SEXP num_splits_tauSEXP, SEXP gridsize_tauSEXP, SEXP zero_splitSEXP, SEXP no_more_tau_treesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1131,7 +1122,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type tree_table_tau(tree_table_tauSEXP);
     Rcpp::traits::input_parameter< List >::type tree_mat_tau(tree_mat_tauSEXP);
     Rcpp::traits::input_parameter< double >::type lowest_BIC(lowest_BICSEXP);
-    Rcpp::traits::input_parameter< int >::type first_round(first_roundSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type parent(parentSEXP);
     Rcpp::traits::input_parameter< List >::type resids_cp_mat_tau(resids_cp_mat_tauSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type err_list(err_listSEXP);
@@ -1155,13 +1145,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type gridsize_tau(gridsize_tauSEXP);
     Rcpp::traits::input_parameter< bool >::type zero_split(zero_splitSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type no_more_tau_trees(no_more_tau_treesSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_best_trees_tau_bcf(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_tau, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_tau, zero_split, no_more_tau_trees));
+    rcpp_result_gen = Rcpp::wrap(get_best_trees_tau_bcf(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, parent, resids_cp_mat_tau, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_tau, zero_split, no_more_tau_trees));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_best_trees_sum_tau_round1_bcf
-List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a, arma::mat& x_moderate_a, NumericVector z, NumericMatrix resids, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double sigma_mu_mu, double sigma_mu_tau, List tree_table_mu, List tree_mat_mu, List tree_table_tau, List tree_mat_tau, double lowest_BIC, int first_round, IntegerVector parent, List resids_cp_mat_tau, IntegerVector err_list, NumericMatrix x_control_test, NumericMatrix x_moderate_test, NumericVector test_z, double alpha_mu, double alpha_tau, double beta_mu, double beta_tau, bool is_test_data, double pen_mu, int num_cp_mu, double pen_tau, int num_cp_tau, bool split_rule_node, bool gridpoint, int maxOWsize, List prev_sum_trees_mu, List prev_sum_trees_mat_mu, NumericVector y_scaled, int num_splits_mu, int num_splits_tau, int gridsize_tau, bool zero_split);
-RcppExport SEXP _bcfbma_get_best_trees_sum_tau_round1_bcf(SEXP x_control_aSEXP, SEXP x_moderate_aSEXP, SEXP zSEXP, SEXP residsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP sigma_mu_muSEXP, SEXP sigma_mu_tauSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP lowest_BICSEXP, SEXP first_roundSEXP, SEXP parentSEXP, SEXP resids_cp_mat_tauSEXP, SEXP err_listSEXP, SEXP x_control_testSEXP, SEXP x_moderate_testSEXP, SEXP test_zSEXP, SEXP alpha_muSEXP, SEXP alpha_tauSEXP, SEXP beta_muSEXP, SEXP beta_tauSEXP, SEXP is_test_dataSEXP, SEXP pen_muSEXP, SEXP num_cp_muSEXP, SEXP pen_tauSEXP, SEXP num_cp_tauSEXP, SEXP split_rule_nodeSEXP, SEXP gridpointSEXP, SEXP maxOWsizeSEXP, SEXP prev_sum_trees_muSEXP, SEXP prev_sum_trees_mat_muSEXP, SEXP y_scaledSEXP, SEXP num_splits_muSEXP, SEXP num_splits_tauSEXP, SEXP gridsize_tauSEXP, SEXP zero_splitSEXP) {
+List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a, arma::mat& x_moderate_a, NumericVector z, NumericMatrix resids, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double sigma_mu_mu, double sigma_mu_tau, List tree_table_mu, List tree_mat_mu, List tree_table_tau, List tree_mat_tau, double lowest_BIC, IntegerVector parent, List resids_cp_mat_tau, IntegerVector err_list, NumericMatrix x_control_test, NumericMatrix x_moderate_test, NumericVector test_z, double alpha_mu, double alpha_tau, double beta_mu, double beta_tau, bool is_test_data, double pen_mu, int num_cp_mu, double pen_tau, int num_cp_tau, bool split_rule_node, bool gridpoint, int maxOWsize, List prev_sum_trees_mu, List prev_sum_trees_mat_mu, NumericVector y_scaled, int num_splits_mu, int num_splits_tau, int gridsize_tau, bool zero_split);
+RcppExport SEXP _bcfbma_get_best_trees_sum_tau_round1_bcf(SEXP x_control_aSEXP, SEXP x_moderate_aSEXP, SEXP zSEXP, SEXP residsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP sigma_mu_muSEXP, SEXP sigma_mu_tauSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP resids_cp_mat_tauSEXP, SEXP err_listSEXP, SEXP x_control_testSEXP, SEXP x_moderate_testSEXP, SEXP test_zSEXP, SEXP alpha_muSEXP, SEXP alpha_tauSEXP, SEXP beta_muSEXP, SEXP beta_tauSEXP, SEXP is_test_dataSEXP, SEXP pen_muSEXP, SEXP num_cp_muSEXP, SEXP pen_tauSEXP, SEXP num_cp_tauSEXP, SEXP split_rule_nodeSEXP, SEXP gridpointSEXP, SEXP maxOWsizeSEXP, SEXP prev_sum_trees_muSEXP, SEXP prev_sum_trees_mat_muSEXP, SEXP y_scaledSEXP, SEXP num_splits_muSEXP, SEXP num_splits_tauSEXP, SEXP gridsize_tauSEXP, SEXP zero_splitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1183,7 +1173,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type tree_table_tau(tree_table_tauSEXP);
     Rcpp::traits::input_parameter< List >::type tree_mat_tau(tree_mat_tauSEXP);
     Rcpp::traits::input_parameter< double >::type lowest_BIC(lowest_BICSEXP);
-    Rcpp::traits::input_parameter< int >::type first_round(first_roundSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type parent(parentSEXP);
     Rcpp::traits::input_parameter< List >::type resids_cp_mat_tau(resids_cp_mat_tauSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type err_list(err_listSEXP);
@@ -1209,13 +1198,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type num_splits_tau(num_splits_tauSEXP);
     Rcpp::traits::input_parameter< int >::type gridsize_tau(gridsize_tauSEXP);
     Rcpp::traits::input_parameter< bool >::type zero_split(zero_splitSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_best_trees_sum_tau_round1_bcf(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_tau, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_mat_mu, y_scaled, num_splits_mu, num_splits_tau, gridsize_tau, zero_split));
+    rcpp_result_gen = Rcpp::wrap(get_best_trees_sum_tau_round1_bcf(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, parent, resids_cp_mat_tau, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_mat_mu, y_scaled, num_splits_mu, num_splits_tau, gridsize_tau, zero_split));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_best_trees_sum_tau_bcf
-List get_best_trees_sum_tau_bcf(arma::mat& x_control_a, arma::mat& x_moderate_a, NumericVector z, NumericMatrix resids, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double sigma_mu_mu, double sigma_mu_tau, List tree_table_mu, List tree_mat_mu, List tree_table_tau, List tree_mat_tau, double lowest_BIC, int first_round, IntegerVector parent, List resids_cp_mat_tau, IntegerVector err_list, NumericMatrix x_control_test, NumericMatrix x_moderate_test, NumericVector test_z, double alpha_mu, double alpha_tau, double beta_mu, double beta_tau, bool is_test_data, double pen_mu, int num_cp_mu, double pen_tau, int num_cp_tau, bool split_rule_node, bool gridpoint, int maxOWsize, List prev_sum_trees_mu, List prev_sum_trees_tau, List prev_sum_trees_mat_mu, List prev_sum_trees_mat_tau, NumericVector y_scaled, int num_splits_mu, int num_splits_tau, int gridsize_tau, bool zero_split);
-RcppExport SEXP _bcfbma_get_best_trees_sum_tau_bcf(SEXP x_control_aSEXP, SEXP x_moderate_aSEXP, SEXP zSEXP, SEXP residsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP sigma_mu_muSEXP, SEXP sigma_mu_tauSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP lowest_BICSEXP, SEXP first_roundSEXP, SEXP parentSEXP, SEXP resids_cp_mat_tauSEXP, SEXP err_listSEXP, SEXP x_control_testSEXP, SEXP x_moderate_testSEXP, SEXP test_zSEXP, SEXP alpha_muSEXP, SEXP alpha_tauSEXP, SEXP beta_muSEXP, SEXP beta_tauSEXP, SEXP is_test_dataSEXP, SEXP pen_muSEXP, SEXP num_cp_muSEXP, SEXP pen_tauSEXP, SEXP num_cp_tauSEXP, SEXP split_rule_nodeSEXP, SEXP gridpointSEXP, SEXP maxOWsizeSEXP, SEXP prev_sum_trees_muSEXP, SEXP prev_sum_trees_tauSEXP, SEXP prev_sum_trees_mat_muSEXP, SEXP prev_sum_trees_mat_tauSEXP, SEXP y_scaledSEXP, SEXP num_splits_muSEXP, SEXP num_splits_tauSEXP, SEXP gridsize_tauSEXP, SEXP zero_splitSEXP) {
+List get_best_trees_sum_tau_bcf(arma::mat& x_control_a, arma::mat& x_moderate_a, NumericVector z, NumericMatrix resids, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double sigma_mu_mu, double sigma_mu_tau, List tree_table_mu, List tree_mat_mu, List tree_table_tau, List tree_mat_tau, double lowest_BIC, IntegerVector parent, List resids_cp_mat_tau, IntegerVector err_list, NumericMatrix x_control_test, NumericMatrix x_moderate_test, NumericVector test_z, double alpha_mu, double alpha_tau, double beta_mu, double beta_tau, bool is_test_data, double pen_mu, int num_cp_mu, double pen_tau, int num_cp_tau, bool split_rule_node, bool gridpoint, int maxOWsize, List prev_sum_trees_mu, List prev_sum_trees_tau, List prev_sum_trees_mat_mu, List prev_sum_trees_mat_tau, NumericVector y_scaled, int num_splits_mu, int num_splits_tau, int gridsize_tau, bool zero_split);
+RcppExport SEXP _bcfbma_get_best_trees_sum_tau_bcf(SEXP x_control_aSEXP, SEXP x_moderate_aSEXP, SEXP zSEXP, SEXP residsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP sigma_mu_muSEXP, SEXP sigma_mu_tauSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP resids_cp_mat_tauSEXP, SEXP err_listSEXP, SEXP x_control_testSEXP, SEXP x_moderate_testSEXP, SEXP test_zSEXP, SEXP alpha_muSEXP, SEXP alpha_tauSEXP, SEXP beta_muSEXP, SEXP beta_tauSEXP, SEXP is_test_dataSEXP, SEXP pen_muSEXP, SEXP num_cp_muSEXP, SEXP pen_tauSEXP, SEXP num_cp_tauSEXP, SEXP split_rule_nodeSEXP, SEXP gridpointSEXP, SEXP maxOWsizeSEXP, SEXP prev_sum_trees_muSEXP, SEXP prev_sum_trees_tauSEXP, SEXP prev_sum_trees_mat_muSEXP, SEXP prev_sum_trees_mat_tauSEXP, SEXP y_scaledSEXP, SEXP num_splits_muSEXP, SEXP num_splits_tauSEXP, SEXP gridsize_tauSEXP, SEXP zero_splitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1237,7 +1226,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type tree_table_tau(tree_table_tauSEXP);
     Rcpp::traits::input_parameter< List >::type tree_mat_tau(tree_mat_tauSEXP);
     Rcpp::traits::input_parameter< double >::type lowest_BIC(lowest_BICSEXP);
-    Rcpp::traits::input_parameter< int >::type first_round(first_roundSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type parent(parentSEXP);
     Rcpp::traits::input_parameter< List >::type resids_cp_mat_tau(resids_cp_mat_tauSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type err_list(err_listSEXP);
@@ -1265,13 +1253,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type num_splits_tau(num_splits_tauSEXP);
     Rcpp::traits::input_parameter< int >::type gridsize_tau(gridsize_tauSEXP);
     Rcpp::traits::input_parameter< bool >::type zero_split(zero_splitSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_best_trees_sum_tau_bcf(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_tau, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, num_splits_mu, num_splits_tau, gridsize_tau, zero_split));
+    rcpp_result_gen = Rcpp::wrap(get_best_trees_sum_tau_bcf(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, parent, resids_cp_mat_tau, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, num_splits_mu, num_splits_tau, gridsize_tau, zero_split));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_best_trees_sum_tau_bcf_2
-List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a, arma::mat& x_moderate_a, NumericVector z, NumericMatrix resids, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double sigma_mu_mu, double sigma_mu_tau, List tree_table_mu, List tree_mat_mu, List tree_table_tau, List tree_mat_tau, double lowest_BIC, int first_round, IntegerVector parent, List resids_cp_mat_tau, IntegerVector err_list, NumericMatrix x_control_test, NumericMatrix x_moderate_test, NumericVector test_z, double alpha_mu, double alpha_tau, double beta_mu, double beta_tau, bool is_test_data, double pen_mu, int num_cp_mu, double pen_tau, int num_cp_tau, bool split_rule_node, bool gridpoint, int maxOWsize, List prev_sum_trees_mu, List prev_sum_trees_tau, List prev_sum_trees_mat_mu, List prev_sum_trees_mat_tau, NumericVector y_scaled, int num_splits_mu, int num_splits_tau, int gridsize_tau, bool zero_split, IntegerVector no_more_tau_trees);
-RcppExport SEXP _bcfbma_get_best_trees_sum_tau_bcf_2(SEXP x_control_aSEXP, SEXP x_moderate_aSEXP, SEXP zSEXP, SEXP residsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP sigma_mu_muSEXP, SEXP sigma_mu_tauSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP lowest_BICSEXP, SEXP first_roundSEXP, SEXP parentSEXP, SEXP resids_cp_mat_tauSEXP, SEXP err_listSEXP, SEXP x_control_testSEXP, SEXP x_moderate_testSEXP, SEXP test_zSEXP, SEXP alpha_muSEXP, SEXP alpha_tauSEXP, SEXP beta_muSEXP, SEXP beta_tauSEXP, SEXP is_test_dataSEXP, SEXP pen_muSEXP, SEXP num_cp_muSEXP, SEXP pen_tauSEXP, SEXP num_cp_tauSEXP, SEXP split_rule_nodeSEXP, SEXP gridpointSEXP, SEXP maxOWsizeSEXP, SEXP prev_sum_trees_muSEXP, SEXP prev_sum_trees_tauSEXP, SEXP prev_sum_trees_mat_muSEXP, SEXP prev_sum_trees_mat_tauSEXP, SEXP y_scaledSEXP, SEXP num_splits_muSEXP, SEXP num_splits_tauSEXP, SEXP gridsize_tauSEXP, SEXP zero_splitSEXP, SEXP no_more_tau_treesSEXP) {
+List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a, arma::mat& x_moderate_a, NumericVector z, NumericMatrix resids, double a_mu, double a_tau, double mu_mu, double mu_tau, double nu, double lambda, double c, double sigma_mu_mu, double sigma_mu_tau, List tree_table_mu, List tree_mat_mu, List tree_table_tau, List tree_mat_tau, double lowest_BIC, IntegerVector parent, List resids_cp_mat_tau, IntegerVector err_list, NumericMatrix x_control_test, NumericMatrix x_moderate_test, NumericVector test_z, double alpha_mu, double alpha_tau, double beta_mu, double beta_tau, bool is_test_data, double pen_mu, int num_cp_mu, double pen_tau, int num_cp_tau, bool split_rule_node, bool gridpoint, int maxOWsize, List prev_sum_trees_mu, List prev_sum_trees_tau, List prev_sum_trees_mat_mu, List prev_sum_trees_mat_tau, NumericVector y_scaled, int num_splits_mu, int num_splits_tau, int gridsize_tau, bool zero_split, IntegerVector no_more_tau_trees);
+RcppExport SEXP _bcfbma_get_best_trees_sum_tau_bcf_2(SEXP x_control_aSEXP, SEXP x_moderate_aSEXP, SEXP zSEXP, SEXP residsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP mu_muSEXP, SEXP mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP sigma_mu_muSEXP, SEXP sigma_mu_tauSEXP, SEXP tree_table_muSEXP, SEXP tree_mat_muSEXP, SEXP tree_table_tauSEXP, SEXP tree_mat_tauSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP resids_cp_mat_tauSEXP, SEXP err_listSEXP, SEXP x_control_testSEXP, SEXP x_moderate_testSEXP, SEXP test_zSEXP, SEXP alpha_muSEXP, SEXP alpha_tauSEXP, SEXP beta_muSEXP, SEXP beta_tauSEXP, SEXP is_test_dataSEXP, SEXP pen_muSEXP, SEXP num_cp_muSEXP, SEXP pen_tauSEXP, SEXP num_cp_tauSEXP, SEXP split_rule_nodeSEXP, SEXP gridpointSEXP, SEXP maxOWsizeSEXP, SEXP prev_sum_trees_muSEXP, SEXP prev_sum_trees_tauSEXP, SEXP prev_sum_trees_mat_muSEXP, SEXP prev_sum_trees_mat_tauSEXP, SEXP y_scaledSEXP, SEXP num_splits_muSEXP, SEXP num_splits_tauSEXP, SEXP gridsize_tauSEXP, SEXP zero_splitSEXP, SEXP no_more_tau_treesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1293,7 +1281,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type tree_table_tau(tree_table_tauSEXP);
     Rcpp::traits::input_parameter< List >::type tree_mat_tau(tree_mat_tauSEXP);
     Rcpp::traits::input_parameter< double >::type lowest_BIC(lowest_BICSEXP);
-    Rcpp::traits::input_parameter< int >::type first_round(first_roundSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type parent(parentSEXP);
     Rcpp::traits::input_parameter< List >::type resids_cp_mat_tau(resids_cp_mat_tauSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type err_list(err_listSEXP);
@@ -1322,7 +1309,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type gridsize_tau(gridsize_tauSEXP);
     Rcpp::traits::input_parameter< bool >::type zero_split(zero_splitSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type no_more_tau_trees(no_more_tau_treesSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_best_trees_sum_tau_bcf_2(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, first_round, parent, resids_cp_mat_tau, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, num_splits_mu, num_splits_tau, gridsize_tau, zero_split, no_more_tau_trees));
+    rcpp_result_gen = Rcpp::wrap(get_best_trees_sum_tau_bcf_2(x_control_a, x_moderate_a, z, resids, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, tree_table_mu, tree_mat_mu, tree_table_tau, tree_mat_tau, lowest_BIC, parent, resids_cp_mat_tau, err_list, x_control_test, x_moderate_test, test_z, alpha_mu, alpha_tau, beta_mu, beta_tau, is_test_data, pen_mu, num_cp_mu, pen_tau, num_cp_tau, split_rule_node, gridpoint, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, num_splits_mu, num_splits_tau, gridsize_tau, zero_split, no_more_tau_trees));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1926,12 +1913,12 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bcfbma_W_tauround1_bcf", (DL_FUNC) &_bcfbma_W_tauround1_bcf, 3},
     {"_bcfbma_sumtree_likelihood_function_bcf_bcf", (DL_FUNC) &_bcfbma_sumtree_likelihood_function_bcf_bcf, 11},
     {"_bcfbma_sumtree_likelihood_tau_round1_bcf", (DL_FUNC) &_bcfbma_sumtree_likelihood_tau_round1_bcf, 9},
-    {"_bcfbma_get_best_split_mu_bcf", (DL_FUNC) &_bcfbma_get_best_split_mu_bcf, 16},
+    {"_bcfbma_get_best_split_mu_bcf", (DL_FUNC) &_bcfbma_get_best_split_mu_bcf, 15},
     {"_bcfbma_get_best_split_bcf", (DL_FUNC) &_bcfbma_get_best_split_bcf, 16},
-    {"_bcfbma_get_best_split_tau_bcf", (DL_FUNC) &_bcfbma_get_best_split_tau_bcf, 20},
-    {"_bcfbma_get_best_split_tau_round1_bcf", (DL_FUNC) &_bcfbma_get_best_split_tau_round1_bcf, 26},
-    {"_bcfbma_get_best_split_sum_tau_bcf", (DL_FUNC) &_bcfbma_get_best_split_sum_tau_bcf, 28},
-    {"_bcfbma_get_best_split_sum_mu_bcf", (DL_FUNC) &_bcfbma_get_best_split_sum_mu_bcf, 28},
+    {"_bcfbma_get_best_split_tau_bcf", (DL_FUNC) &_bcfbma_get_best_split_tau_bcf, 19},
+    {"_bcfbma_get_best_split_tau_round1_bcf", (DL_FUNC) &_bcfbma_get_best_split_tau_round1_bcf, 25},
+    {"_bcfbma_get_best_split_sum_tau_bcf", (DL_FUNC) &_bcfbma_get_best_split_sum_tau_bcf, 27},
+    {"_bcfbma_get_best_split_sum_mu_bcf", (DL_FUNC) &_bcfbma_get_best_split_sum_mu_bcf, 27},
     {"_bcfbma_update_mean_var_bcf", (DL_FUNC) &_bcfbma_update_mean_var_bcf, 4},
     {"_bcfbma_update_predictions_bcf", (DL_FUNC) &_bcfbma_update_predictions_bcf, 4},
     {"_bcfbma_subsetter_bcf", (DL_FUNC) &_bcfbma_subsetter_bcf, 2},
@@ -1945,14 +1932,14 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bcfbma_make_gridpoint_cpmat_tau_bcf", (DL_FUNC) &_bcfbma_make_gridpoint_cpmat_tau_bcf, 5},
     {"_bcfbma_make_pelt_cpmat_mu_bcf", (DL_FUNC) &_bcfbma_make_pelt_cpmat_mu_bcf, 4},
     {"_bcfbma_make_pelt_cpmat_tau_bcf", (DL_FUNC) &_bcfbma_make_pelt_cpmat_tau_bcf, 5},
-    {"_bcfbma_get_best_trees_mu_bcf", (DL_FUNC) &_bcfbma_get_best_trees_mu_bcf, 41},
-    {"_bcfbma_get_best_trees_mu_bcf_2", (DL_FUNC) &_bcfbma_get_best_trees_mu_bcf_2, 42},
-    {"_bcfbma_get_best_trees_sum_mu_bcf", (DL_FUNC) &_bcfbma_get_best_trees_sum_mu_bcf, 46},
-    {"_bcfbma_get_best_trees_sum_mu_bcf_2", (DL_FUNC) &_bcfbma_get_best_trees_sum_mu_bcf_2, 47},
-    {"_bcfbma_get_best_trees_tau_bcf", (DL_FUNC) &_bcfbma_get_best_trees_tau_bcf, 42},
-    {"_bcfbma_get_best_trees_sum_tau_round1_bcf", (DL_FUNC) &_bcfbma_get_best_trees_sum_tau_round1_bcf, 44},
-    {"_bcfbma_get_best_trees_sum_tau_bcf", (DL_FUNC) &_bcfbma_get_best_trees_sum_tau_bcf, 46},
-    {"_bcfbma_get_best_trees_sum_tau_bcf_2", (DL_FUNC) &_bcfbma_get_best_trees_sum_tau_bcf_2, 47},
+    {"_bcfbma_get_best_trees_mu_bcf", (DL_FUNC) &_bcfbma_get_best_trees_mu_bcf, 40},
+    {"_bcfbma_get_best_trees_mu_bcf_2", (DL_FUNC) &_bcfbma_get_best_trees_mu_bcf_2, 41},
+    {"_bcfbma_get_best_trees_sum_mu_bcf", (DL_FUNC) &_bcfbma_get_best_trees_sum_mu_bcf, 45},
+    {"_bcfbma_get_best_trees_sum_mu_bcf_2", (DL_FUNC) &_bcfbma_get_best_trees_sum_mu_bcf_2, 46},
+    {"_bcfbma_get_best_trees_tau_bcf", (DL_FUNC) &_bcfbma_get_best_trees_tau_bcf, 41},
+    {"_bcfbma_get_best_trees_sum_tau_round1_bcf", (DL_FUNC) &_bcfbma_get_best_trees_sum_tau_round1_bcf, 43},
+    {"_bcfbma_get_best_trees_sum_tau_bcf", (DL_FUNC) &_bcfbma_get_best_trees_sum_tau_bcf, 45},
+    {"_bcfbma_get_best_trees_sum_tau_bcf_2", (DL_FUNC) &_bcfbma_get_best_trees_sum_tau_bcf_2, 46},
     {"_bcfbma_scale_response_bcf", (DL_FUNC) &_bcfbma_scale_response_bcf, 5},
     {"_bcfbma_get_original_bcf", (DL_FUNC) &_bcfbma_get_original_bcf, 5},
     {"_bcfbma_BCF_BMA_sumLikelihood", (DL_FUNC) &_bcfbma_BCF_BMA_sumLikelihood, 36},
