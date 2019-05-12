@@ -283,24 +283,20 @@ BEGIN_RCPP
 END_RCPP
 }
 // grow_tree_bcf
-List grow_tree_bcf(arma::mat& xmat, NumericVector y, NumericMatrix prior_tree_matrix, int grow_node, NumericMatrix prior_tree_table, int splitvar, double splitpoint, NumericVector terminal_nodes, NumericVector grow_obs, double d, NumericVector get_min, arma::mat& data_curr_node);
-RcppExport SEXP _bcfbma_grow_tree_bcf(SEXP xmatSEXP, SEXP ySEXP, SEXP prior_tree_matrixSEXP, SEXP grow_nodeSEXP, SEXP prior_tree_tableSEXP, SEXP splitvarSEXP, SEXP splitpointSEXP, SEXP terminal_nodesSEXP, SEXP grow_obsSEXP, SEXP dSEXP, SEXP get_minSEXP, SEXP data_curr_nodeSEXP) {
+List grow_tree_bcf(arma::mat& xmat, NumericMatrix prior_tree_matrix, int grow_node, NumericMatrix prior_tree_table, int splitvar, double splitpoint, NumericVector grow_obs, double d);
+RcppExport SEXP _bcfbma_grow_tree_bcf(SEXP xmatSEXP, SEXP prior_tree_matrixSEXP, SEXP grow_nodeSEXP, SEXP prior_tree_tableSEXP, SEXP splitvarSEXP, SEXP splitpointSEXP, SEXP grow_obsSEXP, SEXP dSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat& >::type xmat(xmatSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type prior_tree_matrix(prior_tree_matrixSEXP);
     Rcpp::traits::input_parameter< int >::type grow_node(grow_nodeSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type prior_tree_table(prior_tree_tableSEXP);
     Rcpp::traits::input_parameter< int >::type splitvar(splitvarSEXP);
     Rcpp::traits::input_parameter< double >::type splitpoint(splitpointSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type terminal_nodes(terminal_nodesSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type grow_obs(grow_obsSEXP);
     Rcpp::traits::input_parameter< double >::type d(dSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type get_min(get_minSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type data_curr_node(data_curr_nodeSEXP);
-    rcpp_result_gen = Rcpp::wrap(grow_tree_bcf(xmat, y, prior_tree_matrix, grow_node, prior_tree_table, splitvar, splitpoint, terminal_nodes, grow_obs, d, get_min, data_curr_node));
+    rcpp_result_gen = Rcpp::wrap(grow_tree_bcf(xmat, prior_tree_matrix, grow_node, prior_tree_table, splitvar, splitpoint, grow_obs, d));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -547,32 +543,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< unsigned int >::type min_num_obs_for_mu_split(min_num_obs_for_mu_splitSEXP);
     Rcpp::traits::input_parameter< unsigned int >::type min_num_obs_after_mu_split(min_num_obs_after_mu_splitSEXP);
     rcpp_result_gen = Rcpp::wrap(get_best_split_mu_bcf(resids, data, treetable, tree_mat, a, mu, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha, beta, maxOWsize, min_num_obs_for_mu_split, min_num_obs_after_mu_split));
-    return rcpp_result_gen;
-END_RCPP
-}
-// get_best_split_bcf
-List get_best_split_bcf(NumericVector resids, arma::mat& data, NumericMatrix treetable, NumericMatrix tree_mat, double a, double mu, double nu, double lambda, double c, double lowest_BIC, int parent, NumericMatrix cp_mat, double alpha, double beta, int maxOWsize, int first_round);
-RcppExport SEXP _bcfbma_get_best_split_bcf(SEXP residsSEXP, SEXP dataSEXP, SEXP treetableSEXP, SEXP tree_matSEXP, SEXP aSEXP, SEXP muSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP lowest_BICSEXP, SEXP parentSEXP, SEXP cp_matSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP maxOWsizeSEXP, SEXP first_roundSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type resids(residsSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type treetable(treetableSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type tree_mat(tree_matSEXP);
-    Rcpp::traits::input_parameter< double >::type a(aSEXP);
-    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
-    Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
-    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
-    Rcpp::traits::input_parameter< double >::type c(cSEXP);
-    Rcpp::traits::input_parameter< double >::type lowest_BIC(lowest_BICSEXP);
-    Rcpp::traits::input_parameter< int >::type parent(parentSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type cp_mat(cp_matSEXP);
-    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< int >::type maxOWsize(maxOWsizeSEXP);
-    Rcpp::traits::input_parameter< int >::type first_round(first_roundSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_best_split_bcf(resids, data, treetable, tree_mat, a, mu, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha, beta, maxOWsize, first_round));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1930,7 +1900,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bcfbma_find_term_cols_bcf", (DL_FUNC) &_bcfbma_find_term_cols_bcf, 2},
     {"_bcfbma_get_grow_obs_bcf", (DL_FUNC) &_bcfbma_get_grow_obs_bcf, 3},
     {"_bcfbma_get_grow_obs_in_z_bcf", (DL_FUNC) &_bcfbma_get_grow_obs_in_z_bcf, 2},
-    {"_bcfbma_grow_tree_bcf", (DL_FUNC) &_bcfbma_grow_tree_bcf, 12},
+    {"_bcfbma_grow_tree_bcf", (DL_FUNC) &_bcfbma_grow_tree_bcf, 8},
     {"_bcfbma_set_daughter_bcf", (DL_FUNC) &_bcfbma_set_daughter_bcf, 6},
     {"_bcfbma_order__bcf", (DL_FUNC) &_bcfbma_order__bcf, 1},
     {"_bcfbma_orderforOW__bcf", (DL_FUNC) &_bcfbma_orderforOW__bcf, 1},
@@ -1948,7 +1918,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bcfbma_sumtree_likelihood_function_bcf_bcf", (DL_FUNC) &_bcfbma_sumtree_likelihood_function_bcf_bcf, 11},
     {"_bcfbma_sumtree_likelihood_tau_round1_bcf", (DL_FUNC) &_bcfbma_sumtree_likelihood_tau_round1_bcf, 9},
     {"_bcfbma_get_best_split_mu_bcf", (DL_FUNC) &_bcfbma_get_best_split_mu_bcf, 17},
-    {"_bcfbma_get_best_split_bcf", (DL_FUNC) &_bcfbma_get_best_split_bcf, 16},
     {"_bcfbma_get_best_split_tau_bcf", (DL_FUNC) &_bcfbma_get_best_split_tau_bcf, 21},
     {"_bcfbma_get_best_split_tau_round1_bcf", (DL_FUNC) &_bcfbma_get_best_split_tau_round1_bcf, 27},
     {"_bcfbma_get_best_split_sum_tau_bcf", (DL_FUNC) &_bcfbma_get_best_split_sum_tau_bcf, 29},

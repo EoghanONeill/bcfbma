@@ -85,8 +85,8 @@ get_grow_obs_in_z_bcf <- function(z_ar, grow_obs) {
     .Call(`_bcfbma_get_grow_obs_in_z_bcf`, z_ar, grow_obs)
 }
 
-grow_tree_bcf <- function(xmat, y, prior_tree_matrix, grow_node, prior_tree_table, splitvar, splitpoint, terminal_nodes, grow_obs, d, get_min, data_curr_node) {
-    .Call(`_bcfbma_grow_tree_bcf`, xmat, y, prior_tree_matrix, grow_node, prior_tree_table, splitvar, splitpoint, terminal_nodes, grow_obs, d, get_min, data_curr_node)
+grow_tree_bcf <- function(xmat, prior_tree_matrix, grow_node, prior_tree_table, splitvar, splitpoint, grow_obs, d) {
+    .Call(`_bcfbma_grow_tree_bcf`, xmat, prior_tree_matrix, grow_node, prior_tree_table, splitvar, splitpoint, grow_obs, d)
 }
 
 set_daughter_bcf <- function(left_daughter, right_daughter, ld_obs, rd_obs, tree_matrix_temp, term_cols) {
@@ -155,10 +155,6 @@ sumtree_likelihood_tau_round1_bcf <- function(y_temp, treetable_tau, obs_to_node
 
 get_best_split_mu_bcf <- function(resids, data, treetable, tree_mat, a, mu, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha, beta, maxOWsize, min_num_obs_for_mu_split, min_num_obs_after_mu_split) {
     .Call(`_bcfbma_get_best_split_mu_bcf`, resids, data, treetable, tree_mat, a, mu, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha, beta, maxOWsize, min_num_obs_for_mu_split, min_num_obs_after_mu_split)
-}
-
-get_best_split_bcf <- function(resids, data, treetable, tree_mat, a, mu, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha, beta, maxOWsize, first_round) {
-    .Call(`_bcfbma_get_best_split_bcf`, resids, data, treetable, tree_mat, a, mu, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha, beta, maxOWsize, first_round)
 }
 
 get_best_split_tau_bcf <- function(resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, z, min_num_obs_for_tau_split, min_num_obs_after_tau_split) {
