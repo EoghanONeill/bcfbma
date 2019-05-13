@@ -9988,8 +9988,8 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
           overall_overall_sum_trees_tau=prev_sum_trees_tau;
           overall_overall_sum_tree_resids_mu=prev_sum_tree_resids_mu;
           overall_overall_sum_tree_resids_tau=prev_sum_tree_resids_tau;
-          overall_sum_trees_mat_mu=prev_sum_trees_mat_mu;
-          overall_sum_trees_mat_tau=prev_sum_trees_mat_tau;
+          overall_overall_sum_trees_mat_mu=prev_sum_trees_mat_mu;
+          overall_overall_sum_trees_mat_tau=prev_sum_trees_mat_tau;
           overall_overall_sum_BIC=prev_round_BIC2;
           overall_overall_sum_preds_outcome=prev_round_preds2_outcome;
           overall_overall_sum_preds_mu=prev_round_preds2_mu;
@@ -11285,8 +11285,8 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
         overall_overall_sum_trees_tau=prev_sum_trees_tau;
         overall_overall_sum_tree_resids_mu=prev_sum_tree_resids_mu;
         overall_overall_sum_tree_resids_tau=prev_sum_tree_resids_tau;
-        overall_sum_trees_mat_mu=prev_sum_trees_mat_mu;
-        overall_sum_trees_mat_tau=prev_sum_trees_mat_tau;
+        overall_overall_sum_trees_mat_mu=prev_sum_trees_mat_mu;
+        overall_overall_sum_trees_mat_tau=prev_sum_trees_mat_tau;
         overall_overall_sum_BIC=prev_round_BIC2;
         overall_overall_sum_preds_outcome=prev_round_preds2_outcome;
         overall_overall_sum_preds_mu=prev_round_preds2_mu;
