@@ -271,7 +271,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // get_grow_obs_in_z_bcf
-NumericVector get_grow_obs_in_z_bcf(arma::vec& z_ar, NumericVector grow_obs);
+arma::uvec get_grow_obs_in_z_bcf(arma::vec& z_ar, NumericVector grow_obs);
 RcppExport SEXP _bcfbma_get_grow_obs_in_z_bcf(SEXP z_arSEXP, SEXP grow_obsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -1547,19 +1547,18 @@ BEGIN_RCPP
 END_RCPP
 }
 // update_Gibbs_mean_var
-List update_Gibbs_mean_var(NumericMatrix tree_table, NumericVector resids, double a, double sigma, double mu_mu, IntegerVector terminal_nodes, List term_obs_tree);
-RcppExport SEXP _bcfbma_update_Gibbs_mean_var(SEXP tree_tableSEXP, SEXP residsSEXP, SEXP aSEXP, SEXP sigmaSEXP, SEXP mu_muSEXP, SEXP terminal_nodesSEXP, SEXP term_obs_treeSEXP) {
+List update_Gibbs_mean_var(NumericVector resids, double a, double sigma, double mu_mu, IntegerVector terminal_nodes, List term_obs_tree);
+RcppExport SEXP _bcfbma_update_Gibbs_mean_var(SEXP residsSEXP, SEXP aSEXP, SEXP sigmaSEXP, SEXP mu_muSEXP, SEXP terminal_nodesSEXP, SEXP term_obs_treeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type tree_table(tree_tableSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type resids(residsSEXP);
     Rcpp::traits::input_parameter< double >::type a(aSEXP);
     Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
     Rcpp::traits::input_parameter< double >::type mu_mu(mu_muSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type terminal_nodes(terminal_nodesSEXP);
     Rcpp::traits::input_parameter< List >::type term_obs_tree(term_obs_treeSEXP);
-    rcpp_result_gen = Rcpp::wrap(update_Gibbs_mean_var(tree_table, resids, a, sigma, mu_mu, terminal_nodes, term_obs_tree));
+    rcpp_result_gen = Rcpp::wrap(update_Gibbs_mean_var(resids, a, sigma, mu_mu, terminal_nodes, term_obs_tree));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1641,18 +1640,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // update_predictions_gs
-List update_predictions_gs(NumericMatrix tree_table, NumericVector new_mean, NumericVector new_var, int n, IntegerVector terminal_nodes, List term_obs_tree);
-RcppExport SEXP _bcfbma_update_predictions_gs(SEXP tree_tableSEXP, SEXP new_meanSEXP, SEXP new_varSEXP, SEXP nSEXP, SEXP terminal_nodesSEXP, SEXP term_obs_treeSEXP) {
+List update_predictions_gs(NumericVector new_mean, NumericVector new_var, int n, IntegerVector terminal_nodes, List term_obs_tree);
+RcppExport SEXP _bcfbma_update_predictions_gs(SEXP new_meanSEXP, SEXP new_varSEXP, SEXP nSEXP, SEXP terminal_nodesSEXP, SEXP term_obs_treeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type tree_table(tree_tableSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type new_mean(new_meanSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type new_var(new_varSEXP);
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type terminal_nodes(terminal_nodesSEXP);
     Rcpp::traits::input_parameter< List >::type term_obs_tree(term_obs_treeSEXP);
-    rcpp_result_gen = Rcpp::wrap(update_predictions_gs(tree_table, new_mean, new_var, n, terminal_nodes, term_obs_tree));
+    rcpp_result_gen = Rcpp::wrap(update_predictions_gs(new_mean, new_var, n, terminal_nodes, term_obs_tree));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1956,14 +1954,14 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bcfbma_find_term_obs_gs", (DL_FUNC) &_bcfbma_find_term_obs_gs, 2},
     {"_bcfbma_calc_rowsums", (DL_FUNC) &_bcfbma_calc_rowsums, 1},
     {"_bcfbma_calculate_resids", (DL_FUNC) &_bcfbma_calculate_resids, 2},
-    {"_bcfbma_update_Gibbs_mean_var", (DL_FUNC) &_bcfbma_update_Gibbs_mean_var, 7},
+    {"_bcfbma_update_Gibbs_mean_var", (DL_FUNC) &_bcfbma_update_Gibbs_mean_var, 6},
     {"_bcfbma_update_sigma", (DL_FUNC) &_bcfbma_update_sigma, 4},
     {"_bcfbma_find_node_means", (DL_FUNC) &_bcfbma_find_node_means, 2},
     {"_bcfbma_get_tree_info", (DL_FUNC) &_bcfbma_get_tree_info, 3},
     {"_bcfbma_get_tree_info_tau", (DL_FUNC) &_bcfbma_get_tree_info_tau, 4},
     {"_bcfbma_remove_curr_col", (DL_FUNC) &_bcfbma_remove_curr_col, 2},
     {"_bcfbma_get_new_mean", (DL_FUNC) &_bcfbma_get_new_mean, 2},
-    {"_bcfbma_update_predictions_gs", (DL_FUNC) &_bcfbma_update_predictions_gs, 6},
+    {"_bcfbma_update_predictions_gs", (DL_FUNC) &_bcfbma_update_predictions_gs, 5},
     {"_bcfbma_scale_response_gs", (DL_FUNC) &_bcfbma_scale_response_gs, 5},
     {"_bcfbma_get_original_gs", (DL_FUNC) &_bcfbma_get_original_gs, 5},
     {"_bcfbma_find_internal_nodes_gs", (DL_FUNC) &_bcfbma_find_internal_nodes_gs, 1},

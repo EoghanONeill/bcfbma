@@ -57,7 +57,8 @@ NumericVector calculate_resids(NumericMatrix predictions,NumericVector response)
 //################################################################################################################################//
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
-List update_Gibbs_mean_var(NumericMatrix tree_table,NumericVector resids,double a,double sigma,double mu_mu,IntegerVector terminal_nodes,  List term_obs_tree){
+List update_Gibbs_mean_var(//NumericMatrix tree_table,
+                           NumericVector resids,double a,double sigma,double mu_mu,IntegerVector terminal_nodes,  List term_obs_tree){
   List update_params(2);
   
   NumericVector mu_ij(terminal_nodes.size());
@@ -321,7 +322,8 @@ NumericVector get_new_mean(IntegerVector terminal_nodes,List new_mean_var){
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // [[Rcpp::export]]
-List update_predictions_gs(NumericMatrix tree_table,NumericVector new_mean,NumericVector new_var,int n,
+List update_predictions_gs(//NumericMatrix tree_table,
+                           NumericVector new_mean,NumericVector new_var,int n,
                            IntegerVector terminal_nodes,List term_obs_tree){
   
   List updated_preds(2);
@@ -330,14 +332,16 @@ List update_predictions_gs(NumericMatrix tree_table,NumericVector new_mean,Numer
     
     NumericVector term_obs=term_obs_tree[k];        
     //update the mean of the selected tree nodes:
-    tree_table(terminal_nodes[k]-1,5)= new_mean[k];
-    tree_table(terminal_nodes[k]-1,6)=sqrt(new_var[k]);
+    //tree_table(terminal_nodes[k]-1,5)= new_mean[k];
+    //tree_table(terminal_nodes[k]-1,6)=sqrt(new_var[k]);
     double newmean=new_mean[k];
     //update residuals for next iteration
     new_preds[term_obs]=newmean;
   }
-  updated_preds[0]=tree_table;
-  updated_preds[1]=new_preds;
+  //updated_preds[0]=tree_table;
+  //updated_preds[1]=new_preds;
+  
+  updated_preds[0]=new_preds;
   
   return(updated_preds);
 }
@@ -830,9 +834,9 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
   List TE_test_list_orig(overall_sum_trees_tau.size());
   
   List prediction_test_list_orig(overall_sum_trees_mu.size());
-  List overall_sum_trees1_mu=clone(overall_sum_trees_mu);
+  //List overall_sum_trees1_mu=clone(overall_sum_trees_mu);
   //List overall_sum_mat1_mu=clone(overall_sum_trees_mu);
-  List overall_sum_trees1_tau=clone(overall_sum_trees_tau);
+  //List overall_sum_trees1_tau=clone(overall_sum_trees_tau);
   //List overall_sum_mat1_tau=clone(overall_sum_trees_tau);
 
   List sigma_chains(overall_sum_trees_mu.size());
@@ -851,12 +855,12 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
     if(is<List>(s_mu)){
       if(is<List>(s_tau)){
         //if current set of trees contains more than one tree
-        List sum_tree_mu=overall_sum_trees1_mu[i];
+        //List sum_tree_mu=overall_sum_trees1_mu[i];
         //List sum_tree_mat_mu=overall_sum_mat1_mu[i];
         List sum_term_nodes_mu=overall_term_nodes_trees_mu[i];
         List sum_term_obs_mu=overall_term_obs_trees_mu[i];
         List sum_term_test_obs_mu=overall_term_test_obs_trees_mu[i];
-        List sum_tree_tau=overall_sum_trees1_tau[i];
+        //List sum_tree_tau=overall_sum_trees1_tau[i];
         //List sum_tree_mat_tau=overall_sum_mat1_tau[i];
         List sum_term_nodes_tau=overall_term_nodes_trees_tau[i];
         List sum_term_obs_tau=overall_term_obs_trees_tau[i];
@@ -891,8 +895,8 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
         NumericMatrix sum_new_test_TEs(num_test_obs,sum_predictions_tau.ncol());
         for(int j=0;j<num_iter;j++){
           //NOW LOOP OVER MU TREES IN SUM OF TREE MODEL i
-          for(int k =0;k<sum_tree_mu.size();k++){
-            NumericMatrix tree_table_mu=sum_tree_mu[k];
+          for(int k =0;k<sum_term_nodes_mu.size();k++){
+            //NumericMatrix tree_table_mu=sum_tree_mu[k];
             //IntegerMatrix tree_mat_mu=sum_tree_mat_mu[k];
             //find terminal node means and observations associated with them
             IntegerVector term_nodes_mu=sum_term_nodes_mu[k];
@@ -903,17 +907,20 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
             //current predictions are the residuals for sum of trees!
             
             //update the means and predictions for tree
-            List new_node_mean_var=update_Gibbs_mean_var(tree_table_mu,predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
+            List new_node_mean_var=update_Gibbs_mean_var(//tree_table_mu,
+                                                         predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
             NumericVector new_node_mean=get_new_mean(term_nodes_mu,new_node_mean_var);
             NumericVector new_node_var=new_node_mean_var[1];
             //update predictions by setting predicted value for term_obs[termnode]=new mean value!
-            List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean,new_node_var,num_obs,term_nodes_mu,term_obs_mu);
-            NumericVector temp_preds_mu=updated_preds_mu[1];
+            List updated_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                        new_node_mean,new_node_var,num_obs,term_nodes_mu,term_obs_mu);
+            //NumericVector temp_preds_mu=updated_preds_mu[1];
+            NumericVector temp_preds_mu=updated_preds_mu[0];
             //NOW UPDATE THE RESIDUALS FOR USE IN NEXT ITERATION
             //THE PLACING OF THIS SECTION OF CODE HERE IS IMPORTANT
             //MUST BE BEFORE sum_new_predictions(_,k) is updated so that the
             //previous round's predictions can be added (i.e. removed from the residual before the new predictions are taken away to create the new residual)
-            for(int l=0;l<sum_tree_mu.size();l++){
+            for(int l=0;l<sum_term_nodes_mu.size();l++){
               if(l!=k){
                 if(j==0){
                   NumericVector temp_resids1_mu= sum_resids_mu[l];
@@ -924,7 +931,7 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
                 }
               }
             }
-            for(int l=0;l<sum_tree_tau.size();l++){
+            for(int l=0;l<sum_term_nodes_tau.size();l++){
               if(j==0){
                 NumericVector temp_resids1_tau= sum_resids_tau[l];
                 sum_resids_tau[l]=temp_resids1_tau+sum_predictions_mu(_,k)-temp_preds_mu;
@@ -934,13 +941,15 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
               }
             }
             sum_new_predictions_mu(_,k)=temp_preds_mu;
-            List updated_test_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean,new_node_var,num_test_obs,term_nodes_mu,term_test_obs_mu);
-            NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
+            List updated_test_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                             new_node_mean,new_node_var,num_test_obs,term_nodes_mu,term_test_obs_mu);
+            //NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
+            NumericVector temp_test_preds_mu=updated_test_preds_mu[0];
             sum_new_test_predictions_mu(_,k)=temp_test_preds_mu;
           }
           // NOW LOOP OVER TAU TREES IN SUM OF TREE MODEL i
-          for(int m =0;m<sum_tree_tau.size();m++){
-            NumericMatrix tree_table_tau=sum_tree_tau[m];
+          for(int m =0;m<sum_term_nodes_tau.size();m++){
+            //NumericMatrix tree_table_tau=sum_tree_tau[m];
             //IntegerMatrix tree_mat_tau=sum_tree_mat_tau[m];
             //find terminal node means and observations associated with them
             IntegerVector term_nodes_tau=sum_term_nodes_tau[m];
@@ -950,19 +959,22 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
             NumericVector predictions_tau=sum_resids_tau[m];
             //current predictions are the residuals for sum of trees!
             //update the means and predictions for tree
-            List new_node_mean_var=update_Gibbs_mean_var(tree_table_tau,predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
+            List new_node_mean_var=update_Gibbs_mean_var(//tree_table_tau,
+                                                         predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
             NumericVector new_node_mean=get_new_mean(term_nodes_tau,new_node_mean_var);
             NumericVector new_node_var=new_node_mean_var[1];
             //update predictions by setting predicted value for term_obs[termnode]=new mean value!
-            List updated_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean,new_node_var,num_obs,term_nodes_tau,term_obs_tau_ALL);
-            NumericVector temp_preds_tau=updated_preds_tau[1];
-
+            List updated_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                         new_node_mean,new_node_var,num_obs,term_nodes_tau,term_obs_tau_ALL);
+            //NumericVector temp_preds_tau=updated_preds_tau[1];
+            NumericVector temp_preds_tau=updated_preds_tau[0];
+            
             NumericVector temp_preds_tau_z=temp_preds_tau*z;
             //NOW UPDATE THE RESIDUALS FOR USE IN NEXT ITERATION
             //THE PLACING OF THIS SECTION OF CODE HERE IS IMPORTANT
             //MUST BE BEFORE sum_new_predictions(_,m) is updated so that the
             //previous round's predictions can be added (i.e. removed from the residual before the new predictions are taken away to create the new residual)
-            for(int l=0;l<sum_tree_mu.size();l++){
+            for(int l=0;l<sum_term_nodes_mu.size();l++){
               if(j==0){
                 NumericVector temp_resids1_mu= sum_resids_mu[l];
                 sum_resids_mu[l]=temp_resids1_mu+z*sum_predictions_tau(_,m)-temp_preds_tau_z;
@@ -971,7 +983,7 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
                 sum_resids_mu[l]=temp_resids1_mu+sum_new_predictions_tau(_,m)-temp_preds_tau_z;
               }
             }
-            for(int l=0;l<sum_tree_tau.size();l++){
+            for(int l=0;l<sum_term_nodes_tau.size();l++){
               if(l!=m){
                 if(j==0){
                   NumericVector temp_resids1_tau= sum_resids_tau[l];
@@ -984,8 +996,10 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
             }
             sum_new_predictions_tau(_,m)=temp_preds_tau_z;
             sum_new_TEs(_,m)=temp_preds_tau;
-            List updated_test_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean,new_node_var,num_test_obs,term_nodes_tau,term_test_obs_tau_ALL);
-            NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
+            List updated_test_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                              new_node_mean,new_node_var,num_test_obs,term_nodes_tau,term_test_obs_tau_ALL);
+            //NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
+            NumericVector temp_test_preds_tau=updated_test_preds_tau[0];
             sum_new_test_predictions_tau(_,m)=z_test*temp_test_preds_tau;
             sum_new_test_TEs(_,m)=temp_test_preds_tau;
           }
@@ -1044,7 +1058,7 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
         
         
         //if current set of trees contains more than one tree
-        List sum_tree_mu=overall_sum_trees1_mu[i];
+        //List sum_tree_mu=overall_sum_trees1_mu[i];
         //List sum_tree_mat_mu=overall_sum_mat1_mu[i];
         List sum_term_nodes_mu=overall_term_nodes_trees_mu[i];
         List sum_term_obs_mu=overall_term_obs_trees_mu[i];
@@ -1086,9 +1100,9 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
         //NumericMatrix tree_predictions_tau=overall_predictions_tau[i];
         
         for(int j=0;j<num_iter;j++){
-          for(int k =0;k<sum_tree_mu.size();k++){
+          for(int k =0;k<sum_term_nodes_mu.size();k++){
             
-            NumericMatrix tree_table_mu=sum_tree_mu[k];
+            //NumericMatrix tree_table_mu=sum_tree_mu[k];
             //IntegerMatrix tree_mat_mu=sum_tree_mat_mu[k];
             //find terminal node means and observations associated with them
             IntegerVector term_nodes_mu=sum_term_nodes_mu[k];
@@ -1099,14 +1113,17 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
             //current predictions are the residuals for sum of trees!
             
             //update the means and predictions for tree
-            List new_node_mean_var_mu=update_Gibbs_mean_var(tree_table_mu,predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
+            List new_node_mean_var_mu=update_Gibbs_mean_var(//tree_table_mu,
+                                                            predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
             NumericVector new_node_mean_mu=get_new_mean(term_nodes_mu,new_node_mean_var_mu);
             NumericVector new_node_var_mu=new_node_mean_var_mu[1];
-            List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
-            NumericVector temp_preds_mu=updated_preds_mu[1];
+            List updated_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                        new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
+            //NumericVector temp_preds_mu=updated_preds_mu[1];
+            NumericVector temp_preds_mu=updated_preds_mu[0];
             
             //NOW UPDATE PARTIAL RESIDUALS
-            for(int l=0;l<sum_tree_mu.size();l++){
+            for(int l=0;l<sum_term_nodes_mu.size();l++){
               if(l!=k){
                 if(j==0){
                   NumericVector temp_resids1_mu= sum_resids_mu[l];
@@ -1128,12 +1145,14 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
             sum_new_predictions_mu(_,k)=temp_preds_mu;
             
             //get updated predictions for the test data
-            List updated_test_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_test_obs,term_nodes_mu,term_test_obs_mu);
-            NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
+            List updated_test_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                             new_node_mean_mu,new_node_var_mu,num_test_obs,term_nodes_mu,term_test_obs_mu);
+            //NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
+            NumericVector temp_test_preds_mu=updated_test_preds_mu[0];
             sum_new_test_predictions_mu(_,k)=temp_test_preds_mu;
           }
           
-          NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
+          //NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
           //IntegerMatrix tree_mat_tau=overall_sum_mat1_tau[i];
           IntegerVector term_nodes_tau=overall_term_nodes_trees_tau[i];
           List term_obs_tau=overall_term_obs_trees_tau[i];
@@ -1144,17 +1163,20 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
           //current predictions are the residuals for sum of trees
           
           //update the means and predictions for tree
-          List new_node_mean_var_tau=update_Gibbs_mean_var(tree_table_tau,predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
+          List new_node_mean_var_tau=update_Gibbs_mean_var(//tree_table_tau,
+                                                           predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
           NumericVector new_node_mean_tau=get_new_mean(term_nodes_tau,new_node_mean_var_tau);
           NumericVector new_node_var_tau=new_node_mean_var_tau[1];
-          List updated_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_obs,term_nodes_tau,term_obs_tau_ALL);
-          NumericVector temp_preds_tau=updated_preds_tau[1];
+          List updated_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                       new_node_mean_tau,new_node_var_tau,num_obs,term_nodes_tau,term_obs_tau_ALL);
+          //NumericVector temp_preds_tau=updated_preds_tau[1];
+          NumericVector temp_preds_tau=updated_preds_tau[0];
           NumericVector temp_preds_tau_z=z*temp_preds_tau;
           
           sum_predictions_tau(_,0)=temp_preds_tau;
           //NOW UPDATE PARTIAL RESIDUALS
           //TAU IS UNAFFECTED, BUT MU SHOULD BE AFFECTED
-          for(int l=0;l<sum_tree_mu.size();l++){
+          for(int l=0;l<sum_term_nodes_mu.size();l++){
             if(j==0){
               NumericVector temp_resids1_mu= sum_resids_mu[l];
               sum_resids_mu[l]=temp_resids1_mu+z*sum_predictions_tau(_,0)-temp_preds_tau_z;
@@ -1167,8 +1189,10 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
           sum_new_TEs(_,0)=temp_preds_tau;
           
           //get updated predictions for the test data
-          List updated_test_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_test_obs,term_nodes_tau,term_test_obs_tau_ALL);
-          NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
+          List updated_test_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                            new_node_mean_tau,new_node_var_tau,num_test_obs,term_nodes_tau,term_test_obs_tau_ALL);
+          //NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
+          NumericVector temp_test_preds_tau=updated_test_preds_tau[0];
           sum_test_predictions_tau(_,0)=z_test*temp_test_preds_tau;
           
           
@@ -1271,7 +1295,7 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
         
         for(int j=0;j<num_iter;j++){
           
-          NumericMatrix tree_table_mu=overall_sum_trees1_mu[i];
+          //NumericMatrix tree_table_mu=overall_sum_trees1_mu[i];
           //IntegerMatrix tree_mat_mu=overall_sum_mat1_mu[i];
           IntegerVector term_nodes_mu=overall_term_nodes_trees_mu[i];
           List term_obs_mu=overall_term_obs_trees_mu[i];
@@ -1281,11 +1305,14 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
           //current predictions are the residuals for sum of trees
           
           //update the means and predictions for tree
-          List new_node_mean_var_mu=update_Gibbs_mean_var(tree_table_mu,predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
+          List new_node_mean_var_mu=update_Gibbs_mean_var(//tree_table_mu,
+                                                          predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
           NumericVector new_node_mean_mu=get_new_mean(term_nodes_mu,new_node_mean_var_mu);
           NumericVector new_node_var_mu=new_node_mean_var_mu[1];
-          List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
-          NumericVector temp_preds_mu=updated_preds_mu[1];
+          List updated_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                      new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
+          //NumericVector temp_preds_mu=updated_preds_mu[1];
+          NumericVector temp_preds_mu=updated_preds_mu[0];
           sum_predictions_mu(_,0)=temp_preds_mu;
           //NOW UPDATE PARTIAL RESIDUALS
           //MU IS UNAFFECTED, BUT TAU SHOULD BE AFFECTED
@@ -1299,12 +1326,14 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
           sum_new_predictions_mu(_,0)=temp_preds_mu;
 
           //get updated predictions for the test data
-          List updated_test_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_test_obs,term_nodes_mu,term_test_obs_mu);
-          NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
+          List updated_test_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                           new_node_mean_mu,new_node_var_mu,num_test_obs,term_nodes_mu,term_test_obs_mu);
+          //NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
+          NumericVector temp_test_preds_mu=updated_test_preds_mu[0];
           sum_test_predictions_mu(_,0)=temp_test_preds_mu;
           
           
-          NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
+          //NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
           //IntegerMatrix tree_mat_tau=overall_sum_mat1_tau[i];
           IntegerVector term_nodes_tau=overall_term_nodes_trees_tau[i];
           List term_obs_tau=overall_term_obs_trees_tau[i];
@@ -1315,11 +1344,14 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
           //current predictions are the residuals for sum of trees
           
           //update the means and predictions for tree
-          List new_node_mean_var_tau=update_Gibbs_mean_var(tree_table_tau,predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
+          List new_node_mean_var_tau=update_Gibbs_mean_var(//tree_table_tau,
+                                                           predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
           NumericVector new_node_mean_tau=get_new_mean(term_nodes_tau,new_node_mean_var_tau);
           NumericVector new_node_var_tau=new_node_mean_var_tau[1];
-          List updated_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_obs,term_nodes_tau,term_obs_tau_ALL);
-          NumericVector temp_preds_tau=updated_preds_tau[1];
+          List updated_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                       new_node_mean_tau,new_node_var_tau,num_obs,term_nodes_tau,term_obs_tau_ALL);
+          //NumericVector temp_preds_tau=updated_preds_tau[1];
+          NumericVector temp_preds_tau=updated_preds_tau[0];
           NumericVector temp_preds_tau_z=z*temp_preds_tau;
           
           sum_predictions_tau(_,0)=temp_preds_tau;
@@ -1336,8 +1368,10 @@ List gibbs_sampler(List overall_sum_trees_mu,List overall_sum_trees_tau,
           sum_new_TEs(_,0)=temp_preds_tau;
           
           //get updated predictions for the test data
-          List updated_test_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_test_obs,term_nodes_tau,term_test_obs_tau_ALL);
-          NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
+          List updated_test_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                            new_node_mean_tau,new_node_var_tau,num_test_obs,term_nodes_tau,term_test_obs_tau_ALL);
+          //NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
+          NumericVector temp_test_preds_tau=updated_test_preds_tau[0];
           //sum_test_predictions_tau(_,0)=z_test*temp_test_preds_tau;
           sum_new_test_TEs(_,0)=temp_test_preds_tau;
           
@@ -1473,9 +1507,9 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
   List TE_test_list_orig(overall_sum_trees_tau.size());
   
   //List prediction_test_list_orig(overall_sum_trees_mu.size());
-  List overall_sum_trees1_mu=clone(overall_sum_trees_mu);
+  //List overall_sum_trees1_mu=clone(overall_sum_trees_mu);
   //List overall_sum_mat1_mu=clone(overall_sum_trees_mu);
-  List overall_sum_trees1_tau=clone(overall_sum_trees_tau);
+  //List overall_sum_trees1_tau=clone(overall_sum_trees_tau);
   //List overall_sum_mat1_tau=clone(overall_sum_trees_tau);
   
   List sigma_chains(overall_sum_trees_mu.size());
@@ -1497,12 +1531,12 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
     if(is<List>(s_mu)){
     if(is<List>(s_tau)){
       //if current set of trees contains more than one tree
-      List sum_tree_mu=overall_sum_trees1_mu[i];
+      //List sum_tree_mu=overall_sum_trees1_mu[i];
       //List sum_tree_mat_mu=overall_sum_mat1_mu[i];
       List sum_term_nodes_mu=overall_term_nodes_trees_mu[i];
       List sum_term_obs_mu=overall_term_obs_trees_mu[i];
       //List sum_term_test_obs_mu=overall_term_test_obs_trees_mu[i];
-      List sum_tree_tau=overall_sum_trees1_tau[i];
+      //List sum_tree_tau=overall_sum_trees1_tau[i];
       //List sum_tree_mat_tau=overall_sum_mat1_tau[i];
       List sum_term_nodes_tau=overall_term_nodes_trees_tau[i];
       List sum_term_obs_tau=overall_term_obs_trees_tau[i];
@@ -1539,8 +1573,8 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
       
       for(int j=0;j<num_iter;j++){
         //NOW LOOP OVER MU TREES IN SUM OF TREE MODEL i
-        for(int k =0;k<sum_tree_mu.size();k++){
-          NumericMatrix tree_table_mu=sum_tree_mu[k];
+        for(int k =0;k<sum_term_nodes_mu.size();k++){
+          //NumericMatrix tree_table_mu=sum_tree_mu[k];
           //IntegerMatrix tree_mat_mu=sum_tree_mat_mu[k];
           //find terminal node means and observations associated with them
           IntegerVector term_nodes_mu=sum_term_nodes_mu[k];
@@ -1552,19 +1586,22 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
 
           //update the means and predictions for tree
 
-          List new_node_mean_var=update_Gibbs_mean_var(tree_table_mu,predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
+          List new_node_mean_var=update_Gibbs_mean_var(//tree_table_mu,
+                                                       predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
           
           NumericVector new_node_mean=get_new_mean(term_nodes_mu,new_node_mean_var);
           NumericVector new_node_var=new_node_mean_var[1];
           //update predictions by setting predicted value for term_obs[termnode]=new mean value!
-          List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean,new_node_var,num_obs,term_nodes_mu,term_obs_mu);
-          NumericVector temp_preds_mu=updated_preds_mu[1];
+          List updated_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                      new_node_mean,new_node_var,num_obs,term_nodes_mu,term_obs_mu);
+          //NumericVector temp_preds_mu=updated_preds_mu[1];
+          NumericVector temp_preds_mu=updated_preds_mu[0];
           //NOW UPDATE THE RESIDUALS FOR USE IN NEXT ITERATION
           //THE PLACING OF THIS SECTION OF CODE HERE IS IMPORTANT
           //MUST BE BEFORE sum_new_predictions(_,k) is updated so that the
           //previous round's predictions can be added (i.e. removed from the residual before the new predictions are taken away to create the new residual)
 
-          for(int l=0;l<sum_tree_mu.size();l++){
+          for(int l=0;l<sum_term_nodes_mu.size();l++){
             if(l!=k){
               if(j==0){
                 NumericVector temp_resids1_mu= sum_resids_mu[l];
@@ -1575,7 +1612,7 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
               }
             }
           }
-          for(int l=0;l<sum_tree_tau.size();l++){
+          for(int l=0;l<sum_term_nodes_tau.size();l++){
               if(j==0){
                 NumericVector temp_resids1_tau= sum_resids_tau[l];
                 sum_resids_tau[l]=temp_resids1_tau+sum_predictions_mu(_,k)-temp_preds_mu;
@@ -1592,8 +1629,8 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
 
         }
         // NOW LOOP OVER TAU TREES IN SUM OF TREE MODEL i
-        for(int m =0;m<sum_tree_tau.size();m++){
-          NumericMatrix tree_table_tau=sum_tree_tau[m];
+        for(int m =0;m<sum_term_nodes_tau.size();m++){
+          //NumericMatrix tree_table_tau=sum_tree_tau[m];
           //IntegerMatrix tree_mat_tau=sum_tree_mat_tau[m];
           //find terminal node means and observations associated with them
           IntegerVector term_nodes_tau=sum_term_nodes_tau[m];
@@ -1604,15 +1641,18 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
           //current predictions are the residuals for sum of trees!
 
           //update the means and predictions for tree
-          List new_node_mean_var=update_Gibbs_mean_var(tree_table_tau,predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
+          List new_node_mean_var=update_Gibbs_mean_var(//tree_table_tau,
+                                                       predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
          
           NumericVector new_node_mean=get_new_mean(term_nodes_tau,new_node_mean_var);
           NumericVector new_node_var=new_node_mean_var[1];
 
           //update predictions by setting predicted value for term_obs[termnode]=new mean value!
-          List updated_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean,new_node_var,num_obs,term_nodes_tau,term_obs_tau_ALL);
-          NumericVector temp_preds_tau=updated_preds_tau[1];
-
+          List updated_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                       new_node_mean,new_node_var,num_obs,term_nodes_tau,term_obs_tau_ALL);
+          //NumericVector temp_preds_tau=updated_preds_tau[1];
+          NumericVector temp_preds_tau=updated_preds_tau[0];
+          
 
           NumericVector temp_preds_tau_z=temp_preds_tau*z;
           //NOW UPDATE THE RESIDUALS FOR USE IN NEXT ITERATION
@@ -1620,7 +1660,7 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
           //MUST BE BEFORE sum_new_predictions(_,m) is updated so that the
           //previous round's predictions can be added (i.e. removed from the residual before the new predictions are taken away to create the new residual)
 
-          for(int l=0;l<sum_tree_mu.size();l++){
+          for(int l=0;l<sum_term_nodes_mu.size();l++){
               if(j==0){
                 NumericVector temp_resids1_mu= sum_resids_mu[l];
                 sum_resids_mu[l]=temp_resids1_mu+z*sum_predictions_tau(_,m)-temp_preds_tau_z;
@@ -1629,7 +1669,7 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
                 sum_resids_mu[l]=temp_resids1_mu+sum_new_predictions_tau(_,m)-temp_preds_tau_z;
               }
             }
-          for(int l=0;l<sum_tree_tau.size();l++){
+          for(int l=0;l<sum_term_nodes_tau.size();l++){
             if(l!=m){
               if(j==0){
                 NumericVector temp_resids1_tau= sum_resids_tau[l];
@@ -1713,7 +1753,7 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
       
       
       //if current set of trees contains more than one tree
-      List sum_tree_mu=overall_sum_trees1_mu[i];
+      //List sum_tree_mu=overall_sum_trees1_mu[i];
       //List sum_tree_mat_mu=overall_sum_mat1_mu[i];
       List sum_term_nodes_mu=overall_term_nodes_trees_mu[i];
       List sum_term_obs_mu=overall_term_obs_trees_mu[i];
@@ -1755,9 +1795,9 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
       //NumericMatrix tree_predictions_tau=overall_predictions_tau[i];
       
       for(int j=0;j<num_iter;j++){
-        for(int k =0;k<sum_tree_mu.size();k++){
+        for(int k =0;k<sum_term_nodes_mu.size();k++){
           
-        NumericMatrix tree_table_mu=sum_tree_mu[k];
+        //NumericMatrix tree_table_mu=sum_tree_mu[k];
         //IntegerMatrix tree_mat_mu=sum_tree_mat_mu[k];
         //find terminal node means and observations associated with them
         IntegerVector term_nodes_mu=sum_term_nodes_mu[k];
@@ -1768,14 +1808,17 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
         //current predictions are the residuals for sum of trees!
         
         //update the means and predictions for tree
-        List new_node_mean_var_mu=update_Gibbs_mean_var(tree_table_mu,predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
+        List new_node_mean_var_mu=update_Gibbs_mean_var(//tree_table_mu,
+                                                        predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
         NumericVector new_node_mean_mu=get_new_mean(term_nodes_mu,new_node_mean_var_mu);
         NumericVector new_node_var_mu=new_node_mean_var_mu[1];
-        List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
-        NumericVector temp_preds_mu=updated_preds_mu[1];
-
+        List updated_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                    new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
+        //NumericVector temp_preds_mu=updated_preds_mu[1];
+        NumericVector temp_preds_mu=updated_preds_mu[0];
+        
         //NOW UPDATE PARTIAL RESIDUALS
-        for(int l=0;l<sum_tree_mu.size();l++){
+        for(int l=0;l<sum_term_nodes_mu.size();l++){
           if(l!=k){
             if(j==0){
               NumericVector temp_resids1_mu= sum_resids_mu[l];
@@ -1802,7 +1845,7 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
         //sum_test_predictions_mu(_,k)=z*temp_test_preds_mu;
         }
         
-        NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
+        //NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
         //IntegerMatrix tree_mat_tau=overall_sum_mat1_tau[i];
         IntegerVector term_nodes_tau=overall_term_nodes_trees_tau[i];
         List term_obs_tau=overall_term_obs_trees_tau[i];
@@ -1813,17 +1856,20 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
         //current predictions are the residuals for sum of trees
         
         //update the means and predictions for tree
-        List new_node_mean_var_tau=update_Gibbs_mean_var(tree_table_tau,predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
+        List new_node_mean_var_tau=update_Gibbs_mean_var(//tree_table_tau,
+                                                         predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
         NumericVector new_node_mean_tau=get_new_mean(term_nodes_tau,new_node_mean_var_tau);
         NumericVector new_node_var_tau=new_node_mean_var_tau[1];
-        List updated_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_obs,term_nodes_tau,term_obs_tau_ALL);
-        NumericVector temp_preds_tau=updated_preds_tau[1];
+        List updated_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                     new_node_mean_tau,new_node_var_tau,num_obs,term_nodes_tau,term_obs_tau_ALL);
+        //NumericVector temp_preds_tau=updated_preds_tau[1];
+        NumericVector temp_preds_tau=updated_preds_tau[0];
         NumericVector temp_preds_tau_z=z*temp_preds_tau;
         
         sum_predictions_tau(_,0)=temp_preds_tau;
         //NOW UPDATE PARTIAL RESIDUALS
         //TAU IS UNAFFECTED, BUT MU SHOULD BE AFFECTED
-        for(int l=0;l<sum_tree_mu.size();l++){
+        for(int l=0;l<sum_term_nodes_mu.size();l++){
           if(j==0){
             NumericVector temp_resids1_mu= sum_resids_mu[l];
             sum_resids_mu[l]=temp_resids1_mu+z*sum_predictions_tau(_,0)-temp_preds_tau_z;
@@ -1943,7 +1989,7 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
 
         for(int j=0;j<num_iter;j++){
 
-          NumericMatrix tree_table_mu=overall_sum_trees1_mu[i];
+          //NumericMatrix tree_table_mu=overall_sum_trees1_mu[i];
           //IntegerMatrix tree_mat_mu=overall_sum_mat1_mu[i];
           IntegerVector term_nodes_mu=overall_term_nodes_trees_mu[i];
           List term_obs_mu=overall_term_obs_trees_mu[i];
@@ -1953,11 +1999,14 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
           //current predictions are the residuals for sum of trees
 
           //update the means and predictions for tree
-          List new_node_mean_var_mu=update_Gibbs_mean_var(tree_table_mu,predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
+          List new_node_mean_var_mu=update_Gibbs_mean_var(//tree_table_mu,
+                                                          predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
           NumericVector new_node_mean_mu=get_new_mean(term_nodes_mu,new_node_mean_var_mu);
           NumericVector new_node_var_mu=new_node_mean_var_mu[1];
-          List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
-          NumericVector temp_preds_mu=updated_preds_mu[1];
+          List updated_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                      new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
+          //NumericVector temp_preds_mu=updated_preds_mu[1];
+          NumericVector temp_preds_mu=updated_preds_mu[0];
           sum_predictions_mu(_,0)=temp_preds_mu;
           //NOW UPDATE PARTIAL RESIDUALS
           //MU IS UNAFFECTED, BUT TAU SHOULD BE AFFECTED
@@ -1978,7 +2027,7 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
           //sum_new_test_TEs(_,0)=temp_test_preds_tau;
 
 
-          NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
+          //NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
           //IntegerMatrix tree_mat_tau=overall_sum_mat1_tau[i];
           IntegerVector term_nodes_tau=overall_term_nodes_trees_tau[i];
           List term_obs_tau=overall_term_obs_trees_tau[i];
@@ -1989,11 +2038,14 @@ List gibbs_sampler2(List overall_sum_trees_mu,List overall_sum_trees_tau,
           //current predictions are the residuals for sum of trees
 
           //update the means and predictions for tree
-          List new_node_mean_var_tau=update_Gibbs_mean_var(tree_table_tau,predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
+          List new_node_mean_var_tau=update_Gibbs_mean_var(//tree_table_tau,
+                                                           predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
           NumericVector new_node_mean_tau=get_new_mean(term_nodes_tau,new_node_mean_var_tau);
           NumericVector new_node_var_tau=new_node_mean_var_tau[1];
-          List updated_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_obs,term_nodes_tau,term_obs_tau_ALL);
-          NumericVector temp_preds_tau=updated_preds_tau[1];
+          List updated_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                       new_node_mean_tau,new_node_var_tau,num_obs,term_nodes_tau,term_obs_tau_ALL);
+          //NumericVector temp_preds_tau=updated_preds_tau[1];
+          NumericVector temp_preds_tau=updated_preds_tau[0];
           NumericVector temp_preds_tau_z=z*temp_preds_tau;
 
           sum_predictions_tau(_,0)=temp_preds_tau;
@@ -2183,9 +2235,9 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
   List TE_test_list_orig(overall_sum_trees_tau.size());
   
   List prediction_test_list_orig(overall_sum_trees_mu.size());
-  List overall_sum_trees1_mu=clone(overall_sum_trees_mu);
+  //List overall_sum_trees1_mu=clone(overall_sum_trees_mu);
   //List overall_sum_mat1_mu=clone(overall_sum_trees_mu);
-  List overall_sum_trees1_tau=clone(overall_sum_trees_tau);
+  //List overall_sum_trees1_tau=clone(overall_sum_trees_tau);
   //List overall_sum_mat1_tau=clone(overall_sum_trees_tau);
   
   List sigma_chains(overall_sum_trees_mu.size());
@@ -2204,12 +2256,12 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
     if(is<List>(s_mu)){
       if(is<List>(s_tau)){
         //if current set of trees contains more than one tree
-        List sum_tree_mu=overall_sum_trees1_mu[i];
+        //List sum_tree_mu=overall_sum_trees1_mu[i];
         //List sum_tree_mat_mu=overall_sum_mat1_mu[i];
         List sum_term_nodes_mu=overall_term_nodes_trees_mu[i];
         List sum_term_obs_mu=overall_term_obs_trees_mu[i];
         List sum_term_test_obs_mu=overall_term_test_obs_trees_mu[i];
-        List sum_tree_tau=overall_sum_trees1_tau[i];
+        //List sum_tree_tau=overall_sum_trees1_tau[i];
         //List sum_tree_mat_tau=overall_sum_mat1_tau[i];
         List sum_term_nodes_tau=overall_term_nodes_trees_tau[i];
         List sum_term_obs_tau=overall_term_obs_trees_tau[i];
@@ -2244,8 +2296,8 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
         NumericMatrix sum_new_test_TEs(num_test_obs,sum_predictions_tau.ncol());
         for(int j=0;j<num_iter;j++){
           //NOW LOOP OVER MU TREES IN SUM OF TREE MODEL i
-          for(int k =0;k<sum_tree_mu.size();k++){
-            NumericMatrix tree_table_mu=sum_tree_mu[k];
+          for(int k =0;k<sum_term_nodes_mu.size();k++){
+            //NumericMatrix tree_table_mu=sum_tree_mu[k];
             //IntegerMatrix tree_mat_mu=sum_tree_mat_mu[k];
             //find terminal node means and observations associated with them
             IntegerVector term_nodes_mu=sum_term_nodes_mu[k];
@@ -2256,12 +2308,15 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
             //current predictions are the residuals for sum of trees!
             
             //update the means and predictions for tree
-            List new_node_mean_var=update_Gibbs_mean_var(tree_table_mu,predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
+            List new_node_mean_var=update_Gibbs_mean_var(//tree_table_mu,
+                                                         predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
             NumericVector new_node_mean=get_new_mean(term_nodes_mu,new_node_mean_var);
             NumericVector new_node_var=new_node_mean_var[1];
             //update predictions by setting predicted value for term_obs[termnode]=new mean value!
-            List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean,new_node_var,num_obs,term_nodes_mu,term_obs_mu);
-            NumericVector temp_preds_mu=updated_preds_mu[1];
+            List updated_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                        new_node_mean,new_node_var,num_obs,term_nodes_mu,term_obs_mu);
+            //NumericVector temp_preds_mu=updated_preds_mu[1];
+            NumericVector temp_preds_mu=updated_preds_mu[0];
             //NOW UPDATE THE RESIDUALS FOR USE IN NEXT ITERATION
             //THE PLACING OF THIS SECTION OF CODE HERE IS IMPORTANT
             //MUST BE BEFORE sum_new_predictions(_,k) is updated so that the
@@ -2287,13 +2342,15 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
             //   }
             // }
             sum_new_predictions_mu(_,k)=temp_preds_mu;
-            List updated_test_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean,new_node_var,num_test_obs,term_nodes_mu,term_test_obs_mu);
-            NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
+            List updated_test_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                             new_node_mean,new_node_var,num_test_obs,term_nodes_mu,term_test_obs_mu);
+            //NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
+            NumericVector temp_test_preds_mu=updated_test_preds_mu[0];
             sum_new_test_predictions_mu(_,k)=temp_test_preds_mu;
           }
           // NOW LOOP OVER TAU TREES IN SUM OF TREE MODEL i
-          for(int m =0;m<sum_tree_tau.size();m++){
-            NumericMatrix tree_table_tau=sum_tree_tau[m];
+          for(int m =0;m<sum_term_nodes_tau.size();m++){
+            //NumericMatrix tree_table_tau=sum_tree_tau[m];
             //IntegerMatrix tree_mat_tau=sum_tree_mat_tau[m];
             //find terminal node means and observations associated with them
             IntegerVector term_nodes_tau=sum_term_nodes_tau[m];
@@ -2303,12 +2360,15 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
             NumericVector predictions_tau=sum_resids_tau[m];
             //current predictions are the residuals for sum of trees!
             //update the means and predictions for tree
-            List new_node_mean_var=update_Gibbs_mean_var(tree_table_tau,predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
+            List new_node_mean_var=update_Gibbs_mean_var(//tree_table_tau,
+                                                         predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
             NumericVector new_node_mean=get_new_mean(term_nodes_tau,new_node_mean_var);
             NumericVector new_node_var=new_node_mean_var[1];
             //update predictions by setting predicted value for term_obs[termnode]=new mean value!
-            List updated_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean,new_node_var,num_obs,term_nodes_tau,term_obs_tau_ALL);
-            NumericVector temp_preds_tau=updated_preds_tau[1];
+            List updated_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                         new_node_mean,new_node_var,num_obs,term_nodes_tau,term_obs_tau_ALL);
+            //NumericVector temp_preds_tau=updated_preds_tau[1];
+            NumericVector temp_preds_tau=updated_preds_tau[0];
             
             NumericVector temp_preds_tau_z=temp_preds_tau*z;
             //NOW UPDATE THE RESIDUALS FOR USE IN NEXT ITERATION
@@ -2337,8 +2397,10 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
             // }
             sum_new_predictions_tau(_,m)=temp_preds_tau_z;
             sum_new_TEs(_,m)=temp_preds_tau;
-            List updated_test_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean,new_node_var,num_test_obs,term_nodes_tau,term_test_obs_tau_ALL);
-            NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
+            List updated_test_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                              new_node_mean,new_node_var,num_test_obs,term_nodes_tau,term_test_obs_tau_ALL);
+            //NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
+            NumericVector temp_test_preds_tau=updated_test_preds_tau[0];
             sum_new_test_predictions_tau(_,m)=z_test*temp_test_preds_tau;
             sum_new_test_TEs(_,m)=temp_test_preds_tau;
           }
@@ -2397,7 +2459,7 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
         
         
         //if current set of trees contains more than one tree
-        List sum_tree_mu=overall_sum_trees1_mu[i];
+        //List sum_tree_mu=overall_sum_trees1_mu[i];
         //List sum_tree_mat_mu=overall_sum_mat1_mu[i];
         List sum_term_nodes_mu=overall_term_nodes_trees_mu[i];
         List sum_term_obs_mu=overall_term_obs_trees_mu[i];
@@ -2439,9 +2501,9 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
         //NumericMatrix tree_predictions_tau=overall_predictions_tau[i];
         
         for(int j=0;j<num_iter;j++){
-          for(int k =0;k<sum_tree_mu.size();k++){
+          for(int k =0;k<sum_term_nodes_mu.size();k++){
             
-            NumericMatrix tree_table_mu=sum_tree_mu[k];
+            //NumericMatrix tree_table_mu=sum_tree_mu[k];
             //IntegerMatrix tree_mat_mu=sum_tree_mat_mu[k];
             //find terminal node means and observations associated with them
             IntegerVector term_nodes_mu=sum_term_nodes_mu[k];
@@ -2452,11 +2514,14 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
             //current predictions are the residuals for sum of trees!
             
             //update the means and predictions for tree
-            List new_node_mean_var_mu=update_Gibbs_mean_var(tree_table_mu,predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
+            List new_node_mean_var_mu=update_Gibbs_mean_var(//tree_table_mu,
+                                                            predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
             NumericVector new_node_mean_mu=get_new_mean(term_nodes_mu,new_node_mean_var_mu);
             NumericVector new_node_var_mu=new_node_mean_var_mu[1];
-            List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
-            NumericVector temp_preds_mu=updated_preds_mu[1];
+            List updated_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                        new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
+            //NumericVector temp_preds_mu=updated_preds_mu[1];
+            NumericVector temp_preds_mu=updated_preds_mu[0];
             
             //NOW UPDATE PARTIAL RESIDUALS
             // for(int l=0;l<sum_tree_mu.size();l++){
@@ -2481,12 +2546,14 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
             sum_new_predictions_mu(_,k)=temp_preds_mu;
             
             //get updated predictions for the test data
-            List updated_test_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_test_obs,term_nodes_mu,term_test_obs_mu);
-            NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
+            List updated_test_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                             new_node_mean_mu,new_node_var_mu,num_test_obs,term_nodes_mu,term_test_obs_mu);
+            //NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
+            NumericVector temp_test_preds_mu=updated_test_preds_mu[0];
             sum_new_test_predictions_mu(_,k)=temp_test_preds_mu;
           }
           
-          NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
+          //NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
           //IntegerMatrix tree_mat_tau=overall_sum_mat1_tau[i];
           IntegerVector term_nodes_tau=overall_term_nodes_trees_tau[i];
           List term_obs_tau=overall_term_obs_trees_tau[i];
@@ -2497,11 +2564,14 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
           //current predictions are the residuals for sum of trees
           
           //update the means and predictions for tree
-          List new_node_mean_var_tau=update_Gibbs_mean_var(tree_table_tau,predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
+          List new_node_mean_var_tau=update_Gibbs_mean_var(//tree_table_tau,
+                                                           predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
           NumericVector new_node_mean_tau=get_new_mean(term_nodes_tau,new_node_mean_var_tau);
           NumericVector new_node_var_tau=new_node_mean_var_tau[1];
-          List updated_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_obs,term_nodes_tau,term_obs_tau_ALL);
-          NumericVector temp_preds_tau=updated_preds_tau[1];
+          List updated_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                       new_node_mean_tau,new_node_var_tau,num_obs,term_nodes_tau,term_obs_tau_ALL);
+          //NumericVector temp_preds_tau=updated_preds_tau[1];
+          NumericVector temp_preds_tau=updated_preds_tau[0];
           NumericVector temp_preds_tau_z=z*temp_preds_tau;
           
           sum_predictions_tau(_,0)=temp_preds_tau;
@@ -2520,8 +2590,10 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
           sum_new_TEs(_,0)=temp_preds_tau;
           
           //get updated predictions for the test data
-          List updated_test_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_test_obs,term_nodes_tau,term_test_obs_tau_ALL);
-          NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
+          List updated_test_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                            new_node_mean_tau,new_node_var_tau,num_test_obs,term_nodes_tau,term_test_obs_tau_ALL);
+          //NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
+          NumericVector temp_test_preds_tau=updated_test_preds_tau[0];
           sum_test_predictions_tau(_,0)=z_test*temp_test_preds_tau;
           
           
@@ -2624,7 +2696,7 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
         
         for(int j=0;j<num_iter;j++){
           
-          NumericMatrix tree_table_mu=overall_sum_trees1_mu[i];
+          //NumericMatrix tree_table_mu=overall_sum_trees1_mu[i];
           //IntegerMatrix tree_mat_mu=overall_sum_mat1_mu[i];
           IntegerVector term_nodes_mu=overall_term_nodes_trees_mu[i];
           List term_obs_mu=overall_term_obs_trees_mu[i];
@@ -2634,11 +2706,14 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
           //current predictions are the residuals for sum of trees
           
           //update the means and predictions for tree
-          List new_node_mean_var_mu=update_Gibbs_mean_var(tree_table_mu,predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
+          List new_node_mean_var_mu=update_Gibbs_mean_var(//tree_table_mu,
+                                                          predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
           NumericVector new_node_mean_mu=get_new_mean(term_nodes_mu,new_node_mean_var_mu);
           NumericVector new_node_var_mu=new_node_mean_var_mu[1];
-          List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
-          NumericVector temp_preds_mu=updated_preds_mu[1];
+          List updated_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                      new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
+          //NumericVector temp_preds_mu=updated_preds_mu[1];
+          NumericVector temp_preds_mu=updated_preds_mu[0];
           sum_predictions_mu(_,0)=temp_preds_mu;
           //NOW UPDATE PARTIAL RESIDUALS
           //MU IS UNAFFECTED, BUT TAU SHOULD BE AFFECTED
@@ -2652,12 +2727,14 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
           sum_new_predictions_mu(_,0)=temp_preds_mu;
           
           //get updated predictions for the test data
-          List updated_test_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_test_obs,term_nodes_mu,term_test_obs_mu);
-          NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
+          List updated_test_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                           new_node_mean_mu,new_node_var_mu,num_test_obs,term_nodes_mu,term_test_obs_mu);
+          //NumericVector temp_test_preds_mu=updated_test_preds_mu[1];
+          NumericVector temp_test_preds_mu=updated_test_preds_mu[0];
           sum_test_predictions_mu(_,0)=temp_test_preds_mu;
           
           
-          NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
+          //NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
           //IntegerMatrix tree_mat_tau=overall_sum_mat1_tau[i];
           IntegerVector term_nodes_tau=overall_term_nodes_trees_tau[i];
           List term_obs_tau=overall_term_obs_trees_tau[i];
@@ -2668,11 +2745,14 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
           //current predictions are the residuals for sum of trees
           
           //update the means and predictions for tree
-          List new_node_mean_var_tau=update_Gibbs_mean_var(tree_table_tau,predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
+          List new_node_mean_var_tau=update_Gibbs_mean_var(//tree_table_tau,
+                                                           predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
           NumericVector new_node_mean_tau=get_new_mean(term_nodes_tau,new_node_mean_var_tau);
           NumericVector new_node_var_tau=new_node_mean_var_tau[1];
-          List updated_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_obs,term_nodes_tau,term_obs_tau_ALL);
-          NumericVector temp_preds_tau=updated_preds_tau[1];
+          List updated_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                       new_node_mean_tau,new_node_var_tau,num_obs,term_nodes_tau,term_obs_tau_ALL);
+          //NumericVector temp_preds_tau=updated_preds_tau[1];
+          NumericVector temp_preds_tau=updated_preds_tau[0];
           NumericVector temp_preds_tau_z=z*temp_preds_tau;
           
           sum_predictions_tau(_,0)=temp_preds_tau;
@@ -2689,8 +2769,10 @@ List gibbs_sampler_no_update(List overall_sum_trees_mu,List overall_sum_trees_ta
           sum_new_TEs(_,0)=temp_preds_tau;
           
           //get updated predictions for the test data
-          List updated_test_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_test_obs,term_nodes_tau,term_test_obs_tau_ALL);
-          NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
+          List updated_test_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                            new_node_mean_tau,new_node_var_tau,num_test_obs,term_nodes_tau,term_test_obs_tau_ALL);
+          //NumericVector temp_test_preds_tau=updated_test_preds_tau[1];
+          NumericVector temp_test_preds_tau=updated_test_preds_tau[0];
           //sum_test_predictions_tau(_,0)=z_test*temp_test_preds_tau;
           sum_new_test_TEs(_,0)=temp_test_preds_tau;
           
@@ -2826,9 +2908,9 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
   List TE_test_list_orig(overall_sum_trees_tau.size());
   
   //List prediction_test_list_orig(overall_sum_trees_mu.size());
-  List overall_sum_trees1_mu=clone(overall_sum_trees_mu);
+  //List overall_sum_trees1_mu=clone(overall_sum_trees_mu);
   //List overall_sum_mat1_mu=clone(overall_sum_trees_mu);
-  List overall_sum_trees1_tau=clone(overall_sum_trees_tau);
+  //List overall_sum_trees1_tau=clone(overall_sum_trees_tau);
   //List overall_sum_mat1_tau=clone(overall_sum_trees_tau);
   
   List sigma_chains(overall_sum_trees_mu.size());
@@ -2850,12 +2932,12 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
     if(is<List>(s_mu)){
       if(is<List>(s_tau)){
         //if current set of trees contains more than one tree
-        List sum_tree_mu=overall_sum_trees1_mu[i];
+        //List sum_tree_mu=overall_sum_trees1_mu[i];
         //List sum_tree_mat_mu=overall_sum_mat1_mu[i];
         List sum_term_nodes_mu=overall_term_nodes_trees_mu[i];
         List sum_term_obs_mu=overall_term_obs_trees_mu[i];
         //List sum_term_test_obs_mu=overall_term_test_obs_trees_mu[i];
-        List sum_tree_tau=overall_sum_trees1_tau[i];
+        //List sum_tree_tau=overall_sum_trees1_tau[i];
         //List sum_tree_mat_tau=overall_sum_mat1_tau[i];
         List sum_term_nodes_tau=overall_term_nodes_trees_tau[i];
         List sum_term_obs_tau=overall_term_obs_trees_tau[i];
@@ -2892,8 +2974,8 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
         
         for(int j=0;j<num_iter;j++){
           //NOW LOOP OVER MU TREES IN SUM OF TREE MODEL i
-          for(int k =0;k<sum_tree_mu.size();k++){
-            NumericMatrix tree_table_mu=sum_tree_mu[k];
+          for(int k =0;k<sum_term_nodes_mu.size();k++){
+            //NumericMatrix tree_table_mu=sum_tree_mu[k];
             //IntegerMatrix tree_mat_mu=sum_tree_mat_mu[k];
             //find terminal node means and observations associated with them
             IntegerVector term_nodes_mu=sum_term_nodes_mu[k];
@@ -2905,13 +2987,16 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
             
             //update the means and predictions for tree
             
-            List new_node_mean_var=update_Gibbs_mean_var(tree_table_mu,predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
+            List new_node_mean_var=update_Gibbs_mean_var(//tree_table_mu,
+                                                         predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
             
             NumericVector new_node_mean=get_new_mean(term_nodes_mu,new_node_mean_var);
             NumericVector new_node_var=new_node_mean_var[1];
             //update predictions by setting predicted value for term_obs[termnode]=new mean value!
-            List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean,new_node_var,num_obs,term_nodes_mu,term_obs_mu);
-            NumericVector temp_preds_mu=updated_preds_mu[1];
+            List updated_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                        new_node_mean,new_node_var,num_obs,term_nodes_mu,term_obs_mu);
+            //NumericVector temp_preds_mu=updated_preds_mu[1];
+            NumericVector temp_preds_mu=updated_preds_mu[0];
             //NOW UPDATE THE RESIDUALS FOR USE IN NEXT ITERATION
             //THE PLACING OF THIS SECTION OF CODE HERE IS IMPORTANT
             //MUST BE BEFORE sum_new_predictions(_,k) is updated so that the
@@ -2945,8 +3030,8 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
             
           }
           // NOW LOOP OVER TAU TREES IN SUM OF TREE MODEL i
-          for(int m =0;m<sum_tree_tau.size();m++){
-            NumericMatrix tree_table_tau=sum_tree_tau[m];
+          for(int m =0;m<sum_term_nodes_tau.size();m++){
+            //NumericMatrix tree_table_tau=sum_tree_tau[m];
             //IntegerMatrix tree_mat_tau=sum_tree_mat_tau[m];
             //find terminal node means and observations associated with them
             IntegerVector term_nodes_tau=sum_term_nodes_tau[m];
@@ -2957,14 +3042,17 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
             //current predictions are the residuals for sum of trees!
             
             //update the means and predictions for tree
-            List new_node_mean_var=update_Gibbs_mean_var(tree_table_tau,predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
+            List new_node_mean_var=update_Gibbs_mean_var(//tree_table_tau,
+                                                         predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
             
             NumericVector new_node_mean=get_new_mean(term_nodes_tau,new_node_mean_var);
             NumericVector new_node_var=new_node_mean_var[1];
             
             //update predictions by setting predicted value for term_obs[termnode]=new mean value!
-            List updated_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean,new_node_var,num_obs,term_nodes_tau,term_obs_tau_ALL);
-            NumericVector temp_preds_tau=updated_preds_tau[1];
+            List updated_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                         new_node_mean,new_node_var,num_obs,term_nodes_tau,term_obs_tau_ALL);
+            //NumericVector temp_preds_tau=updated_preds_tau[1];
+            NumericVector temp_preds_tau=updated_preds_tau[0];
             
             
             NumericVector temp_preds_tau_z=temp_preds_tau*z;
@@ -3066,7 +3154,7 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
         
 
         //if current set of trees contains more than one tree
-        List sum_tree_mu=overall_sum_trees1_mu[i];
+        //List sum_tree_mu=overall_sum_trees1_mu[i];
         //List sum_tree_mat_mu=overall_sum_mat1_mu[i];
         List sum_term_nodes_mu=overall_term_nodes_trees_mu[i];
         List sum_term_obs_mu=overall_term_obs_trees_mu[i];
@@ -3107,9 +3195,9 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
         //NumericVector tree_predictions_tau=overall_predictions_tau[i];
 
         for(int j=0;j<num_iter;j++){
-          for(int k =0;k<sum_tree_mu.size();k++){
+          for(int k =0;k<sum_term_nodes_mu.size();k++){
             
-            NumericMatrix tree_table_mu=sum_tree_mu[k];
+            //NumericMatrix tree_table_mu=sum_tree_mu[k];
             //IntegerMatrix tree_mat_mu=sum_tree_mat_mu[k];
             //find terminal node means and observations associated with them
             IntegerVector term_nodes_mu=sum_term_nodes_mu[k];
@@ -3119,12 +3207,15 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
             NumericVector predictions_mu=sum_resids_mu[k];
             //current predictions are the residuals for sum of trees!
             //update the means and predictions for tree
-            List new_node_mean_var_mu=update_Gibbs_mean_var(tree_table_mu,predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
+            List new_node_mean_var_mu=update_Gibbs_mean_var(//tree_table_mu,
+                                                            predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
             NumericVector new_node_mean_mu=get_new_mean(term_nodes_mu,new_node_mean_var_mu);
             NumericVector new_node_var_mu=new_node_mean_var_mu[1];
-            List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
-            NumericVector temp_preds_mu=updated_preds_mu[1];
-
+            List updated_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                        new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
+            //NumericVector temp_preds_mu=updated_preds_mu[1];
+            NumericVector temp_preds_mu=updated_preds_mu[0];
+            
             //NOW UPDATE PARTIAL RESIDUALS
             // for(int l=0;l<sum_tree_mu.size();l++){
             //   if(l!=k){
@@ -3153,7 +3244,7 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
             //sum_test_predictions_mu(_,0)=z*temp_test_preds_mu;
           }
           
-          NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
+          //NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
           //IntegerMatrix tree_mat_tau=overall_sum_mat1_tau[i];
           IntegerVector term_nodes_tau=overall_term_nodes_trees_tau[i];
           List term_obs_tau=overall_term_obs_trees_tau[i];
@@ -3164,11 +3255,14 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
           //current predictions are the residuals for sum of trees
           
           //update the means and predictions for tree
-          List new_node_mean_var_tau=update_Gibbs_mean_var(tree_table_tau,predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
+          List new_node_mean_var_tau=update_Gibbs_mean_var(//tree_table_tau,
+                                                           predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
           NumericVector new_node_mean_tau=get_new_mean(term_nodes_tau,new_node_mean_var_tau);
           NumericVector new_node_var_tau=new_node_mean_var_tau[1];
-          List updated_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_obs,term_nodes_tau,term_obs_tau_ALL);
-          NumericVector temp_preds_tau=updated_preds_tau[1];
+          List updated_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                       new_node_mean_tau,new_node_var_tau,num_obs,term_nodes_tau,term_obs_tau_ALL);
+          //NumericVector temp_preds_tau=updated_preds_tau[1];
+          NumericVector temp_preds_tau=updated_preds_tau[0];
           NumericVector temp_preds_tau_z=z*temp_preds_tau;
           
           sum_predictions_tau(_,0)=temp_preds_tau;
@@ -3294,7 +3388,7 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
         
         for(int j=0;j<num_iter;j++){
           
-          NumericMatrix tree_table_mu=overall_sum_trees1_mu[i];
+          //NumericMatrix tree_table_mu=overall_sum_trees1_mu[i];
           //IntegerMatrix tree_mat_mu=overall_sum_mat1_mu[i];
           IntegerVector term_nodes_mu=overall_term_nodes_trees_mu[i];
           List term_obs_mu=overall_term_obs_trees_mu[i];
@@ -3304,11 +3398,14 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
           //current predictions are the residuals for sum of trees
           
           //update the means and predictions for tree
-          List new_node_mean_var_mu=update_Gibbs_mean_var(tree_table_mu,predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
+          List new_node_mean_var_mu=update_Gibbs_mean_var(//tree_table_mu,
+                                                          predictions_mu,a_mu,sigma2,mu_mu_mu,term_nodes_mu,term_obs_mu);
           NumericVector new_node_mean_mu=get_new_mean(term_nodes_mu,new_node_mean_var_mu);
           NumericVector new_node_var_mu=new_node_mean_var_mu[1];
-          List updated_preds_mu=update_predictions_gs(tree_table_mu,new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
-          NumericVector temp_preds_mu=updated_preds_mu[1];
+          List updated_preds_mu=update_predictions_gs(//tree_table_mu,
+                                                      new_node_mean_mu,new_node_var_mu,num_obs,term_nodes_mu,term_obs_mu);
+          //NumericVector temp_preds_mu=updated_preds_mu[1];
+          NumericVector temp_preds_mu=updated_preds_mu[0];
           sum_predictions_mu(_,0)=temp_preds_mu;
           //NOW UPDATE PARTIAL RESIDUALS
           //MU IS UNAFFECTED, BUT TAU SHOULD BE AFFECTED
@@ -3329,7 +3426,7 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
           //sum_new_test_TEs(_,0)=temp_test_preds_tau;
           
           
-          NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
+          //NumericMatrix tree_table_tau=overall_sum_trees1_tau[i];
           //IntegerMatrix tree_mat_tau=overall_sum_mat1_tau[i];
           IntegerVector term_nodes_tau=overall_term_nodes_trees_tau[i];
           List term_obs_tau=overall_term_obs_trees_tau[i];
@@ -3340,11 +3437,14 @@ List gibbs_sampler_no_update2(List overall_sum_trees_mu,List overall_sum_trees_t
           //current predictions are the residuals for sum of trees
           
           //update the means and predictions for tree
-          List new_node_mean_var_tau=update_Gibbs_mean_var(tree_table_tau,predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
+          List new_node_mean_var_tau=update_Gibbs_mean_var(//tree_table_tau,
+                                                           predictions_tau,a_tau,sigma2,mu_mu_tau,term_nodes_tau,term_obs_tau);
           NumericVector new_node_mean_tau=get_new_mean(term_nodes_tau,new_node_mean_var_tau);
           NumericVector new_node_var_tau=new_node_mean_var_tau[1];
-          List updated_preds_tau=update_predictions_gs(tree_table_tau,new_node_mean_tau,new_node_var_tau,num_obs,term_nodes_tau,term_obs_tau_ALL);
-          NumericVector temp_preds_tau=updated_preds_tau[1];
+          List updated_preds_tau=update_predictions_gs(//tree_table_tau,
+                                                       new_node_mean_tau,new_node_var_tau,num_obs,term_nodes_tau,term_obs_tau_ALL);
+          //NumericVector temp_preds_tau=updated_preds_tau[1];
+          NumericVector temp_preds_tau=updated_preds_tau[0];
           NumericVector temp_preds_tau_z=z*temp_preds_tau;
           
           sum_predictions_tau(_,0)=temp_preds_tau;

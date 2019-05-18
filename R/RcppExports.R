@@ -309,8 +309,8 @@ calculate_resids <- function(predictions, response) {
     .Call(`_bcfbma_calculate_resids`, predictions, response)
 }
 
-update_Gibbs_mean_var <- function(tree_table, resids, a, sigma, mu_mu, terminal_nodes, term_obs_tree) {
-    .Call(`_bcfbma_update_Gibbs_mean_var`, tree_table, resids, a, sigma, mu_mu, terminal_nodes, term_obs_tree)
+update_Gibbs_mean_var <- function(resids, a, sigma, mu_mu, terminal_nodes, term_obs_tree) {
+    .Call(`_bcfbma_update_Gibbs_mean_var`, resids, a, sigma, mu_mu, terminal_nodes, term_obs_tree)
 }
 
 update_sigma <- function(a1, b, resids, n) {
@@ -337,8 +337,8 @@ get_new_mean <- function(terminal_nodes, new_mean_var) {
     .Call(`_bcfbma_get_new_mean`, terminal_nodes, new_mean_var)
 }
 
-update_predictions_gs <- function(tree_table, new_mean, new_var, n, terminal_nodes, term_obs_tree) {
-    .Call(`_bcfbma_update_predictions_gs`, tree_table, new_mean, new_var, n, terminal_nodes, term_obs_tree)
+update_predictions_gs <- function(new_mean, new_var, n, terminal_nodes, term_obs_tree) {
+    .Call(`_bcfbma_update_predictions_gs`, new_mean, new_var, n, terminal_nodes, term_obs_tree)
 }
 
 scale_response_gs <- function(a, b, c, d, y) {
