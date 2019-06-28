@@ -875,6 +875,320 @@ else{
 }
   return(predictions);						// return the vector of predictions
 }
+
+//######################################################################################################################//
+
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+List get_initial_resids(NumericMatrix test_data,
+                        NumericMatrix pihatdata,
+                        List List_of_lists_tree_tables_mu,
+                        List List_of_lists_tree_tables_tau,
+                        NumericVector ytrain,
+                        NumericVector ztrain
+) {
+  //Function to make predictions from test data, given a single tree and the terminal node predictions, this function will be called
+  //for each tree accepted in Occam's Window.
+  
+  arma::uvec z_a(as<arma::uvec>(ztrain));		// convert input vector to an unsigned integer vector called grow_obs2. Why isn't the input vector an IntegerVector?
+  arma::uvec z_inds= arma::find(z_a==1) ;			// Obtain the elements of the split_var^th column of the input matrix indexed by grow_obs
+  
+  //arma::uvec get_min=arma::intersect(z_inds,grow_obs2 );			// Obtain the elements of the split_var^th column of the input matrix indexed by grow_obs
+  IntegerVector z_ind_wrapped=as<IntegerVector>(wrap(z_inds));
+  
+  NumericVector treated_y= ytrain[z_ind_wrapped];
+  
+  
+  arma::mat D1(test_data.begin(), test_data.nrow(), test_data.ncol(), false);				// copy the covariate data matrix into an arma mat
+  arma::mat x_control_a=D1;			// create arma mat copy of x_control.
+  arma::mat pihat_a(pihatdata.begin(), pihatdata.nrow(), pihatdata.ncol(), false);				// copy the pihat matrix into an arma mat
+  x_control_a.insert_cols(0,pihat_a);		// add propensity scores as new leftmost columns of x_control_a
+  NumericMatrix x_control=wrap(x_control_a);	// convert x_control_a to a NumericMatrix called x_control
+  
+
+  List List_of_resid_lists_mu(List_of_lists_tree_tables_mu.size());
+  List new_pred_list_mu(List_of_lists_tree_tables_mu.size());
+  
+  List List_of_resid_lists_tau(List_of_lists_tree_tables_tau.size());
+  List new_pred_list_tau(List_of_lists_tree_tables_tau.size());
+  
+  for(int k=0;k<List_of_lists_tree_tables_mu.size();k++){
+
+    List One_sum_of_tree_list_mu = List_of_lists_tree_tables_mu[k];  
+    List One_sum_of_tree_list_tau = List_of_lists_tree_tables_tau[k];  
+    //create list of outcomes from which to take away predictions in each round to create residuals
+    NumericMatrix new_pred_mat_mu(x_control.nrow(),One_sum_of_tree_list_mu.size());
+    NumericMatrix new_pred_mat_tau(x_control.nrow(),One_sum_of_tree_list_tau.size());
+    
+    List temp_resid_list_mu(One_sum_of_tree_list_mu.size()) ; 
+    for(int q=0;q<One_sum_of_tree_list_mu.size();q++){
+      temp_resid_list_mu[q]=ytrain;
+    }
+    
+    List temp_resid_list_tau(One_sum_of_tree_list_tau.size()) ; 
+    for(int q=0;q<One_sum_of_tree_list_tau.size();q++){
+      temp_resid_list_tau[q]=ytrain;
+    }
+    
+    
+    for(int l=0;l<One_sum_of_tree_list_mu.size();l++){
+      
+
+      NumericMatrix tree_data = One_sum_of_tree_list_mu[l];
+
+      arma::mat arma_tree(tree_data.begin(), tree_data.nrow(), tree_data.ncol(), false);
+      arma::mat testd(x_control.begin(), x_control.nrow(), x_control.ncol(), false);
+      NumericVector terminal_nodes=find_term_nodes_bcf(tree_data);
+      arma::vec arma_terminal_nodes=Rcpp::as<arma::vec>(terminal_nodes);
+      //NumericVector tree_predictions;
+      //for each internal node find the observations that belong to the terminal nodes
+      NumericVector predictions(x_control.nrow());
+      if(terminal_nodes.size()==1){
+        double nodemean=mean(ytrain)/One_sum_of_tree_list_mu.size();				// let nodemean equal tree_data row terminal_nodes[i]^th row , 6th column. The minus 1 is because terminal nodes consists of indices starting at 1, but need indices to start at 0.
+        predictions=rep(nodemean,x_control.nrow());
+      }
+      else{
+        for(int i=0;i<terminal_nodes.size();i++){
+          arma::mat subdata=testd;
+          int curr_term=terminal_nodes[i];
+          int row_index;
+          int term_node=terminal_nodes[i];
+          if(curr_term % 2==0){
+            row_index=terminal_nodes[i];
+          }else{
+            row_index=terminal_nodes[i]-1;
+          }
+          //save the left and right node data into arma uvec
+          arma::vec left_nodes=arma_tree.col(0);
+          arma::vec right_nodes=arma_tree.col(1);
+          arma::mat node_split_mat;    
+          node_split_mat.set_size(0,3);
+
+          while(row_index!=1){
+            //for each terminal node work backwards and see if the parent node was a left or right node
+            //append split info to a matrix 
+            int rd=0;
+            arma::uvec parent_node=arma::find(left_nodes == term_node);
+            
+            if(parent_node.size()==0){
+              parent_node=arma::find(right_nodes == term_node);
+              rd=1;
+            }      
+            node_split_mat.insert_rows(0,1);
+
+            node_split_mat(0,0)=tree_data(parent_node[0],2);
+
+            node_split_mat(0,1)=tree_data(parent_node[0],3);
+
+            node_split_mat(0,2)=rd;
+            row_index=parent_node[0] +1;
+            term_node=parent_node[0]+1;
+          }  
+
+          //fill in the predicted value for tree
+          arma::uvec pred_indices;
+          int split= node_split_mat(0,0)-1;
+
+          arma::vec tempvec = testd.col(split);
+
+          double temp_split = node_split_mat(0,1);
+          
+          if(node_split_mat(0,2)==0){
+            pred_indices = arma::find(tempvec <= temp_split);
+          }else{
+            pred_indices = arma::find(tempvec > temp_split);
+          }
+          arma::uvec temp_pred_indices;
+          //arma::vec data_subset = testd.col(split);
+          //data_subset=data_subset.elem(pred_indices);
+          int n=node_split_mat.n_rows;
+          
+          for(int j=1;j<n;j++){
+            int curr_sv=node_split_mat(j,0);
+            double split_p = node_split_mat(j,1);
+            
+            arma::vec data_subset = testd.col(curr_sv-1);
+            data_subset=data_subset.elem(pred_indices);
+            
+            if(node_split_mat(j,2)==0){
+              //split is to the left
+              temp_pred_indices=arma::find(data_subset <= split_p);
+            }else{
+              //split is to the right
+              temp_pred_indices=arma::find(data_subset > split_p);
+            }
+            pred_indices=pred_indices.elem(temp_pred_indices);
+            
+            if(pred_indices.size()==0){
+              continue;
+            }
+          }
+          IntegerVector predind=as<IntegerVector>(wrap(pred_indices));
+          NumericVector ys_in_node= ytrain[predind];
+          double nodemean=mean(ys_in_node)/One_sum_of_tree_list_mu.size();
+          predictions[predind]= nodemean;
+        } 
+      }
+      //Add predictions to tree predictions
+      for(int q=0;q<One_sum_of_tree_list_mu.size();q++){
+        if(q==l){
+          
+        }else{
+          NumericVector temp_for_update = temp_resid_list_mu[q];
+          temp_resid_list_mu[q]=temp_for_update-predictions;
+        }
+      }
+      
+      
+      for(int q=0;q<One_sum_of_tree_list_tau.size();q++){
+          NumericVector temp_for_update = temp_resid_list_tau[q];
+          temp_resid_list_tau[q]=temp_for_update-predictions;
+      }
+
+      new_pred_mat_mu(_,l)=predictions;
+
+    }
+    
+
+    
+    for(int l=0;l<One_sum_of_tree_list_tau.size();l++){
+      
+      
+      NumericMatrix tree_data = One_sum_of_tree_list_tau[l];
+      
+      arma::mat arma_tree(tree_data.begin(), tree_data.nrow(), tree_data.ncol(), false);
+      arma::mat testd(test_data.begin(), test_data.nrow(), test_data.ncol(), false);
+      NumericVector terminal_nodes=find_term_nodes_bcf(tree_data);
+      arma::vec arma_terminal_nodes=Rcpp::as<arma::vec>(terminal_nodes);
+      //NumericVector tree_predictions;
+      //for each internal node find the observations that belong to the terminal nodes
+      NumericVector predictions(test_data.nrow());
+      if(terminal_nodes.size()==1){
+        double nodemean=mean(treated_y)/One_sum_of_tree_list_tau.size();				// let nodemean equal tree_data row terminal_nodes[i]^th row , 6th column. The minus 1 is because terminal nodes consists of indices starting at 1, but need indices to start at 0.
+        predictions=rep(nodemean,test_data.nrow());
+      }
+      else{
+        for(int i=0;i<terminal_nodes.size();i++){
+          arma::mat subdata=testd;
+          int curr_term=terminal_nodes[i];
+          int row_index;
+          int term_node=terminal_nodes[i];
+          if(curr_term % 2==0){
+            row_index=terminal_nodes[i];
+          }else{
+            row_index=terminal_nodes[i]-1;
+          }
+          //save the left and right node data into arma uvec
+          
+          arma::vec left_nodes=arma_tree.col(0);
+          arma::vec right_nodes=arma_tree.col(1);
+          arma::mat node_split_mat;    
+          node_split_mat.set_size(0,3);
+          
+          while(row_index!=1){
+            //for each terminal node work backwards and see if the parent node was a left or right node
+            //append split info to a matrix 
+            int rd=0;
+            arma::uvec parent_node=arma::find(left_nodes == term_node);
+            
+            if(parent_node.size()==0){
+              parent_node=arma::find(right_nodes == term_node);
+              rd=1;
+            }      
+            node_split_mat.insert_rows(0,1);
+            node_split_mat(0,0)=tree_data(parent_node[0],2);
+            node_split_mat(0,1)=tree_data(parent_node[0],3);
+            node_split_mat(0,2)=rd;
+            row_index=parent_node[0] +1;
+            term_node=parent_node[0]+1;
+          }  
+          //fill in the predicted value for tree
+          arma::uvec pred_indices;
+          int split= node_split_mat(0,0)-1;
+          arma::vec tempvec = testd.col(split);
+          double temp_split = node_split_mat(0,1);
+          if(node_split_mat(0,2)==0){
+            pred_indices = arma::find(tempvec <= temp_split);
+          }else{
+            pred_indices = arma::find(tempvec > temp_split);
+          }
+          
+          arma::uvec temp_pred_indices;
+          //arma::vec data_subset = testd.col(split);
+          //data_subset=data_subset.elem(pred_indices);
+          int n=node_split_mat.n_rows;
+          
+          for(int j=1;j<n;j++){
+            int curr_sv=node_split_mat(j,0);
+            double split_p = node_split_mat(j,1);
+            
+            arma::vec data_subset = testd.col(curr_sv-1);
+            data_subset=data_subset.elem(pred_indices);
+            
+            if(node_split_mat(j,2)==0){
+              //split is to the left
+              temp_pred_indices=arma::find(data_subset <= split_p);
+            }else{
+              //split is to the right
+              temp_pred_indices=arma::find(data_subset > split_p);
+            }
+            pred_indices=pred_indices.elem(temp_pred_indices);
+            
+            if(pred_indices.size()==0){
+              continue;
+            }
+          }
+          arma::uvec inds_tr_obs_node = arma::intersect(pred_indices,z_inds);
+          IntegerVector predind=as<IntegerVector>(wrap(inds_tr_obs_node));
+          
+          NumericVector ys_in_node= ytrain[predind];
+          double nodemean=mean(ys_in_node)/One_sum_of_tree_list_tau.size();
+          predictions[predind]= nodemean;
+        } 
+      }
+      
+      //Add predictions to tree predictions
+      for(int q=0;q<One_sum_of_tree_list_tau.size();q++){
+        if(q==l){
+          
+        }else{
+          NumericVector temp_for_update = temp_resid_list_tau[q];
+          temp_resid_list_tau[q]=temp_for_update-ztrain*predictions;
+        }
+      }
+      
+      
+      for(int q=0;q<One_sum_of_tree_list_mu.size();q++){
+        NumericVector temp_for_update = temp_resid_list_mu[q];
+        temp_resid_list_mu[q]=temp_for_update-ztrain*predictions;
+      }
+
+      new_pred_mat_tau(_,l)=predictions;
+
+    }
+    
+
+    
+    
+    
+    List_of_resid_lists_mu[k]=temp_resid_list_mu;
+    List_of_resid_lists_tau[k]=temp_resid_list_tau;
+    
+    new_pred_list_mu[k]=new_pred_mat_mu;
+    new_pred_list_tau[k]=new_pred_mat_tau;
+
+    
+  }
+  
+  List ret(4);
+  ret[0]=List_of_resid_lists_mu;
+  ret[1]=new_pred_list_mu;
+  ret[2]=List_of_resid_lists_tau;
+  ret[3]=new_pred_list_tau;
+  return(ret);
+  
+}
+
 //######################################################################################################################//
 
 // [[Rcpp::export]]
@@ -1234,7 +1548,8 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
       tree_prior=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha,beta);	// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
       int_nodes=find_term_nodes_bcf(proposal_tree[0]);							// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector?
       p=int_nodes.size();														// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
-      BIC=-2*(lik+log(tree_prior))+p*log(data.n_rows);						// data.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      //BIC=-2*(lik+log(tree_prior))+p*log(data.n_rows);						// data.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      BIC=-2*(lik+log(tree_prior));						// data.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       //BIC=-2*(lik)+p*log(data.n_rows);						// data.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       if(BIC<lowest_BIC){														// if statement for updating lowest BIC...etc.
         lowest_BIC=BIC;														// update (input variable) lowest_BIC
@@ -1472,7 +1787,8 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
       tree_prior=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);	// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
       int_nodes=find_term_nodes_bcf(proposal_tree[0]);							// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector?
       p=int_nodes.size();														// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
-      BIC=-2*(lik+log(tree_prior))+p*log(x_moderate_a.n_rows);	
+      //BIC=-2*(lik+log(tree_prior))+p*log(x_moderate_a.n_rows);	
+      BIC=-2*(lik+log(tree_prior));	
       
       //BIC=-2*(lik)+(p_other_mu+p)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
@@ -1802,7 +2118,8 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
       
       int_nodes=find_term_nodes_bcf(proposal_tree[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
       p=int_nodes.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
-      BIC=-2*(lik+log(tree_prior))+(p_other_mu+p)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      //BIC=-2*(lik+log(tree_prior))+(p_other_mu+p)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      BIC=-2*(lik+log(tree_prior));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       //BIC=-2*(lik)+(p_other_mu+p)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
         lowest_BIC=BIC;											// update (input variable) lowest_BIC
@@ -2179,8 +2496,9 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
       
       //int_nodes=find_term_nodes_bcf(proposal_tree[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
       //p=int_nodes.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
-      BIC=-2*(lik+log(tree_prior))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
-      
+      //BIC=-2*(lik+log(tree_prior))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      BIC=-2*(lik+log(tree_prior));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        
       //BIC=-2*(lik)+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       // Rcout << "p_other_mu+p_other_tau=" << p_other_mu+p_other_tau << ".\n";
       // Rcout << "lik=" << lik << ".\n";
@@ -2568,7 +2886,8 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
       
       //int_nodes=find_term_nodes_bcf(proposal_tree[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
       //p=int_nodes.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
-      BIC=-2*(lik+log(tree_prior))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      //BIC=-2*(lik+log(tree_prior))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      BIC=-2*(lik+log(tree_prior));			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       //BIC=-2*(lik)+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       // Rcout << "p_other_mu+p_other_tau=" << p_other_mu+p_other_tau << ".\n";
       // Rcout << "lik=" << lik << ".\n";
@@ -3357,7 +3676,8 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
   overall_parent2[0]=-1;
   double lik_temp=likelihood_function_bcf(resids(_,0),tree_table_mu[0],tree_mat_mu[0],a_mu,mu_mu,nu,lambda);
   double tree_prior_temp=get_tree_prior_bcf(tree_table_mu[0],tree_mat_mu[0],alpha_mu,beta_mu);
-  double lowest_BIC_temp=-2*(lik_temp+log(tree_prior_temp))+1*log(x_control_a.n_rows);
+  //double lowest_BIC_temp=-2*(lik_temp+log(tree_prior_temp))+1*log(x_control_a.n_rows);
+  double lowest_BIC_temp=-2*(lik_temp+log(tree_prior_temp));
   overall_lik[0]= lowest_BIC_temp;
   overall_count=1;  
   
@@ -3632,7 +3952,8 @@ List get_best_trees_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,Nume
     overall_parent2[0]=-1;
     double lik_temp=likelihood_function_bcf(resids(_,0),tree_table_mu[0],tree_mat_mu[0],a_mu,mu_mu,nu,lambda);
     double tree_prior_temp=get_tree_prior_bcf(tree_table_mu[0],tree_mat_mu[0],alpha_mu,beta_mu);
-    double lowest_BIC_temp=-2*(lik_temp+log(tree_prior_temp))+1*log(x_control_a.n_rows);
+    //double lowest_BIC_temp=-2*(lik_temp+log(tree_prior_temp))+1*log(x_control_a.n_rows);
+    double lowest_BIC_temp=-2*(lik_temp+log(tree_prior_temp));
     overall_lik[0]= lowest_BIC_temp;
     overall_count=1;  
     
@@ -3955,7 +4276,8 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
         }
         
         // Rcout << "Get to Line 3693 in get_best_trees_sum_mu_bcf.\n";
-        double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           
         overall_trees[overall_count]=tree_table_mu[0];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
         overall_mat[overall_count]=tree_mat_mu[0];			// include all elements of mat_subset_curr_round in overall_mat (across iterations of this loop)
@@ -4007,7 +4329,8 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
           if(tree.ncol()<5) throw std::range_error("Line 2013");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
-        double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           //Rcout << "Get to Line 3401 in get_best_trees_sum_mu_bcf.\n";
           overall_trees[overall_count]=tree_table_mu[0];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
           overall_mat[overall_count]=tree_mat_mu[0];			// include all elements of mat_subset_curr_round in overall_mat (across iterations of this loop)
@@ -4064,7 +4387,8 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
           if(tree.ncol()<5) throw std::range_error("Line 2047");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
-        double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
         //Rcout << "Get to Line 3458 in get_best_trees_sum_mu_bcf.\n";
         overall_trees[overall_count]=tree_table_mu[0];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
         overall_mat[overall_count]=tree_mat_mu[0];			// include all elements of mat_subset_curr_round in overall_mat (across iterations of this loop)
@@ -4119,7 +4443,8 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
           if(tree.ncol()<5) throw std::range_error("Line 2077");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
-        double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
         //Rcout << "Get to Line 3513 in get_best_trees_sum_mu_bcf.\n";
         overall_trees[overall_count]=tree_table_mu[0];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
         overall_mat[overall_count]=tree_mat_mu[0];			// include all elements of mat_subset_curr_round in overall_mat (across iterations of this loop)
@@ -4568,7 +4893,8 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
           }
           
           // Rcout << "Get to Line 3693 in get_best_trees_sum_mu_bcf.\n";
-          double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           
           overall_trees[overall_count]=tree_table_mu[0];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
           overall_mat[overall_count]=tree_mat_mu[0];			// include all elements of mat_subset_curr_round in overall_mat (across iterations of this loop)
@@ -4620,7 +4946,8 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
             if(tree.ncol()<5) throw std::range_error("Line 2013");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
-          double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           //Rcout << "Get to Line 3401 in get_best_trees_sum_mu_bcf.\n";
           overall_trees[overall_count]=tree_table_mu[0];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
           overall_mat[overall_count]=tree_mat_mu[0];			// include all elements of mat_subset_curr_round in overall_mat (across iterations of this loop)
@@ -4677,7 +5004,8 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
             if(tree.ncol()<5) throw std::range_error("Line 2047");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
-          double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           //Rcout << "Get to Line 3458 in get_best_trees_sum_mu_bcf.\n";
           overall_trees[overall_count]=tree_table_mu[0];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
           overall_mat[overall_count]=tree_mat_mu[0];			// include all elements of mat_subset_curr_round in overall_mat (across iterations of this loop)
@@ -4732,7 +5060,8 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
             if(tree.ncol()<5) throw std::range_error("Line 2077");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
-          double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           //Rcout << "Get to Line 3513 in get_best_trees_sum_mu_bcf.\n";
           overall_trees[overall_count]=tree_table_mu[0];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
           overall_mat[overall_count]=tree_mat_mu[0];			// include all elements of mat_subset_curr_round in overall_mat (across iterations of this loop)
@@ -5129,7 +5458,8 @@ List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numer
     
     double lik_temp=sumtree_likelihood_tau_round1_bcf(resids(_,0),tree_table_tau[0],tree_mat_tau[0],resids(_,0).size(),a_mu,a_tau,nu,lambda,z);
     double tree_prior_temp=get_tree_prior_bcf(tree_table_tau[0],tree_mat_tau[0],alpha_tau,beta_tau);
-    double lowest_BIC_temp=-2*(lik_temp+log(tree_prior_temp))+1*log(x_control_a.n_rows);
+    //double lowest_BIC_temp=-2*(lik_temp+log(tree_prior_temp))+1*log(x_control_a.n_rows);
+    double lowest_BIC_temp=-2*(lik_temp+log(tree_prior_temp));
     overall_lik[0]= lowest_BIC_temp;
     overall_count=1;  
     
@@ -5464,7 +5794,8 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
  
  NumericVector int_nodes_tau=find_term_nodes_bcf(tree_table_tau[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
  int p_other_tau=int_nodes_tau.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
- double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);	
+ //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);	
+ double BIC=-2*(lik_temp+log(tree_prior_temp));	
  
  overall_trees[overall_count]=tree_table_tau[0];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
  overall_mat[overall_count]=tree_mat_tau[0];			// include all elements of mat_subset_curr_round in overall_mat (across iterations of this loop)
@@ -5503,8 +5834,9 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
 
   NumericVector int_nodes_tau=find_term_nodes_bcf(tree_table_tau[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
   int p_other_tau=int_nodes_tau.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
-  double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);	
-
+  //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);	
+  double BIC=-2*(lik_temp+log(tree_prior_temp));	
+  
   overall_trees[overall_count]=tree_table_tau[0];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
   overall_mat[overall_count]=tree_mat_tau[0];			// include all elements of mat_subset_curr_round in overall_mat (across iterations of this loop)
   overall_parent[overall_count]=parent[q];				// include all elements of parent_curr_round in overall_parent (across iterations of this loop)
@@ -5963,7 +6295,8 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           // Rcout << "LINE 4390 tree_prior_temp =" << tree_prior_temp << ".\n";
         }
         
-        double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
         // Rcout << "LINE 4395 BIC =" << BIC << ".\n";
         // Rcout << "LINE 4395 lik_temp =" << lik_temp << ".\n";
         // Rcout << "LINE 4395 tree_prior_temp =" << tree_prior_temp << ".\n";
@@ -6016,7 +6349,8 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           if(tree.ncol()<5) throw std::range_error("Line 1695");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
-        double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
         // Rcout << "LINE 4440 BIC =" << BIC << ".\n";
         
         overall_trees[overall_count]=tree_table_tau[0];		
@@ -6075,7 +6409,8 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           if(tree.ncol()<5) throw std::range_error("Line 1730");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
-        double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
         // Rcout << "LINE 4500 BIC =" << BIC << ".\n";
         
         overall_trees[overall_count]=tree_table_tau[0];		
@@ -6128,7 +6463,8 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           if(tree.ncol()<5) throw std::range_error("Line 1760");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
-        double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+        double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
         // Rcout << "LINE 4553 BIC =" << BIC << ".\n";
         
         overall_trees[overall_count]=tree_table_tau[0];		
@@ -6589,7 +6925,8 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
             // Rcout << "LINE 4390 tree_prior_temp =" << tree_prior_temp << ".\n";
           }
           
-          double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           // Rcout << "LINE 4395 BIC =" << BIC << ".\n";
           // Rcout << "LINE 4395 lik_temp =" << lik_temp << ".\n";
           // Rcout << "LINE 4395 tree_prior_temp =" << tree_prior_temp << ".\n";
@@ -6642,7 +6979,8 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
             if(tree.ncol()<5) throw std::range_error("Line 1695");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
-          double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           // Rcout << "LINE 4440 BIC =" << BIC << ".\n";
           
           overall_trees[overall_count]=tree_table_tau[0];		
@@ -6701,7 +7039,8 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
             if(tree.ncol()<5) throw std::range_error("Line 1730");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
-          double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           // Rcout << "LINE 4500 BIC =" << BIC << ".\n";
           
           overall_trees[overall_count]=tree_table_tau[0];		
@@ -6754,7 +7093,8 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
             if(tree.ncol()<5) throw std::range_error("Line 1760");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
-          double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+          double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           // Rcout << "LINE 4553 BIC =" << BIC << ".\n";
           
           overall_trees[overall_count]=tree_table_tau[0];		
@@ -7280,8 +7620,9 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
   double lik=likelihood_function_mu_bcf(y_scaled,treetable_mu,treemat_mu,a_mu,mu_mu,nu,lambda);	// defined on line 201. Returns log likelihood of initial model with no trees?
   if(treetable_mu.ncol()<5) throw std::range_error("Line 4081");
   double tree_prior=get_tree_prior_bcf(treetable_mu,treemat_mu,alpha_mu,beta_mu);				// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees? but the tree is empty  at this stage?)
-  double lowest_BIC=-2*(lik+log(tree_prior))+1*log(n);						// BIC actually not the BIC because add 2*log(prior). Closer to the Bayes factor? (Not noted in paper).
-
+  //double lowest_BIC=-2*(lik+log(tree_prior))+1*log(n);						// BIC actually not the BIC because add 2*log(prior). Closer to the Bayes factor? (Not noted in paper).
+  double lowest_BIC=-2*(lik+log(tree_prior));						// BIC actually not the BIC because add 2*log(prior). Closer to the Bayes factor? (Not noted in paper).
+  
   // create initial tree table lists for mu(x) and tau(x)
   // Need to check if doing this correctly for tau(x)
   List tree_table_mu;								// create tree table.
@@ -9564,7 +9905,8 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
   double lik=likelihood_function_mu_bcf(y_scaled,treetable_mu,treemat_mu,a_mu,mu_mu,nu,lambda);	// defined on line 201. Returns log likelihood of initial model with no trees?
   if(treetable_mu.ncol()<5) throw std::range_error("Line 4081");
   double tree_prior=get_tree_prior_bcf(treetable_mu,treemat_mu,alpha_mu,beta_mu);				// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees? but the tree is empty  at this stage?)
-  double lowest_BIC=-2*(lik+log(tree_prior))+1*log(n);						// BIC actually not the BIC because add 2*log(prior). Closer to the Bayes factor? (Not noted in paper).
+  //double lowest_BIC=-2*(lik+log(tree_prior))+1*log(n);						// BIC actually not the BIC because add 2*log(prior). Closer to the Bayes factor? (Not noted in paper).
+  double lowest_BIC=-2*(lik+log(tree_prior));						// BIC actually not the BIC because add 2*log(prior). Closer to the Bayes factor? (Not noted in paper).
   
   // create initial tree table lists for mu(x) and tau(x)
   // Need to check if doing this correctly for tau(x)

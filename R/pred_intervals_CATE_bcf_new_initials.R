@@ -11,75 +11,119 @@
 #' @export 
 #' @return The output is a list of length one. The one element in this list is a vector of prediction intervals???
 
-pred_intervals_CATE_bcf <-function(object,num_iter,burnin,l_quant,u_quant,newdata=NULL,update_resids=1){
+pred_intervals_CATE_bcf_new_initials <-function(object,num_iter,burnin,l_quant,u_quant,newdata=NULL,update_resids=1,
+                                                trainingdata,pihatdata){
   if(l_quant>0.5 ||u_quant<0 ||u_quant>1){stop("Lower quantile must be lower than 0.5 and greater than 0")}
   if(u_quant<0.5 ||u_quant<0 ||u_quant>1){stop("Upper quantile must be greater than 0.5 and less than 1")}
   #object will be bartBMA object.
   
   
+  scaled_train_y <- scale_response_bcf(min(object$response),max(object$response),-0.5,0.5,object$response)
+  
+  get_resids <- get_initial_resids(trainingdata,
+                                   pihatdata,
+                                   object$sumoftrees_mu,
+                                   object$sumoftrees_tau,
+                                   scaled_train_y,
+                                   object$z)
+  
+  diff_inital_resids_mu <- get_resids[[1]]
+  new_pred_list1_mu <- get_resids[[2]]
+  diff_inital_resids_tau <- get_resids[[3]]
+  new_pred_list1_tau <- get_resids[[4]]
+  
+  
   if(update_resids==0){
     if(is.null(newdata) && length(object)==31){
       #if test data specified separately
-      gs_chains<-gibbs_sampler_no_update(object$sumoftrees_mu,object$sumoftrees_tau,object$obs_to_termNodesMatrix_mu,object$obs_to_termNodesMatrix_tau,
+      gs_chains<-gibbs_sampler_no_update_new_inits(object$sumoftrees_mu,object$sumoftrees_tau,object$obs_to_termNodesMatrix_mu,object$obs_to_termNodesMatrix_tau,
                                          object$response,
                                          object$bic,num_iter, burnin,object$nrowTrain,
                                          object$a_mu,object$a_tau,object$sigma,0,0,
                                          object$nu,object$lambda,
-                                         object$sum_residuals_mu,object$sum_residuals_tau,object$z,
+                                         diff_inital_resids_mu,
+                                         diff_inital_resids_tau,
+                                         object$z,
                                          object$test_data,
-                                         object$test_pihat, object$test_z, object$include_pi2, object$num_propscores, object$nrowtest)
+                                         object$test_pihat, object$test_z, object$include_pi2, object$num_propscores, object$nrowtest,
+                                         new_pred_list1_mu,
+                                         new_pred_list1_tau)
     }else{ if(is.null(newdata) && length(object)==25){
       #else return Pred Ints for training data
-      gs_chains<-gibbs_sampler_no_update2(object$sumoftrees_mu,object$sumoftrees_tau,object$obs_to_termNodesMatrix_mu,object$obs_to_termNodesMatrix_tau,
+      gs_chains<-gibbs_sampler_no_update2_new_inits(object$sumoftrees_mu,object$sumoftrees_tau,object$obs_to_termNodesMatrix_mu,
+                                          object$obs_to_termNodesMatrix_tau,
                                           object$response,
                                           object$bic,num_iter, burnin,object$nrowTrain,
                                           object$a_mu,object$a_tau,object$sigma,0,0,
                                           object$nu,object$lambda,
-                                          object$sum_residuals_mu,object$sum_residuals_tau,object$z)
+                                          diff_inital_resids_mu,
+                                          diff_inital_resids_tau,
+                                          object$z,
+                                          new_pred_list1_mu,
+                                          new_pred_list1_tau)
       
     }else{
       #if test data included in call to object
-      gs_chains<-gibbs_sampler_no_update(object$sumoftrees_mu,object$sumoftrees_tau,object$obs_to_termNodesMatrix_mu,object$obs_to_termNodesMatrix_tau,
+      gs_chains<-gibbs_sampler_no_update_new_inits(object$sumoftrees_mu,object$sumoftrees_tau,object$obs_to_termNodesMatrix_mu,object$obs_to_termNodesMatrix_tau,
                                          object$response,
                                          object$bic,num_iter, burnin,object$nrowTrain,
                                          object$a_mu,object$a_tau,object$sigma,0,0,
                                          object$nu,object$lambda,
-                                         object$sum_residuals_mu,object$sum_residuals_tau,object$z,
+                                         diff_inital_resids_mu,
+                                         diff_inital_resids_tau,
+                                         object$z,
                                          object$test_data,
-                                         object$test_pihat, object$test_z, object$include_pi2, object$num_propscores, object$nrowtest)
+                                         object$test_pihat, object$test_z, object$include_pi2, object$num_propscores, 
+                                         object$nrowtest,
+                                         new_pred_list1_mu,
+                                         new_pred_list1_tau)
     }
     }
   }
   else{
     if(is.null(newdata) && length(object)==31){
       #if test data specified separately
-      gs_chains<-gibbs_sampler(object$sumoftrees_mu,object$sumoftrees_tau,object$obs_to_termNodesMatrix_mu,object$obs_to_termNodesMatrix_tau,
+      gs_chains<-gibbs_sampler_new_inits(object$sumoftrees_mu,object$sumoftrees_tau,object$obs_to_termNodesMatrix_mu,object$obs_to_termNodesMatrix_tau,
                                object$response,
                                object$bic,num_iter, burnin,object$nrowTrain,
                                object$a_mu,object$a_tau,object$sigma,0,0,
                                object$nu,object$lambda,
-                               object$sum_residuals_mu,object$sum_residuals_tau,object$z,
+                               diff_inital_resids_mu,
+                               diff_inital_resids_tau,
+                               object$z,
                                object$test_data,
-                               object$test_pihat, object$test_z, object$include_pi2, object$num_propscores, object$nrowtest)
+                               object$test_pihat, object$test_z, object$include_pi2, object$num_propscores, 
+                               object$nrowtest,
+                               new_pred_list1_mu,
+                               new_pred_list1_tau)
     }else{ if(is.null(newdata) && length(object)==25){
       #else return Pred Ints for training data
-      gs_chains<-gibbs_sampler2(object$sumoftrees_mu,object$sumoftrees_tau,object$obs_to_termNodesMatrix_mu,object$obs_to_termNodesMatrix_tau,
+      gs_chains<-gibbs_sampler2_new_inits(object$sumoftrees_mu,object$sumoftrees_tau,object$obs_to_termNodesMatrix_mu,object$obs_to_termNodesMatrix_tau,
                                 object$response,
                                 object$bic,num_iter, burnin,object$nrowTrain,
                                 object$a_mu,object$a_tau,object$sigma,0,0,
                                 object$nu,object$lambda,
-                                object$sum_residuals_mu,object$sum_residuals_tau,object$z)
+                                diff_inital_resids_mu,
+                                diff_inital_resids_tau,
+                                object$z,
+                                new_pred_list1_mu,
+                                new_pred_list1_tau)
       
     }else{
       #if test data included in call to object
-      gs_chains<-gibbs_sampler(object$sumoftrees_mu,object$sumoftrees_tau,object$obs_to_termNodesMatrix_mu,object$obs_to_termNodesMatrix_tau,
+      gs_chains<-gibbs_sampler_new_inits(object$sumoftrees_mu,object$sumoftrees_tau,object$obs_to_termNodesMatrix_mu,object$obs_to_termNodesMatrix_tau,
                                object$response,
                                object$bic,num_iter, burnin,object$nrowTrain,
                                object$a_mu,object$a_tau,object$sigma,0,0,
                                object$nu,object$lambda,
-                               object$sum_residuals_mu,object$sum_residuals_tau,object$z,
+                               diff_inital_resids_mu,
+                               diff_inital_resids_tau,
+                               object$z,
                                object$test_data,
-                               object$test_pihat, object$test_z, object$include_pi2, object$num_propscores, object$nrowtest)
+                               object$test_pihat, object$test_z, object$include_pi2, object$num_propscores,
+                               object$nrowtest,
+                               new_pred_list1_mu,
+                               new_pred_list1_tau)
     }
     }
   }
@@ -160,8 +204,8 @@ pred_intervals_CATE_bcf <-function(object,num_iter,burnin,l_quant,u_quant,newdat
   ret$PATE_PI <- PATE_PI
   ret$PATT_PI <- PATT_PI
   ret$PATNT_PI <- PATNT_PI
-
-
+  
+  
   class(ret)<-"CATE_intervals.bcfBMA"  
   ret
 }

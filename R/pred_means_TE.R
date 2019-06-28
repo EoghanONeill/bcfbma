@@ -86,18 +86,18 @@ pred_means_TE<-function(object,num_iter,burnin,l_quant,u_quant,newdata=NULL,upda
   #y_orig_post_sum_trees<-gs_chains[[5]]
   #sigma_chains<-gs_chains[[3]]
     if(is.null(newdata) && length(object)==31){
-      y_posterior_sum_trees<-gs_chains[[8]]
-      y_orig_post_sum_trees<-gs_chains[[9]]
-      sigma_chains<-gs_chains[[3]]
+      #y_posterior_sum_trees<-gs_chains#[[8]]
+      y_orig_post_sum_trees<-gs_chains[[2]]#[[9]]
+      sigma_chains<-gs_chains[[1]]#[[3]]
     }else{if(is.null(newdata) && length(object)==25){
-      y_posterior_sum_trees<-gs_chains[[6]]
-      y_orig_post_sum_trees<-gs_chains[[7]]
-      sigma_chains<-gs_chains[[3]]
+      #y_posterior_sum_trees<-gs_chains#[[6]]
+      y_orig_post_sum_trees<-gs_chains[[2]]#[[7]]
+      sigma_chains<-gs_chains[[1]]#[[3]]
   
     }else{
-      y_posterior_sum_trees<-gs_chains[[8]]
-      y_orig_post_sum_trees<-gs_chains[[9]]
-      sigma_chains<-gs_chains[[3]]
+      #y_posterior_sum_trees<-gs_chains#[[8]]
+      y_orig_post_sum_trees<-gs_chains[[2]]#[[9]]
+      sigma_chains<-gs_chains[[1]]#[[3]]
     } 
     }
   sum_of_tree_BIC<- -0.5*object$bic
@@ -106,16 +106,16 @@ pred_means_TE<-function(object,num_iter,burnin,l_quant,u_quant,newdata=NULL,upda
   num_its_to_sample<-round(weights*(num_iter-burnin))
   #final_sigma_chain<-numeric(0)
   
-  final_y_chain<-matrix(nrow=0,ncol=ncol(y_posterior_sum_trees[[1]]))
+  #final_y_chain<-matrix(nrow=0,ncol=ncol(y_posterior_sum_trees[[1]]))
   final_yorig_chain<-matrix(nrow=0,ncol=ncol(y_orig_post_sum_trees[[1]]))
   
   for(i in 1:length(sigma_chains)){
     sample_its<-sample(burnin:num_iter,num_its_to_sample[i])
     #final_sigma_chain<-c(final_sigma_chain,sigma_chains[[i]][sample_its])
     #now do the same for predicted response updates
-    post_y_i<-y_posterior_sum_trees[[i]]
+    #post_y_i<-y_posterior_sum_trees[[i]]
     post_yorig_i<-y_orig_post_sum_trees[[i]]
-    final_y_chain<-rbind(final_y_chain,post_y_i[sample_its,])
+    #final_y_chain<-rbind(final_y_chain,post_y_i[sample_its,])
     final_yorig_chain<-rbind(final_yorig_chain,post_yorig_i[sample_its,])
     
   }
