@@ -36,23 +36,23 @@ NumericMatrix addcol_bcf(NumericMatrix prior_tree_matrix_temp,int grow_node,Nume
   arma::mat M=Rcpp::as<arma::mat>(prior_tree_matrix_temp);	// input matrix converted to a arma mat M
   M.insert_cols(ncol,1);		// insert one column of zeros after the final column of M (note: prviously columns numbered 0 to ncol-1, so added col number ncol).
   for(int i =0;i<ld_obs.size();i++){		// for loop, length of input vectot ld_obs
-    try{
-      if(ld_obs[i]>prior_tree_matrix_temp.nrow()){		// create an error if the value of entry i in input vector ld_obs is greater than the number of rows in the input matrix
-        throw std::range_error("can't add col because ld row index is out of range");
-      }
-    }catch(...){
-      ::Rf_error("there is a problem adding col to mat don't know why");
-    }
+    // try{
+    //   if(ld_obs[i]>prior_tree_matrix_temp.nrow()){		// create an error if the value of entry i in input vector ld_obs is greater than the number of rows in the input matrix
+    //     throw std::range_error("can't add col because ld row index is out of range");
+    //   }
+    // }catch(...){
+    //   ::Rf_error("there is a problem adding col to mat don't know why");
+    // }
     M(ld_obs[i],ncol)=grow_node+1;		// Enter value grow_node+1 in matrix M row ld_obs[i], column ncol (i.e. the last column)
   }
   for(int i =0;i<rd_obs.size();i++){		// for loop, length of input vectot rd_obs
-    try{
-      if(rd_obs[i]>prior_tree_matrix_temp.nrow()){	// create an error if the value of entry i in input vector rd_obs is greater than the number of rows in the input matrix
-        throw std::range_error("can't add col because rd row index is out of range");
-      }
-    }catch(...){
-      ::Rf_error("there is a problem adding rd col to mat");
-    }    
+    // try{
+    //   if(rd_obs[i]>prior_tree_matrix_temp.nrow()){	// create an error if the value of entry i in input vector rd_obs is greater than the number of rows in the input matrix
+    //     throw std::range_error("can't add col because rd row index is out of range");
+    //   }
+    // }catch(...){
+    //   ::Rf_error("there is a problem adding rd col to mat");
+    // }    
     M(rd_obs[i],ncol)=grow_node+2;		// Enter value grow_node+2 in matrix M row rd_obs[i], column ncol (i.e. the new last column)
   }
   return(wrap(M));		// return the matrix
@@ -209,9 +209,13 @@ double likelihood_function_mu_bcf(NumericVector y_temp,NumericMatrix treetable_t
     arma::vec y_k_sq=pow(y_k,2);	// let y_k_sq be the squares of all the obsrevations in y_k (observations in the terminal node)
     double sum_yksq=sum(y_k_sq);	// let sum_yksq be the sum of these squares
     double b2=pow(ni*ybar +a*mu,2)/(ni+a);		//  b2 is a square of an expression all divided by (ni+a). 
-    term2+=(sum_yksq+a*pow(mu,2)-b2+nu*lambda);	// iteratively add function of parameters and sum of squares
+    
+    //term2+=(sum_yksq+a*pow(mu,2)-b2+nu*lambda);	// iteratively add function of parameters and sum of squares
+    term2+=(sum_yksq+a*pow(mu,2)-b2);	// iteratively add function of parameters and sum of squares
+    
   }
-  tree_log_lik=(b/2)*log(a)-0.5*term1-((y_temp.size()+nu)/2)*log(term2);	// function of paramters, number of observations, and term1 and term2 obtained in for loop
+  //tree_log_lik=(b/2)*log(a)-0.5*term1-((y_temp.size()+nu)/2)*log(term2);	// function of paramters, number of observations, and term1 and term2 obtained in for loop
+  tree_log_lik=(b/2)*log(a)-0.5*term1-((y_temp.size()+nu)/2)*log(term2+nu*lambda);	// function of paramters, number of observations, and term1 and term2 obtained in for loop
   
   // for(int i=0;i<b;i++){		// loop over the length of the terminal nodes vector
   //   if(n[i]<=5){	// If the number of obs in term node i is less than 5
@@ -252,9 +256,11 @@ double likelihood_function_bcf(NumericVector y_temp,NumericMatrix treetable_temp
     arma::vec y_k_sq=pow(y_k,2);	// let y_k_sq be the squares of all the obsrevations in y_k (observations in the terminal node)
     double sum_yksq=sum(y_k_sq);	// let sum_yksq be the sum of these squares
     double b2=pow(ni*ybar +a*mu,2)/(ni+a);		//  b2 is a square of an expression all divided by (ni+a). 
-    term2+=(sum_yksq+a*pow(mu,2)-b2+nu*lambda);	// iteratively add function of parameters and sum of squares
+    //term2+=(sum_yksq+a*pow(mu,2)-b2+nu*lambda);	// iteratively add function of parameters and sum of squares
+    term2+=(sum_yksq+a*pow(mu,2)-b2);	// iteratively add function of parameters and sum of squares
   }
-  tree_log_lik=(b/2)*log(a)-0.5*term1-((y_temp.size()+nu)/2)*log(term2);	// function of paramters, number of observations, and term1 and term2 obtained in for loop
+  //tree_log_lik=(b/2)*log(a)-0.5*term1-((y_temp.size()+nu)/2)*log(term2);	// function of paramters, number of observations, and term1 and term2 obtained in for loop
+  tree_log_lik=(b/2)*log(a)-0.5*term1-((y_temp.size()+nu)/2)*log(term2+nu*lambda);	// function of paramters, number of observations, and term1 and term2 obtained in for loop
   
   // for(int i=0;i<b;i++){		// loop over the length of the terminal nodes vector
   //   if(n[i]<=5){	// If the number of obs in term node i is less than 5
@@ -1356,7 +1362,7 @@ double sumtree_likelihood_function_bcf_bcf(NumericVector y_temp,List sum_treetab
   arma::mat y(n,1);										// create a matrix with n (number of observations) rows and 1 column
   y.col(0)=yvec;										// set first column of y equal to yvec
   //get exponent
-  double expon=(n+nu+b)/2;								// set the expoenent (equation 5 in the paper)
+  double expon=(n+nu)/2;								// set the expoenent (equation 5 in the paper)
   //get y^Tpsi^{-1}y
   // arma::mat psi_inv=psi.i();
   arma::mat yty=y.t()*y;								// yty = y transpose y (sum of squares)
@@ -1381,7 +1387,7 @@ double sumtree_likelihood_function_bcf_bcf(NumericVector y_temp,List sum_treetab
   arma::mat third_term=Wmat.t()*y;						// W_bcf transpose Y
   //get m^TV^{-1}m
   arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
-  arma::mat rel=-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+  arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
   double rel2=as<double>(wrap(rel));					// convert to double (from 1 by 1 arma mat)
   return(rel2);											// return the log marginal likelihood
 }    
@@ -1408,7 +1414,7 @@ double sumtree_likelihood_tau_round1_bcf(NumericVector y_temp,NumericMatrix tree
   arma::mat y(n,1);										// create a matrix with n (number of observations) rows and 1 column
   y.col(0)=yvec;										// set first column of y equal to yvec
   //get exponent
-  double expon=(n+nu+b)/2;								// set the expoenent (equation 5 in the paper)
+  double expon=(n+nu)/2;								// set the expoenent (equation 5 in the paper)
   //get y^Tpsi^{-1}y
   // arma::mat psi_inv=psi.i();
   arma::mat yty=y.t()*y;								// yty = y transpose y (sum of squares)
@@ -1433,7 +1439,7 @@ double sumtree_likelihood_tau_round1_bcf(NumericVector y_temp,NumericMatrix tree
   arma::mat third_term=Wmat.t()*y;						// W_bcf transpose Y
   //get m^TV^{-1}m
   arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
-  arma::mat rel=-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+  arma::mat rel=(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
   double rel2=as<double>(wrap(rel));					// convert to double (from 1 by 1 arma mat)
   return(rel2);											// return the log marginal likelihood
 }    
@@ -1469,9 +1475,9 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
   double tree_prior=0;											// create a variable tree_prior. Initialized equal to 0.
   //List changetree;												// create a list changetree
   double BIC;														// create a variable BIC
-  int p;															// create a variable p
+  //int p;															// create a variable p
   List eval_model;												// create a list eval_model
-  NumericVector int_nodes;										// create a vector int_nodes
+  //NumericVector int_nodes;										// create a vector int_nodes
   //arma::colvec curr_col=data.col(0);										// Let the arma colvec, curr_col, equal the 1st column of the input matrix data
   //arma::uvec grow_obs=find_term_obs_bcf(treemat_c,terminal_nodes[0]);			// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of treemat_c that has elements equal to terminal_nodes[0]).
   //NumericVector d1=unique(find_term_cols_bcf(treemat_c,terminal_nodes[0]));	// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
@@ -1546,8 +1552,8 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
       
       
       tree_prior=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha,beta);	// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
-      int_nodes=find_term_nodes_bcf(proposal_tree[0]);							// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector?
-      p=int_nodes.size();														// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
+      //int_nodes=find_term_nodes_bcf(proposal_tree[0]);							// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector?
+      //p=int_nodes.size();														// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
       //BIC=-2*(lik+log(tree_prior))+p*log(data.n_rows);						// data.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       BIC=-2*(lik+log(tree_prior));						// data.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       //BIC=-2*(lik)+p*log(data.n_rows);						// data.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -1688,11 +1694,11 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
   double tree_prior=1;														// create a double variable, initialized equal to 0.
   //List changetree;															// create an empty list.
   double BIC;																	// create a double variable. Not initialized.
-  int p;																		// create an integer variable. Not initialized.
+  //int p;																		// create an integer variable. Not initialized.
   //int p_other_mu=0;
   //int p_other_tau=0;
   List eval_model;															// create an empty list.
-  NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
+  //NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
   //NumericVector other_int_nodes_mu;
   //NumericVector other_int_nodes_tau;
   //arma::colvec curr_col=x_moderate_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_moderate_a.
@@ -1785,8 +1791,8 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
       
       
       tree_prior=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);	// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
-      int_nodes=find_term_nodes_bcf(proposal_tree[0]);							// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector?
-      p=int_nodes.size();														// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
+      //int_nodes=find_term_nodes_bcf(proposal_tree[0]);							// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector?
+      //p=int_nodes.size();														// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
       //BIC=-2*(lik+log(tree_prior))+p*log(x_moderate_a.n_rows);	
       BIC=-2*(lik+log(tree_prior));	
       
@@ -1930,13 +1936,13 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
   double tree_prior=1;														// create a double variable, initialized equal to 0.
   //List changetree;															// create an empty list.
   double BIC;																	// create a double variable. Not initialized.
-  int p;																		// create an integer variable. Not initialized.
-  int p_other_mu=0;
+  //int p;																		// create an integer variable. Not initialized.
+  //int p_other_mu=0;
   //int p_other_tau=0;
   List eval_model;															// create an empty list.
-  NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
-  NumericVector other_int_nodes_mu;
-  NumericVector other_int_nodes_tau;
+  //NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
+  //NumericVector other_int_nodes_mu;
+  //NumericVector other_int_nodes_tau;
   //arma::colvec curr_col=x_moderate_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_moderate_a.
   //arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[0]).
   //Rcout << "length of grow_obs equals " << grow_obs.n_elem<< ".\n";
@@ -1982,7 +1988,7 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
     // Rcout << "Line 1625. l = " << l << ".\n"; 
     
     for(int k=0;k<w;k++){														// loop of length w, the number of rows of cp_mat
-      p_other_mu=0;
+      //p_other_mu=0;
       //Rcout << "inner iteration number " << k<< ".\n" ;
       split_var=cp_mat(k,0)+1;												// split_var is k+1^th row, 1st column of cp_mat +1
       //arma::colvec curr_cols=x_moderate_a.col(split_var-1);							// curr_cols is the split_var^th column of x_moderate_a
@@ -2065,22 +2071,23 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
           // This can all probably be made more efficient by taking account of the fact that there should be just one mu tree
           for(int t=0;t<prev_sum_trees_mu2.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=prev_sum_trees_mu2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-            other_int_nodes_mu = find_term_nodes_bcf(tree);
-            p_other_mu+=other_int_nodes_mu.size();
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
             NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 1412");
+            //if(tree.ncol()<5) throw std::range_error("Line 1412");
             tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not well defined
-          NumericMatrix temptestingtabcols = proposal_tree[0];
-          if(temptestingtabcols.ncol()<5) throw std::range_error("Line 1417");
+          //NumericMatrix temptestingtabcols = proposal_tree[0];
+          //if(temptestingtabcols.ncol()<5) throw std::range_error("Line 1417");
+          
           tree_prior*=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }else{															// if s is not a list
           NumericMatrix prev_sum_trees_mu2=prev_sum_trees_mu[parent2[i]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
           NumericMatrix prev_sum_trees_mat_mu2=prev_sum_trees_mat_mu[parent2[i]];		// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
-          other_int_nodes_mu = find_term_nodes_bcf(prev_sum_trees_mu2);
-          p_other_mu=other_int_nodes_mu.size();
+          //other_int_nodes_mu = find_term_nodes_bcf(prev_sum_trees_mu2);
+          //p_other_mu=other_int_nodes_mu.size();
           List st_mu(1);													// create list, st, of length 2.
           List st_mat_mu(1);												// create lisr, st_mat of length 2.
           st_mu[0]=prev_sum_trees_mu2;												// let the first elemetn of st be sum_trees2.
@@ -2107,8 +2114,9 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
             tree_prior*=get_tree_prior_bcf(prev_sum_trees_mu2,prev_sum_trees_mat_mu2,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not well defined
-          NumericMatrix temptestingtabcols = proposal_tree[0];
-          if(temptestingtabcols.ncol()<5) throw std::range_error("Line 1443");
+          //NumericMatrix temptestingtabcols = proposal_tree[0];
+          //if(temptestingtabcols.ncol()<5) throw std::range_error("Line 1443");
+          
           tree_prior*=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }  
       //}else{
@@ -2116,8 +2124,8 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
       //}
       //at the moment tree prior is only for current tree need to get it for entire sum of tree list.
       
-      int_nodes=find_term_nodes_bcf(proposal_tree[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
-      p=int_nodes.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
+      //int_nodes=find_term_nodes_bcf(proposal_tree[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
+      //p=int_nodes.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
       //BIC=-2*(lik+log(tree_prior))+(p_other_mu+p)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       BIC=-2*(lik+log(tree_prior));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       //BIC=-2*(lik)+(p_other_mu+p)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -2259,12 +2267,12 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
   //List changetree;															// create an empty list.
   double BIC;																	// create a double variable. Not initialized.
   //int p;																		// create an integer variable. Not initialized.
-  int p_other_mu=0;
-  int p_other_tau=0;
+  //int p_other_mu=0;
+  //int p_other_tau=0;
   List eval_model;															// create an empty list.
-  NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
-  NumericVector other_int_nodes_mu;
-  NumericVector other_int_nodes_tau;
+  //NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
+  //NumericVector other_int_nodes_mu;
+  //NumericVector other_int_nodes_tau;
   //arma::colvec curr_col=x_moderate_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_moderate_a.
   //arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[0]).
   //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
@@ -2291,8 +2299,8 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
       //continue;
     }
     for(int k=0;k<w;k++){														// loop of length w, the number of rows of cp_mat
-      p_other_mu=0;
-      p_other_tau=0;
+      //p_other_mu=0;
+      //p_other_tau=0;
       split_var=cp_mat(k,0)+1;												// split_var is k+1^th row, 1st column of cp_mat +1
       arma::colvec curr_cols=x_moderate_a.col(split_var-1);							// curr_cols is the split_var^th column of x_moderate_a
       //NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of x_moderate_a that are indexed by grow_obs 
@@ -2368,20 +2376,20 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
             // This can all probably be made more efficient by taking account of the fact that there should be just one mu tree
             for(int t=0;t<prev_sum_trees_mu2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=prev_sum_trees_mu2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-              other_int_nodes_mu = find_term_nodes_bcf(tree);
-              p_other_mu+=other_int_nodes_mu.size();
+              //other_int_nodes_mu = find_term_nodes_bcf(tree);
+              //p_other_mu+=other_int_nodes_mu.size();
               NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-              if(tree.ncol()<5) throw std::range_error("Line 1660");
+              //if(tree.ncol()<5) throw std::range_error("Line 1660");
               tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-              other_int_nodes_tau = find_term_nodes_bcf(tree);
-              p_other_tau+=other_int_nodes_tau.size();
+              //other_int_nodes_tau = find_term_nodes_bcf(tree);
+              //p_other_tau+=other_int_nodes_tau.size();
               NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-              if(tree.ncol()<5) throw std::range_error("Line 1667");
+              //if(tree.ncol()<5) throw std::range_error("Line 1667");
               tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             
@@ -2401,20 +2409,20 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
             // This can all probably be made more efficient by taking account of the fact that there should be just one mu tree
             for(int t=0;t<prev_sum_trees_mu2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=prev_sum_trees_mu2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-              other_int_nodes_mu = find_term_nodes_bcf(tree);
-              p_other_mu+=other_int_nodes_mu.size();
+              //other_int_nodes_mu = find_term_nodes_bcf(tree);
+              //p_other_mu+=other_int_nodes_mu.size();
               NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-              if(tree.ncol()<5) throw std::range_error("Line 1689");
+              //if(tree.ncol()<5) throw std::range_error("Line 1689");
               tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-              other_int_nodes_tau = find_term_nodes_bcf(tree);
-              p_other_tau+=other_int_nodes_tau.size();
+              //other_int_nodes_tau = find_term_nodes_bcf(tree);
+              //p_other_tau+=other_int_nodes_tau.size();
               NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-              if(tree.ncol()<5) throw std::range_error("Line 1695");
+              //if(tree.ncol()<5) throw std::range_error("Line 1695");
               tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
           }
@@ -2439,20 +2447,20 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
             lik=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,sum_trees_tau2,st_mat_mu,sum_trees_mat_tau2,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
             for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
               NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
-              other_int_nodes_mu = find_term_nodes_bcf(tree);
-              p_other_mu+=other_int_nodes_mu.size();
+              //other_int_nodes_mu = find_term_nodes_bcf(tree);
+              //p_other_mu+=other_int_nodes_mu.size();
               NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-              if(tree.ncol()<5) throw std::range_error("Line 1723");
+              //if(tree.ncol()<5) throw std::range_error("Line 1723");
               tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-              other_int_nodes_tau = find_term_nodes_bcf(tree);
-              p_other_tau+=other_int_nodes_tau.size();
+              //other_int_nodes_tau = find_term_nodes_bcf(tree);
+              //p_other_tau+=other_int_nodes_tau.size();
               NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-              if(tree.ncol()<5) throw std::range_error("Line 1730");
+              //if(tree.ncol()<5) throw std::range_error("Line 1730");
               tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
           }else{
@@ -2473,20 +2481,20 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
             lik=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
             for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
               NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
-              other_int_nodes_mu = find_term_nodes_bcf(tree);
-              p_other_mu+=other_int_nodes_mu.size();
+              //other_int_nodes_mu = find_term_nodes_bcf(tree);
+              //p_other_mu+=other_int_nodes_mu.size();
               NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-              if(tree.ncol()<5) throw std::range_error("Line 1753");
+              //if(tree.ncol()<5) throw std::range_error("Line 1753");
               tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-              other_int_nodes_tau = find_term_nodes_bcf(tree);
-              p_other_tau+=other_int_nodes_tau.size();
+              //other_int_nodes_tau = find_term_nodes_bcf(tree);
+              //p_other_tau+=other_int_nodes_tau.size();
               NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-              if(tree.ncol()<5) throw std::range_error("Line 1760");
+              //if(tree.ncol()<5) throw std::range_error("Line 1760");
               tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
           }
@@ -2643,12 +2651,12 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
   //List changetree;															// create an empty list.
   double BIC;																	// create a double variable. Not initialized.
   //int p;																		// create an integer variable. Not initialized.
-  int p_other_mu=0;
-  int p_other_tau=0;
+  //int p_other_mu=0;
+  //int p_other_tau=0;
   List eval_model;															// create an empty list.
-  NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
-  NumericVector other_int_nodes_mu;
-  NumericVector other_int_nodes_tau;
+  //NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
+  //NumericVector other_int_nodes_mu;
+  //NumericVector other_int_nodes_tau;
   //arma::colvec curr_col=x_control_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_control_a.
   //arma::uvec grow_obs=find_term_obs_bcf(tree_mat_mu_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_mu_c that has elements equal to terminal_nodes[0]).
   //NumericVector d1=unique(find_term_cols_bcf(tree_mat_mu_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
@@ -2676,8 +2684,8 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
     for(int k=0;k<w;k++){														// loop of length w, the number of rows of cp_mat
       // Rcout << "get to line 2401. l= " << l << ". k= " << k << ". \n";
       
-      p_other_mu=0;
-      p_other_tau=0;
+      //p_other_mu=0;
+      //p_other_tau=0;
       split_var=cp_mat(k,0)+1;												// split_var is k+1^th row, 1st column of cp_mat +1
       //arma::colvec curr_cols=x_control_a.col(split_var-1);							// curr_cols is the split_var^th column of x_control_a
       //NumericVector get_min=get_grow_obs_bcf(x_control_a,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of x_control_a that are indexed by grow_obs 
@@ -2747,20 +2755,20 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
             
             for(int t=0;t<prev_sum_trees_mu2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=prev_sum_trees_mu2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-              other_int_nodes_mu = find_term_nodes_bcf(tree);
-              p_other_mu+=other_int_nodes_mu.size();
+              //other_int_nodes_mu = find_term_nodes_bcf(tree);
+              //p_other_mu+=other_int_nodes_mu.size();
               NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-              if(tree.ncol()<5) throw std::range_error("Line 1977");
+              //if(tree.ncol()<5) throw std::range_error("Line 1977");
               tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-              other_int_nodes_tau = find_term_nodes_bcf(tree);
-              p_other_tau+=other_int_nodes_tau.size();
+              //other_int_nodes_tau = find_term_nodes_bcf(tree);
+              //p_other_tau+=other_int_nodes_tau.size();
               NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-              if(tree.ncol()<5) throw std::range_error("Line 1984");
+              //if(tree.ncol()<5) throw std::range_error("Line 1984");
               tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             // Rcout << "get to line 2480. l= " << l << ". k= " << k << ". \n";
@@ -2787,20 +2795,20 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
             // This can all probably be made more efficient by taking account of the fact that there should be just one mu tree
             for(int t=0;t<prev_sum_trees_mu2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=prev_sum_trees_mu2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-              other_int_nodes_mu = find_term_nodes_bcf(tree);
-              p_other_mu+=other_int_nodes_mu.size();
+              //other_int_nodes_mu = find_term_nodes_bcf(tree);
+              //p_other_mu+=other_int_nodes_mu.size();
               NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-              if(tree.ncol()<5) throw std::range_error("Line 2006");
+              //if(tree.ncol()<5) throw std::range_error("Line 2006");
               tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-              other_int_nodes_tau = find_term_nodes_bcf(tree);
-              p_other_tau+=other_int_nodes_tau.size();
+              //other_int_nodes_tau = find_term_nodes_bcf(tree);
+              //p_other_tau+=other_int_nodes_tau.size();
               NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-              if(tree.ncol()<5) throw std::range_error("Line 2013");
+              //if(tree.ncol()<5) throw std::range_error("Line 2013");
               tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
           }
@@ -2826,20 +2834,20 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
             lik=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,sum_trees_tau2,st_mat_mu,sum_trees_mat_tau2,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
             for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
               NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
-              other_int_nodes_mu = find_term_nodes_bcf(tree);
-              p_other_mu+=other_int_nodes_mu.size();
+              //other_int_nodes_mu = find_term_nodes_bcf(tree);
+              //p_other_mu+=other_int_nodes_mu.size();
               NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-              if(tree.ncol()<5) throw std::range_error("Line 2040");
+              //if(tree.ncol()<5) throw std::range_error("Line 2040");
               tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-              other_int_nodes_tau = find_term_nodes_bcf(tree);
-              p_other_tau+=other_int_nodes_tau.size();
+              //other_int_nodes_tau = find_term_nodes_bcf(tree);
+              //p_other_tau+=other_int_nodes_tau.size();
               NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-              if(tree.ncol()<5) throw std::range_error("Line 2047");
+              //if(tree.ncol()<5) throw std::range_error("Line 2047");
               tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
           }else{
@@ -2862,20 +2870,20 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
             lik=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
             for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
               NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
-              other_int_nodes_mu = find_term_nodes_bcf(tree);
-              p_other_mu+=other_int_nodes_mu.size();
+              //other_int_nodes_mu = find_term_nodes_bcf(tree);
+              //p_other_mu+=other_int_nodes_mu.size();
               NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-              if(tree.ncol()<5) throw std::range_error("Line 2070");
+              //if(tree.ncol()<5) throw std::range_error("Line 2070");
               tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-              other_int_nodes_tau = find_term_nodes_bcf(tree);
-              p_other_tau+=other_int_nodes_tau.size();
+              //other_int_nodes_tau = find_term_nodes_bcf(tree);
+              //p_other_tau+=other_int_nodes_tau.size();
               NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-              if(tree.ncol()<5) throw std::range_error("Line 2077");
+              //if(tree.ncol()<5) throw std::range_error("Line 2077");
               tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
           }
@@ -4251,27 +4259,27 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
         double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2_temp,sum_trees_tau2_temp,prev_sum_trees_mat_mu2_temp,sum_trees_mat_tau2_temp,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
 
         double tree_prior_temp=1;
-        int p_other_mu=0;
-        int p_other_tau=0;
-        NumericVector other_int_nodes_mu;
-        NumericVector other_int_nodes_tau;
+        //int p_other_mu=0;
+        //int p_other_tau=0;
+        //NumericVector other_int_nodes_mu;
+        //NumericVector other_int_nodes_tau;
         // Rcout << "Get to Line 3673 in get_best_trees_sum_mu_bcf.\n";
           for(int t=0;t<prev_sum_trees_mu2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=prev_sum_trees_mu2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-          other_int_nodes_mu = find_term_nodes_bcf(tree);
-          p_other_mu+=other_int_nodes_mu.size();
+          //other_int_nodes_mu = find_term_nodes_bcf(tree);
+          //p_other_mu+=other_int_nodes_mu.size();
           NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-          if(tree.ncol()<5) throw std::range_error("Line 1977");
+          //if(tree.ncol()<5) throw std::range_error("Line 1977");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-          other_int_nodes_tau = find_term_nodes_bcf(tree);
-          p_other_tau+=other_int_nodes_tau.size();
+          //other_int_nodes_tau = find_term_nodes_bcf(tree);
+          //p_other_tau+=other_int_nodes_tau.size();
           NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-          if(tree.ncol()<5) throw std::range_error("Line 1984");
+          //if(tree.ncol()<5) throw std::range_error("Line 1984");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         
@@ -4306,27 +4314,27 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
         double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2_temp,st_tau,prev_sum_trees_mat_mu2_temp,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
 
         double tree_prior_temp=1;
-        int p_other_mu=0;
-        int p_other_tau=0;
-        NumericVector other_int_nodes_mu;
-        NumericVector other_int_nodes_tau;
+        //int p_other_mu=0;
+        //int p_other_tau=0;
+        //NumericVector other_int_nodes_mu;
+        //NumericVector other_int_nodes_tau;
         // Rcout << "Get to Line 3727 in get_best_trees_sum_mu_bcf.\n";
           for(int t=0;t<prev_sum_trees_mu2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=prev_sum_trees_mu2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-          other_int_nodes_mu = find_term_nodes_bcf(tree);
-          p_other_mu+=other_int_nodes_mu.size();
+          //other_int_nodes_mu = find_term_nodes_bcf(tree);
+          //p_other_mu+=other_int_nodes_mu.size();
           NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-          if(tree.ncol()<5) throw std::range_error("Line 2006");
+          //if(tree.ncol()<5) throw std::range_error("Line 2006");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-          other_int_nodes_tau = find_term_nodes_bcf(tree);
-          p_other_tau+=other_int_nodes_tau.size();
+          //other_int_nodes_tau = find_term_nodes_bcf(tree);
+          //p_other_tau+=other_int_nodes_tau.size();
           NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-          if(tree.ncol()<5) throw std::range_error("Line 2013");
+          //if(tree.ncol()<5) throw std::range_error("Line 2013");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -4363,28 +4371,28 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
         double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,sum_trees_tau2_temp,st_mat_mu,sum_trees_mat_tau2_temp,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
         double tree_prior_temp=1;
         
-        int p_other_mu=0;
-        int p_other_tau=0;
+        //int p_other_mu=0;
+        //int p_other_tau=0;
         
-        NumericVector other_int_nodes_mu;
-        NumericVector other_int_nodes_tau;
+        //NumericVector other_int_nodes_mu;
+        //NumericVector other_int_nodes_tau;
         //Rcout << "Get to Line 3438 in get_best_trees_sum_mu_bcf.\n";
         for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
           NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
-          other_int_nodes_mu = find_term_nodes_bcf(tree);
-          p_other_mu+=other_int_nodes_mu.size();
+          //other_int_nodes_mu = find_term_nodes_bcf(tree);
+          //p_other_mu+=other_int_nodes_mu.size();
           NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-          if(tree.ncol()<5) throw std::range_error("Line 2040");
+          //if(tree.ncol()<5) throw std::range_error("Line 2040");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-          other_int_nodes_tau = find_term_nodes_bcf(tree);
-          p_other_tau+=other_int_nodes_tau.size();
+          //other_int_nodes_tau = find_term_nodes_bcf(tree);
+          //p_other_tau+=other_int_nodes_tau.size();
           NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-          if(tree.ncol()<5) throw std::range_error("Line 2047");
+          //if(tree.ncol()<5) throw std::range_error("Line 2047");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -4418,29 +4426,29 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
         double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
         double tree_prior_temp=1;
         
-        int p_other_mu=0;
-        int p_other_tau=0;
+        //int p_other_mu=0;
+        //int p_other_tau=0;
         
-        NumericVector other_int_nodes_mu;
-        NumericVector other_int_nodes_tau;
+        //NumericVector other_int_nodes_mu;
+        //NumericVector other_int_nodes_tau;
         
         //Rcout << "Get to Line 3493 in get_best_trees_sum_mu_bcf.\n";
         for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
           NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
-          other_int_nodes_mu = find_term_nodes_bcf(tree);
-          p_other_mu+=other_int_nodes_mu.size();
+          //other_int_nodes_mu = find_term_nodes_bcf(tree);
+          //p_other_mu+=other_int_nodes_mu.size();
           NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-          if(tree.ncol()<5) throw std::range_error("Line 2070");
+          //if(tree.ncol()<5) throw std::range_error("Line 2070");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-          other_int_nodes_tau = find_term_nodes_bcf(tree);
-          p_other_tau+=other_int_nodes_tau.size();
+          //other_int_nodes_tau = find_term_nodes_bcf(tree);
+          //p_other_tau+=other_int_nodes_tau.size();
           NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-          if(tree.ncol()<5) throw std::range_error("Line 2077");
+          //if(tree.ncol()<5) throw std::range_error("Line 2077");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -4868,27 +4876,27 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
           double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2_temp,sum_trees_tau2_temp,prev_sum_trees_mat_mu2_temp,sum_trees_mat_tau2_temp,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
           
           double tree_prior_temp=1;
-          int p_other_mu=0;
-          int p_other_tau=0;
-          NumericVector other_int_nodes_mu;
-          NumericVector other_int_nodes_tau;
+          //int p_other_mu=0;
+          //int p_other_tau=0;
+          //NumericVector other_int_nodes_mu;
+          //NumericVector other_int_nodes_tau;
           // Rcout << "Get to Line 3673 in get_best_trees_sum_mu_bcf.\n";
           for(int t=0;t<prev_sum_trees_mu2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=prev_sum_trees_mu2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-            other_int_nodes_mu = find_term_nodes_bcf(tree);
-            p_other_mu+=other_int_nodes_mu.size();
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
             NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 1977");
+            //if(tree.ncol()<5) throw std::range_error("Line 1977");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-            other_int_nodes_tau = find_term_nodes_bcf(tree);
-            p_other_tau+=other_int_nodes_tau.size();
+            //other_int_nodes_tau = find_term_nodes_bcf(tree);
+            //p_other_tau+=other_int_nodes_tau.size();
             NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 1984");
+            //if(tree.ncol()<5) throw std::range_error("Line 1984");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           
@@ -4923,27 +4931,27 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
           double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2_temp,st_tau,prev_sum_trees_mat_mu2_temp,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
           
           double tree_prior_temp=1;
-          int p_other_mu=0;
-          int p_other_tau=0;
-          NumericVector other_int_nodes_mu;
-          NumericVector other_int_nodes_tau;
+          //int p_other_mu=0;
+          //int p_other_tau=0;
+          //NumericVector other_int_nodes_mu;
+          //NumericVector other_int_nodes_tau;
           // Rcout << "Get to Line 3727 in get_best_trees_sum_mu_bcf.\n";
           for(int t=0;t<prev_sum_trees_mu2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=prev_sum_trees_mu2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-            other_int_nodes_mu = find_term_nodes_bcf(tree);
-            p_other_mu+=other_int_nodes_mu.size();
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
             NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 2006");
+            //if(tree.ncol()<5) throw std::range_error("Line 2006");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-            other_int_nodes_tau = find_term_nodes_bcf(tree);
-            p_other_tau+=other_int_nodes_tau.size();
+            //other_int_nodes_tau = find_term_nodes_bcf(tree);
+            //p_other_tau+=other_int_nodes_tau.size();
             NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 2013");
+            //if(tree.ncol()<5) throw std::range_error("Line 2013");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -4980,28 +4988,28 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
           double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,sum_trees_tau2_temp,st_mat_mu,sum_trees_mat_tau2_temp,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
           double tree_prior_temp=1;
           
-          int p_other_mu=0;
-          int p_other_tau=0;
+          //int p_other_mu=0;
+          //int p_other_tau=0;
           
-          NumericVector other_int_nodes_mu;
-          NumericVector other_int_nodes_tau;
+          //NumericVector other_int_nodes_mu;
+          //NumericVector other_int_nodes_tau;
           //Rcout << "Get to Line 3438 in get_best_trees_sum_mu_bcf.\n";
           for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
             NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
-            other_int_nodes_mu = find_term_nodes_bcf(tree);
-            p_other_mu+=other_int_nodes_mu.size();
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
             NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 2040");
+            //if(tree.ncol()<5) throw std::range_error("Line 2040");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-            other_int_nodes_tau = find_term_nodes_bcf(tree);
-            p_other_tau+=other_int_nodes_tau.size();
+            //other_int_nodes_tau = find_term_nodes_bcf(tree);
+            //p_other_tau+=other_int_nodes_tau.size();
             NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 2047");
+            //if(tree.ncol()<5) throw std::range_error("Line 2047");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -5035,29 +5043,29 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
           double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
           double tree_prior_temp=1;
           
-          int p_other_mu=0;
-          int p_other_tau=0;
+          //int p_other_mu=0;
+          //int p_other_tau=0;
           
-          NumericVector other_int_nodes_mu;
-          NumericVector other_int_nodes_tau;
+          //NumericVector other_int_nodes_mu;
+          //NumericVector other_int_nodes_tau;
           
           //Rcout << "Get to Line 3493 in get_best_trees_sum_mu_bcf.\n";
           for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
             NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
-            other_int_nodes_mu = find_term_nodes_bcf(tree);
-            p_other_mu+=other_int_nodes_mu.size();
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
             NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 2070");
+            //if(tree.ncol()<5) throw std::range_error("Line 2070");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-            other_int_nodes_tau = find_term_nodes_bcf(tree);
-            p_other_tau+=other_int_nodes_tau.size();
+            //other_int_nodes_tau = find_term_nodes_bcf(tree);
+            //p_other_tau+=other_int_nodes_tau.size();
             NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 2077");
+            //if(tree.ncol()<5) throw std::range_error("Line 2077");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -5777,23 +5785,23 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
     
     double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2_temp,st_tau,prev_sum_trees_mat_mu2_temp,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
     double tree_prior_temp=1;
-    int p_other_mu=0;
-    NumericVector other_int_nodes_mu;
+    //int p_other_mu=0;
+    //NumericVector other_int_nodes_mu;
     
     
       for(int t=0;t<prev_sum_trees_mu2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
       NumericMatrix tree=prev_sum_trees_mu2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-      other_int_nodes_mu = find_term_nodes_bcf(tree);
-      p_other_mu+=other_int_nodes_mu.size();
+      //other_int_nodes_mu = find_term_nodes_bcf(tree);
+      //p_other_mu+=other_int_nodes_mu.size();
       NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
       //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-      if(tree.ncol()<5) throw std::range_error("Line 1412");
+      //if(tree.ncol()<5) throw std::range_error("Line 1412");
       tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
     }
       tree_prior_temp*=get_tree_prior_bcf(tree_table_tau[0],tree_mat_tau[0],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
  
- NumericVector int_nodes_tau=find_term_nodes_bcf(tree_table_tau[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
- int p_other_tau=int_nodes_tau.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
+ //NumericVector int_nodes_tau=find_term_nodes_bcf(tree_table_tau[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
+ //int p_other_tau=int_nodes_tau.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
  //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);	
  double BIC=-2*(lik_temp+log(tree_prior_temp));	
  
@@ -5810,11 +5818,11 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
 
     NumericMatrix prev_sum_trees_mu2_temp=prev_sum_trees_mu[parent[q]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
     NumericMatrix prev_sum_trees_mat_mu2_temp=prev_sum_trees_mat_mu[parent[q]];		// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
-    int p_other_mu=0;
-    NumericVector other_int_nodes_mu;
+    //int p_other_mu=0;
+    //NumericVector other_int_nodes_mu;
 
-    other_int_nodes_mu = find_term_nodes_bcf(prev_sum_trees_mu2_temp);
-    p_other_mu=other_int_nodes_mu.size();
+    //other_int_nodes_mu = find_term_nodes_bcf(prev_sum_trees_mu2_temp);
+    //p_other_mu=other_int_nodes_mu.size();
     List st_mu(1);													// create list, st, of length 2.
     List st_mat_mu(1);												// create lisr, st_mat of length 2.
     st_mu[0]=prev_sum_trees_mu2_temp;												// let the first elemetn of st be sum_trees2.
@@ -5832,8 +5840,8 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
 
     tree_prior_temp*=get_tree_prior_bcf(tree_table_tau[0],tree_mat_tau[0],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
 
-  NumericVector int_nodes_tau=find_term_nodes_bcf(tree_table_tau[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
-  int p_other_tau=int_nodes_tau.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
+  //NumericVector int_nodes_tau=find_term_nodes_bcf(tree_table_tau[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
+  //int p_other_tau=int_nodes_tau.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
   //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);	
   double BIC=-2*(lik_temp+log(tree_prior_temp));	
   
@@ -6263,21 +6271,21 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
 
         double tree_prior_temp=1;
         
-        int p_other_mu=0;
-        int p_other_tau=0;
+        //int p_other_mu=0;
+        //int p_other_tau=0;
         
-        NumericVector other_int_nodes_mu;
-        NumericVector other_int_nodes_tau;
+        //NumericVector other_int_nodes_mu;
+        //NumericVector other_int_nodes_tau;
         
         
         
         for(int t=0;t<prev_sum_trees_mu2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=prev_sum_trees_mu2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-          other_int_nodes_mu = find_term_nodes_bcf(tree);
-          p_other_mu+=other_int_nodes_mu.size();
+          //other_int_nodes_mu = find_term_nodes_bcf(tree);
+          //p_other_mu+=other_int_nodes_mu.size();
           NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-          if(tree.ncol()<5) throw std::range_error("Line 1660");
+          //if(tree.ncol()<5) throw std::range_error("Line 1660");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           // Rcout << "LINE 4378 t =" << t << ".\n";
           // Rcout << "LINE 4378 tree_prior_temp =" << tree_prior_temp << ".\n";
@@ -6285,11 +6293,11 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
         }
         for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-          other_int_nodes_tau = find_term_nodes_bcf(tree);
-          p_other_tau+=other_int_nodes_tau.size();
+          //other_int_nodes_tau = find_term_nodes_bcf(tree);
+          //p_other_tau+=other_int_nodes_tau.size();
           NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-          if(tree.ncol()<5) throw std::range_error("Line 1667");
+          //if(tree.ncol()<5) throw std::range_error("Line 1667");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           // Rcout << "LINE 4390 t =" << t << ".\n";
           // Rcout << "LINE 4390 tree_prior_temp =" << tree_prior_temp << ".\n";
@@ -6324,29 +6332,29 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
         
         double tree_prior_temp=1;
         
-        int p_other_mu=0;
-        int p_other_tau=0;
+        //int p_other_mu=0;
+        //int p_other_tau=0;
         
-        NumericVector other_int_nodes_mu;
-        NumericVector other_int_nodes_tau;
+        //NumericVector other_int_nodes_mu;
+        //NumericVector other_int_nodes_tau;
         
         
         for(int t=0;t<prev_sum_trees_mu2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=prev_sum_trees_mu2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-          other_int_nodes_mu = find_term_nodes_bcf(tree);
-          p_other_mu+=other_int_nodes_mu.size();
+          //other_int_nodes_mu = find_term_nodes_bcf(tree);
+          //p_other_mu+=other_int_nodes_mu.size();
           NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-          if(tree.ncol()<5) throw std::range_error("Line 1689");
+          //if(tree.ncol()<5) throw std::range_error("Line 1689");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-          other_int_nodes_tau = find_term_nodes_bcf(tree);
-          p_other_tau+=other_int_nodes_tau.size();
+          //other_int_nodes_tau = find_term_nodes_bcf(tree);
+          //p_other_tau+=other_int_nodes_tau.size();
           NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-          if(tree.ncol()<5) throw std::range_error("Line 1695");
+          //if(tree.ncol()<5) throw std::range_error("Line 1695");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -6384,29 +6392,29 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
         
         double tree_prior_temp=1;
         
-        int p_other_mu=0;
-        int p_other_tau=0;
+        //int p_other_mu=0;
+        //int p_other_tau=0;
         
-        NumericVector other_int_nodes_mu;
-        NumericVector other_int_nodes_tau;
+        //NumericVector other_int_nodes_mu;
+        //NumericVector other_int_nodes_tau;
         
         
         for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
           NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
-          other_int_nodes_mu = find_term_nodes_bcf(tree);
-          p_other_mu+=other_int_nodes_mu.size();
+          //other_int_nodes_mu = find_term_nodes_bcf(tree);
+          //p_other_mu+=other_int_nodes_mu.size();
           NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-          if(tree.ncol()<5) throw std::range_error("Line 1723");
+          //if(tree.ncol()<5) throw std::range_error("Line 1723");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-          other_int_nodes_tau = find_term_nodes_bcf(tree);
-          p_other_tau+=other_int_nodes_tau.size();
+          //other_int_nodes_tau = find_term_nodes_bcf(tree);
+          //p_other_tau+=other_int_nodes_tau.size();
           NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-          if(tree.ncol()<5) throw std::range_error("Line 1730");
+          //if(tree.ncol()<5) throw std::range_error("Line 1730");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -6439,28 +6447,28 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
         double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
         double tree_prior_temp=1;
         
-        int p_other_mu=0;
-        int p_other_tau=0;
+        //int p_other_mu=0;
+        //int p_other_tau=0;
         
-        NumericVector other_int_nodes_mu;
-        NumericVector other_int_nodes_tau;
+        //NumericVector other_int_nodes_mu;
+        //NumericVector other_int_nodes_tau;
         
         for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
           NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
-          other_int_nodes_mu = find_term_nodes_bcf(tree);
-          p_other_mu+=other_int_nodes_mu.size();
+          //other_int_nodes_mu = find_term_nodes_bcf(tree);
+          //p_other_mu+=other_int_nodes_mu.size();
           NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-          if(tree.ncol()<5) throw std::range_error("Line 1753");
+          //if(tree.ncol()<5) throw std::range_error("Line 1753");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-          other_int_nodes_tau = find_term_nodes_bcf(tree);
-          p_other_tau+=other_int_nodes_tau.size();
+          //other_int_nodes_tau = find_term_nodes_bcf(tree);
+          //p_other_tau+=other_int_nodes_tau.size();
           NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-          if(tree.ncol()<5) throw std::range_error("Line 1760");
+          //if(tree.ncol()<5) throw std::range_error("Line 1760");
           tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -6893,21 +6901,21 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
           
           double tree_prior_temp=1;
           
-          int p_other_mu=0;
-          int p_other_tau=0;
+          //int p_other_mu=0;
+          //int p_other_tau=0;
           
-          NumericVector other_int_nodes_mu;
-          NumericVector other_int_nodes_tau;
+          //NumericVector other_int_nodes_mu;
+          //NumericVector other_int_nodes_tau;
           
           
           
           for(int t=0;t<prev_sum_trees_mu2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=prev_sum_trees_mu2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-            other_int_nodes_mu = find_term_nodes_bcf(tree);
-            p_other_mu+=other_int_nodes_mu.size();
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
             NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 1660");
+            //if(tree.ncol()<5) throw std::range_error("Line 1660");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             // Rcout << "LINE 4378 t =" << t << ".\n";
             // Rcout << "LINE 4378 tree_prior_temp =" << tree_prior_temp << ".\n";
@@ -6915,11 +6923,11 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
           }
           for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-            other_int_nodes_tau = find_term_nodes_bcf(tree);
-            p_other_tau+=other_int_nodes_tau.size();
+            //other_int_nodes_tau = find_term_nodes_bcf(tree);
+            //p_other_tau+=other_int_nodes_tau.size();
             NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 1667");
+            //if(tree.ncol()<5) throw std::range_error("Line 1667");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             // Rcout << "LINE 4390 t =" << t << ".\n";
             // Rcout << "LINE 4390 tree_prior_temp =" << tree_prior_temp << ".\n";
@@ -6954,29 +6962,29 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
           
           double tree_prior_temp=1;
           
-          int p_other_mu=0;
-          int p_other_tau=0;
+          //int p_other_mu=0;
+          //int p_other_tau=0;
           
-          NumericVector other_int_nodes_mu;
-          NumericVector other_int_nodes_tau;
+          //NumericVector other_int_nodes_mu;
+          //NumericVector other_int_nodes_tau;
           
           
           for(int t=0;t<prev_sum_trees_mu2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=prev_sum_trees_mu2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-            other_int_nodes_mu = find_term_nodes_bcf(tree);
-            p_other_mu+=other_int_nodes_mu.size();
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
             NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 1689");
+            //if(tree.ncol()<5) throw std::range_error("Line 1689");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-            other_int_nodes_tau = find_term_nodes_bcf(tree);
-            p_other_tau+=other_int_nodes_tau.size();
+            //other_int_nodes_tau = find_term_nodes_bcf(tree);
+            //p_other_tau+=other_int_nodes_tau.size();
             NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 1695");
+            //if(tree.ncol()<5) throw std::range_error("Line 1695");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -7014,29 +7022,29 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
           
           double tree_prior_temp=1;
           
-          int p_other_mu=0;
-          int p_other_tau=0;
+          //int p_other_mu=0;
+          //int p_other_tau=0;
           
-          NumericVector other_int_nodes_mu;
-          NumericVector other_int_nodes_tau;
+          //NumericVector other_int_nodes_mu;
+          //NumericVector other_int_nodes_tau;
           
           
           for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
             NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
-            other_int_nodes_mu = find_term_nodes_bcf(tree);
-            p_other_mu+=other_int_nodes_mu.size();
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
             NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 1723");
+            //if(tree.ncol()<5) throw std::range_error("Line 1723");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-            other_int_nodes_tau = find_term_nodes_bcf(tree);
-            p_other_tau+=other_int_nodes_tau.size();
+            //other_int_nodes_tau = find_term_nodes_bcf(tree);
+            //p_other_tau+=other_int_nodes_tau.size();
             NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 1730");
+            //if(tree.ncol()<5) throw std::range_error("Line 1730");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -7069,28 +7077,28 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
           double lik_temp=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
           double tree_prior_temp=1;
           
-          int p_other_mu=0;
-          int p_other_tau=0;
+          //int p_other_mu=0;
+          //int p_other_tau=0;
           
-          NumericVector other_int_nodes_mu;
-          NumericVector other_int_nodes_tau;
+          //NumericVector other_int_nodes_mu;
+          //NumericVector other_int_nodes_tau;
           
           for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
             NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
-            other_int_nodes_mu = find_term_nodes_bcf(tree);
-            p_other_mu+=other_int_nodes_mu.size();
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
             NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 1753");
+            //if(tree.ncol()<5) throw std::range_error("Line 1753");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
-            other_int_nodes_tau = find_term_nodes_bcf(tree);
-            p_other_tau+=other_int_nodes_tau.size();
+            //other_int_nodes_tau = find_term_nodes_bcf(tree);
+            //p_other_tau+=other_int_nodes_tau.size();
             NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
-            if(tree.ncol()<5) throw std::range_error("Line 1760");
+            //if(tree.ncol()<5) throw std::range_error("Line 1760");
             tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
