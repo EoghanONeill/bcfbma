@@ -3116,13 +3116,13 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
 
 // [[Rcpp::export]]
 NumericVector update_mean_var_bcf(NumericMatrix tree_table,NumericMatrix tree_matrix,NumericVector resids,double a){
-  List update_params(1);															// create a list of length 1
+  //List update_params(1);															// create a list of length 1
   NumericVector terminal_nodes;													// create a Numeric vector. All values initially 0.
   arma::uvec term_obs;															// create an unsigned integer vector. Not initialized or given a length.
   terminal_nodes= find_term_nodes_bcf(tree_table);									// find term nodes function defined line 168. Gives index of values of treetable_temp that are term nodes (indices from 1 to length of vector). Why not integer vector?
   NumericVector Tj(terminal_nodes.size());										// Tj is a vector of length equal to length of terminal_nodes
   NumericVector new_mean(terminal_nodes.size());									// new_mean is a vector of length equal to length of terminal_nodes
-  arma::vec armaresids=as<arma::vec>(resids);										// copy input vector resids to an arma vec
+  //arma::vec armaresids=as<arma::vec>(resids);										// copy input vector resids to an arma vec
   
   for(int k=0;k< terminal_nodes.size();k++){    									// for-loop of length equal to that of terminal_nodes.
     term_obs=find_term_obs_bcf(tree_matrix,terminal_nodes[k]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[k] (for leftmost column of tree_matrix that has elements equal to terminal_nodes[k]). 
@@ -3238,8 +3238,8 @@ IntegerVector PELT_meanvar_norm2_bcf(NumericVector resp,double pen)
   NumericVector tmplike(n+1);						// tmplike is a vector with n+1 elements.
   IntegerVector tmpt(n+1);						// tmpt is a vector with n+1 elements.
   int tstar,i,whichout,nchecktmp;					// create a set of integers.
-  double mll_meanvar();
-  void min_which();
+  //double mll_meanvar();
+  //void min_which();
   lastchangelike[0]= -pen;						// first element of lastchangelike is negative of input pen.
   lastchangecpts[0]=0; lastchangecpts[n]=0;		// set first and n+1^th element of lastchangecpts to 0.
   double x=y[1];									// let x be second element of y.
@@ -3259,7 +3259,7 @@ IntegerVector PELT_meanvar_norm2_bcf(NumericVector resp,double pen)
   checklist[1]=2;			// second element of checklist set to 2
   
   for(tstar=4;tstar<(n+1);tstar++){					// loop of length n-3. n is  length of input resp
-    R_CheckUserInterrupt(); // checks if user has interrupted the R session and quits if true 
+    //R_CheckUserInterrupt(); // checks if user has interrupted the R session and quits if true 
     
     for(i=0;i<nchecklist;i++){						// loop of length nchecklist
       tmplike[i]=lastchangelike[checklist[i]] + mll_meanvar2_bcf(y[tstar]- y[checklist[i]],y2[tstar]-y2[checklist[i]],tstar-checklist[i])+pen;
@@ -4011,9 +4011,9 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
     if(is_test_data)overall_test_preds(_,k)=test_preds;													// If input boolean is_test_data is true, let the k+1^th column of overallpreds be the vector of predictions for tree overall_trees[k].
   }
   arma::mat M1(overallpreds.begin(), overallpreds.nrow(), overallpreds.ncol(), false);					// create arma mat copy of overallpreds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
-  arma::colvec predicted_values=sum(M1,1);																// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
+  //arma::colvec predicted_values=sum(M1,1);																// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
   arma::mat M2(overall_test_preds.begin(), overall_test_preds.nrow(), overall_test_preds.ncol(), false);	// create arma mat copy of overall_test_preds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
-  arma::colvec predicted_test_values=sum(M2,1);															// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
+  //arma::colvec predicted_test_values=sum(M2,1);															// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
   List ret(7);				// list of length 8.
   ret[0]=overall_lik2;		// first element of list is a vector of BICs?
   ret[1]=overall_trees;		// list of tree tables.
@@ -4287,9 +4287,9 @@ List get_best_trees_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,Nume
     if(is_test_data)overall_test_preds(_,k)=test_preds;													// If input boolean is_test_data is true, let the k+1^th column of overallpreds be the vector of predictions for tree overall_trees[k].
   }
   arma::mat M1(overallpreds.begin(), overallpreds.nrow(), overallpreds.ncol(), false);					// create arma mat copy of overallpreds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
-  arma::colvec predicted_values=sum(M1,1);																// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
+  //arma::colvec predicted_values=sum(M1,1);																// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
   arma::mat M2(overall_test_preds.begin(), overall_test_preds.nrow(), overall_test_preds.ncol(), false);	// create arma mat copy of overall_test_preds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
-  arma::colvec predicted_test_values=sum(M2,1);															// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
+  //arma::colvec predicted_test_values=sum(M2,1);															// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
   List ret(7);				// list of length 8.
   ret[0]=overall_lik2;		// first element of list is a vector of BICs?
   ret[1]=overall_trees;		// list of tree tables.
@@ -4896,11 +4896,11 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
     //Rcout << "Get to Line 3829 in get_best_trees_sum_mu_bcf.\n";
   }
   arma::mat M1(overallpreds.begin(), overallpreds.nrow(), overallpreds.ncol(), false);			// create arma mat copy of overallpreds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
-  arma::colvec predicted_values=sum(M1,1);														// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
+  //arma::colvec predicted_values=sum(M1,1);														// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
   // Rcout << "Get to Line 4179 in get_best_trees_sum_mu_bcf.\n";
   arma::mat M2(overall_test_preds.begin(), overall_test_preds.nrow(), overall_test_preds.ncol(), false);		// create arma mat copy of overall_test_preds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
   // Rcout << "Get to Line 4181 in get_best_trees_sum_mu_bcf.\n";
-  arma::colvec predicted_test_values=sum(M2,1);		// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
+  //arma::colvec predicted_test_values=sum(M2,1);		// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
   List ret(7);				// list of length 8.
   ret[0]=overall_lik2;		// first element of list is a vector of BICs?
   ret[1]=overall_trees;		// list of tree tables.
@@ -5512,11 +5512,11 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
     //Rcout << "Get to Line 3829 in get_best_trees_sum_mu_bcf.\n";
   }
   arma::mat M1(overallpreds.begin(), overallpreds.nrow(), overallpreds.ncol(), false);			// create arma mat copy of overallpreds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
-  arma::colvec predicted_values=sum(M1,1);														// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
+  //arma::colvec predicted_values=sum(M1,1);														// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
   // Rcout << "Get to Line 4179 in get_best_trees_sum_mu_bcf.\n";
   arma::mat M2(overall_test_preds.begin(), overall_test_preds.nrow(), overall_test_preds.ncol(), false);		// create arma mat copy of overall_test_preds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
   // Rcout << "Get to Line 4181 in get_best_trees_sum_mu_bcf.\n";
-  arma::colvec predicted_test_values=sum(M2,1);		// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
+  //arma::colvec predicted_test_values=sum(M2,1);		// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
   List ret(7);				// list of length 8.
   ret[0]=overall_lik2;		// first element of list is a vector of BICs?
   ret[1]=overall_trees;		// list of tree tables.
@@ -5825,9 +5825,9 @@ List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numer
   //Rcout << "Line 4494.\n";
   
   arma::mat M1(overallpreds.begin(), overallpreds.nrow(), overallpreds.ncol(), false);			// create arma mat copy of overallpreds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
-  arma::colvec predicted_values=sum(M1,1);														// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
+  //arma::colvec predicted_values=sum(M1,1);														// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
   arma::mat M2(overall_test_preds.begin(), overall_test_preds.nrow(), overall_test_preds.ncol(), false);		// create arma mat copy of overall_test_preds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
-  arma::colvec predicted_test_values=sum(M2,1);		// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
+  //arma::colvec predicted_test_values=sum(M2,1);		// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
   List ret(7);				// list of length 8.
   ret[0]=overall_lik2;		// first element of list is a vector of BICs?
   ret[1]=overall_trees;		// list of tree tables.
@@ -6294,9 +6294,9 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
     if(is_test_data)overall_test_preds(_,k)=test_preds;											// If input boolean is_test_data is true, let the k+1^th column of overallpreds be the vector of predictions for tree overall_trees[k].
   }
   arma::mat M1(overallpreds.begin(), overallpreds.nrow(), overallpreds.ncol(), false);			// create arma mat copy of overallpreds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
-  arma::colvec predicted_values=sum(M1,1);														// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
+  //arma::colvec predicted_values=sum(M1,1);														// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
   arma::mat M2(overall_test_preds.begin(), overall_test_preds.nrow(), overall_test_preds.ncol(), false);		// create arma mat copy of overall_test_preds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
-  arma::colvec predicted_test_values=sum(M2,1);		// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
+  //arma::colvec predicted_test_values=sum(M2,1);		// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
   List ret(7);				// list of length 8.
   ret[0]=overall_lik2;		// first element of list is a vector of BICs?
   ret[1]=overall_trees;		// list of tree tables.
@@ -6914,9 +6914,9 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
     if(is_test_data)overall_test_preds(_,k)=test_preds;											// If input boolean is_test_data is true, let the k+1^th column of overallpreds be the vector of predictions for tree overall_trees[k].
   }
   arma::mat M1(overallpreds.begin(), overallpreds.nrow(), overallpreds.ncol(), false);			// create arma mat copy of overallpreds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
-  arma::colvec predicted_values=sum(M1,1);														// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
+  //arma::colvec predicted_values=sum(M1,1);														// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
   arma::mat M2(overall_test_preds.begin(), overall_test_preds.nrow(), overall_test_preds.ncol(), false);		// create arma mat copy of overall_test_preds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
-  arma::colvec predicted_test_values=sum(M2,1);		// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
+  //arma::colvec predicted_test_values=sum(M2,1);		// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
   List ret(7);				// list of length 8.
   ret[0]=overall_lik2;		// first element of list is a vector of BICs?
   ret[1]=overall_trees;		// list of tree tables.
@@ -7557,9 +7557,9 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
     if(is_test_data)overall_test_preds(_,k)=test_preds;											// If input boolean is_test_data is true, let the k+1^th column of overallpreds be the vector of predictions for tree overall_trees[k].
   }
   arma::mat M1(overallpreds.begin(), overallpreds.nrow(), overallpreds.ncol(), false);			// create arma mat copy of overallpreds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
-  arma::colvec predicted_values=sum(M1,1);														// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
+  //arma::colvec predicted_values=sum(M1,1);														// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
   arma::mat M2(overall_test_preds.begin(), overall_test_preds.nrow(), overall_test_preds.ncol(), false);		// create arma mat copy of overall_test_preds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
-  arma::colvec predicted_test_values=sum(M2,1);		// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
+  //arma::colvec predicted_test_values=sum(M2,1);		// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
   List ret(7);				// list of length 8.
   ret[0]=overall_lik2;		// first element of list is a vector of BICs?
   ret[1]=overall_trees;		// list of tree tables.
@@ -12019,9 +12019,9 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
       orig_test_preds_mu=get_original_bcf(min(y),max(y),-0.5,0.5,wrap(predicted_test_values_mu)) ;					// inverse scale out-of-sample predictions to original scale
       orig_test_preds_tau=get_original_bcf(min(y),max(y),-0.5,0.5,wrap(predicted_test_values_tau)) ;					// inverse scale out-of-sample predictions to original scale
     }
-    NumericVector minmax(2);					// create vector minmax of length 2
-    minmax[0]=min(y);							// set first element equal to min(y)
-    minmax[1]=max(y);							// set first element equal to max(y)
+    //NumericVector minmax(2);					// create vector minmax of length 2
+    //minmax[0]=min(y);							// set first element equal to min(y)
+    //minmax[1]=max(y);							// set first element equal to max(y)
     if(is_test_data==1){						// if there is test data
       List ret(13);									// list of length 6.
       ret[0] = orig_preds_outcome;							// The first element is a vector of in-sample predictions
