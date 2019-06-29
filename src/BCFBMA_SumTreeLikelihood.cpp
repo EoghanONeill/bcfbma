@@ -91,7 +91,7 @@ NumericMatrix set_daughter_to_end_tree_bcf(int grow_node,NumericMatrix prior_tre
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
-NumericMatrix set_daughter_to_end_mat_bcf(double d,NumericMatrix prior_tree_matrix_temp,double left_daughter,NumericVector ld_obs,NumericVector rd_obs){
+NumericMatrix set_daughter_to_end_mat_bcf(int d,NumericMatrix prior_tree_matrix_temp,double left_daughter,NumericVector ld_obs,NumericVector rd_obs){
   int ncol_mat=prior_tree_matrix_temp.ncol();		// number of columns in input matrix
   arma::mat N=Rcpp::as<arma::mat>(prior_tree_matrix_temp);	// saves input matrix as arma mat N
   arma::vec colmat=N.col(d);			// extracts column number d+1 (why is d a double rather than an integer?) ASSUMING CHANGES DON'T PROPAGATE TO N
@@ -354,7 +354,7 @@ NumericMatrix set_tree_to_middle_bcf(NumericVector node_to_update,NumericMatrix 
 //######################################################################################################################//
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
-NumericMatrix update_grow_obs_bcf(NumericMatrix prior_tree_matrix_temp,double grow_node,double left_daughter,double d,NumericVector ld_obs,NumericVector rd_obs){
+NumericMatrix update_grow_obs_bcf(NumericMatrix prior_tree_matrix_temp,double grow_node,double left_daughter,int d,NumericVector ld_obs,NumericVector rd_obs){
   arma::mat prior_tree_matrix_temp2(prior_tree_matrix_temp.begin(),prior_tree_matrix_temp.nrow(),prior_tree_matrix_temp.ncol(),false);	// make an arma mat from the input matrix
   arma::vec ptm2=prior_tree_matrix_temp2.col(d);	// d+1^th column of the matrix. Why isn't d an integer?
   NumericVector ptm=wrap(ptm2);					// convert from arma mat to numeric vector
@@ -368,7 +368,7 @@ NumericMatrix update_grow_obs_bcf(NumericMatrix prior_tree_matrix_temp,double gr
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
-NumericMatrix find_obs_to_update_grow_bcf(NumericMatrix prior_tree_matrix_temp,double left_daughter,double d,NumericVector ld_obs,NumericVector rd_obs){
+NumericMatrix find_obs_to_update_grow_bcf(NumericMatrix prior_tree_matrix_temp,double left_daughter,int d,NumericVector ld_obs,NumericVector rd_obs){
   
   int rows=prior_tree_matrix_temp.nrow();		// number of rows in input matrix
   int cols=prior_tree_matrix_temp.ncol();		// number of columns in input matrix
@@ -395,8 +395,9 @@ NumericMatrix find_obs_to_update_grow_bcf(NumericMatrix prior_tree_matrix_temp,d
       }else if(prior_tree_matrix_temp(rows_obs[k],cols_obs[k])==0){	
         prior_tree_matrix_temp(rows_obs[k],cols_obs[k])=0;	// if already equals zero, then this line is unnecessary? Make empty if statement
       }else{   
-        int temp=prior_tree_matrix_temp(rows_obs[k],cols_obs[k])+2;		// add two to relevant element of matrix. Why isn't this a numeric (part of numeric matrix)
-        prior_tree_matrix_temp(rows_obs[k],cols_obs[k])=temp;			// this and the above line could be one line?
+        //int temp=prior_tree_matrix_temp(rows_obs[k],cols_obs[k])+2;		// add two to relevant element of matrix. Why isn't this a numeric (part of numeric matrix)
+        //prior_tree_matrix_temp(rows_obs[k],cols_obs[k])=temp;			// this and the above line could be one line?
+        prior_tree_matrix_temp(rows_obs[k],cols_obs[k])=prior_tree_matrix_temp(rows_obs[k],cols_obs[k])+2;
       }
     }
   }
@@ -460,27 +461,29 @@ List get_daughter_obs_bcf(arma::mat& xmat,NumericVector obs_to_update,int split_
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
-NumericVector find_term_cols_bcf(NumericMatrix tree_matrix_temp,int terminal_node){
+int find_term_cols_bcf(NumericMatrix tree_matrix_temp,int terminal_node){
   
-  arma::mat tree_matrix_temp2(tree_matrix_temp.begin(),tree_matrix_temp.nrow(),tree_matrix_temp.ncol(),false);	// convert input matrix to arma mat called tree_matrix_temp2
-  int count=0;												// Initialize count at 0
-  std::vector<double> term_cols(tree_matrix_temp.ncol());		// term_cols is a vector of length equal to the number of columns in input matrix. Why not IntegerVector>
-  
-  for(int j=0;j<tree_matrix_temp.ncol();j++){					// loop of length equal to the number of columns in the input matrix
+  arma::mat tree_matrix_temp2(tree_matrix_temp.begin(),tree_matrix_temp.nrow(),tree_matrix_temp.ncol(),false);
+  //int count=0;
+  //std::vector<double> term_cols(tree_matrix_temp.ncol());
+  int term_col=0;
+  for(int j=0;j<tree_matrix_temp.ncol();j++){
     
-    arma::vec tempcol=tree_matrix_temp2.col(j);				// arma vec tempcol equals j^th column of matrix
-    arma::uvec term_nodes=find(tempcol==terminal_node);		// unsigned integer vec term_nodes equals indices of elements of tempcol that are equal to terminal_node (input value).
+    arma::vec tempcol=tree_matrix_temp2.col(j);
+    arma::uvec term_nodes=find(tempcol==terminal_node);
     
-    if(term_nodes.size()>0){		// If term_nodes has nonzero length, i.e. some elements of tempcol are equal to terminal_node
-      term_cols[count]=j;		// Then let the count+1^th (starting from zero) element of term_cols be j (the number minus 1 of the column in the loop) 
-      count++;		// only increase count when the condition is true. term_cols therefore contains indexes (starting at 0) all the columns with at least some elements equal to terminal_nodes
+    if(term_nodes.size()>0){  
+      //term_cols[count]=j;
+      //count++;
+      term_col=j;
+      break;
     }
   }
   
-  term_cols.resize(count);	// reduce size to nonempty entries. Note that only all of term_cols filled in if all columns have some elements equal to terminal_nodes.
+  //term_cols.resize(count);
   
-  return(wrap(term_cols));		// convert to R object (NumericVector) and return.
-  
+  //return(wrap(term_cols));
+  return(term_col);
 }
 
 //######################################################################################################################//
@@ -518,7 +521,7 @@ arma::uvec get_grow_obs_in_z_bcf(arma::vec& z_ar,NumericVector grow_obs){
 List grow_tree_bcf(arma::mat& xmat,//NumericVector y,
                    NumericMatrix prior_tree_matrix,int grow_node,NumericMatrix prior_tree_table,
                    int splitvar,double splitpoint,//NumericVector terminal_nodes,
-                   NumericVector grow_obs,double d//,NumericVector get_min,arma::mat& data_curr_node
+                   NumericVector grow_obs,int d//,NumericVector get_min,arma::mat& data_curr_node
                      )
 {
   // Rcout << "Line 509.\n";
@@ -560,7 +563,7 @@ List grow_tree_bcf(arma::mat& xmat,//NumericVector y,
     // Rcout << "Line 542.\n";
     
     if(prev.size()!=0){														// If prev has nonzero size
-      if(prior_tree_table.ncol()<5) throw std::range_error("Line 531");
+      //if(prior_tree_table.ncol()<5) throw std::range_error("Line 531");
       arma::uvec find_nonterm=find_internal_nodes_bcf(prior_tree_table);		// Use function defined on line 241. Returns index vector of internal nodes. Note not applied to temporary version of table
       //should only find internal nodes at the current depth
       prev_nonterm=find_prev_nonterm_bcf(find_nonterm,prev);					// Function defined on line 256. Total number of elements of find_nonterm equal to elements of prev.
@@ -656,12 +659,12 @@ double get_tree_prior_bcf(NumericMatrix tree_table,NumericMatrix tree_matrix,dou
   double propsplit=1;
   IntegerVector d;
   IntegerVector d2;
-  int col=tree_matrix.ncol();
-  std::vector<int> int_nodes_index(100*col); // Why  100* ? 
-  std::vector<int> term_nodes_index(100*col); //
+  // int col=tree_matrix.ncol();
+  // std::vector<int> int_nodes_index(100*col); // Why  100* ? 
+  // std::vector<int> term_nodes_index(100*col); //
   
-  int index_count=0;  
-  int index_count2=0;
+  // int index_count=0;  
+  // int index_count2=0;
   arma::uvec internal_nodes_prop=find_internal_nodes_bcf(tree_table);
   NumericVector terminal_nodes_prop_wrapped=find_term_nodes_bcf(tree_table);
   arma::uvec terminal_nodes_prop=as<arma::uvec>(terminal_nodes_prop_wrapped);
@@ -676,20 +679,21 @@ double get_tree_prior_bcf(NumericMatrix tree_table,NumericMatrix tree_matrix,dou
       arma::vec armacol=tree_matrix2.col(j);
       arma::uvec found=find(armacol==internal_nodes_prop[k]);      
       if(found.size()>0){        
-        int_nodes_index[index_count]=j;
-        index_count++;
+        //int_nodes_index[index_count]=j;
+        //index_count++;
+        propsplit*=alpha*pow((j+1),-beta) ;  
         break;
       }        
     }
-    int_nodes_index.resize(index_count);
-    if(int_nodes_index.size()!=0){      
-      d=unique(as<IntegerVector>(wrap(int_nodes_index)));
-      double d1=d[0];
-      propsplit*=alpha*pow((d1+1),-beta) ;  
-    }
-    std::vector<int> temp(col);
-    int_nodes_index=temp;
-    index_count=0;
+    // int_nodes_index.resize(index_count);
+    // if(int_nodes_index.size()!=0){      
+    //   d=unique(as<IntegerVector>(wrap(int_nodes_index)));
+    //   double d1=d[0];
+    //   propsplit*=alpha*pow((d1+1),-beta) ;  
+    // }
+    // std::vector<int> temp(col);
+    // int_nodes_index=temp;
+    // index_count=0;
   } 
   
   if(count!=0){  
@@ -698,20 +702,21 @@ double get_tree_prior_bcf(NumericMatrix tree_table,NumericMatrix tree_matrix,dou
         arma::vec armacol=tree_matrix2.col(j);
         arma::uvec found=find(armacol==terminal_nodes_prop[k]);      
         if(found.size()>0){        
-          term_nodes_index[index_count2]=j;
-          index_count2++;
+          //term_nodes_index[index_count2]=j;
+          //index_count2++;
+          propsplit*=1-alpha*pow((j+1),-beta) ; 
           break;
         }        
       }
-      term_nodes_index.resize(index_count2);
-      if(term_nodes_index.size()!=0){      
-        d2=unique(as<IntegerVector>(wrap(term_nodes_index)));
-        double d1=d2[0];
-        propsplit*=1-alpha*pow((d1+1),-beta) ;  
-      }
-      std::vector<int> temp2(col);
-      term_nodes_index=temp2;
-      index_count2=0;
+      // term_nodes_index.resize(index_count2);
+      // if(term_nodes_index.size()!=0){      
+      //   d2=unique(as<IntegerVector>(wrap(term_nodes_index)));
+      //   double d1=d2[0];
+      //   propsplit*=1-alpha*pow((d1+1),-beta) ;  
+      // }
+      // std::vector<int> temp2(col);
+      // term_nodes_index=temp2;
+      // index_count2=0;
     }
   }
   
@@ -741,6 +746,28 @@ NumericMatrix start_tree_bcf(double start_mean,double start_sd){
 //######################################################################################################################//
 
 // [[Rcpp::export]]
+NumericMatrix start_tree2_bcf(){
+  
+  NumericMatrix treemat(1,7);
+  //double rand=R::rnorm(start_mean,start_sd);
+  NumericVector testrow = NumericVector::create(0,0,0,0,-1,0,0);
+  //for(int k=0;k<1;k++){
+  for(int j=0;j<7;j++){
+    //treemat(k,j)=testrow[j];
+    treemat(0,j)=testrow[j];
+  }
+  //}
+  List dimnms = // two vec. with static names
+    List::create(CharacterVector::create("1"),
+                 CharacterVector::create("left daughter","right daughter","split var","split point","status","mean","std dev"));
+  // and assign it
+  treemat.attr("dimnames") = dimnms;
+  
+  return(treemat);
+}
+//######################################################################################################################//
+
+// [[Rcpp::export]]
 NumericMatrix start_matrix_bcf(int n){
   NumericMatrix mat(n,1);					// Matrix with n rows, 1 column
   std::fill(mat.begin(), mat.end(), 1);	// set all matrix elements to 1
@@ -761,11 +788,11 @@ List evaluate_model_occams_window_bcf(NumericVector tree_lik,double lowest_BIC,d
       break;												// break out of while loop?
     }
     //delete tree from tree list
-    if((tree_lik[sorted_lik_index[s]-1])-(lowest_BIC)>c){	// same condition as for while loop above. Presuably tree_lik actually includes the BICs
+    //if((tree_lik[sorted_lik_index[s]-1])-(lowest_BIC)>c){	// same condition as for while loop above. Presuably tree_lik actually includes the BICs
       //set indicator for index of trees to be removed
       to_be_removed[s]=sorted_lik_index[s]-1;				// include the index number sorted_lik_index[s]-1 in to_be_removed. (Records models to be removed).
       s+=1;												// increase s by 1
-    }
+    //}
   }
   
   to_be_removed.resize(s);											// resize_bcf to_be_removed to exlude elements that aren't filled in
@@ -800,7 +827,7 @@ NumericVector get_testdata_term_obs_bcf(NumericMatrix test_data,NumericMatrix tr
   arma::mat testd(test_data.begin(), test_data.nrow(), test_data.ncol(), false);			// read matrix test_data, call it testd
   NumericVector terminal_nodes=find_term_nodes_bcf(tree_data);								// find term nodes function defined line 168. Gives index of values of tree_data that are term nodes (indices from 1 to length of vector). Why not integer vector?
   arma::vec arma_terminal_nodes=Rcpp::as<arma::vec>(terminal_nodes);						// convert terminal_nodes to arma_vec. Could use uvec
-  NumericVector tree_predictions;															// this vector is not used anywhere. delete line?
+  //NumericVector tree_predictions;															// this vector is not used anywhere. delete line?
   //for each internal node find the observations that belong to the terminal nodes
   NumericVector predictions(test_data.nrow());											// Create a vector of length equal to the number of rows of test_data. Not initialized.
   if(terminal_nodes.size()==1){
@@ -852,13 +879,13 @@ else{
       pred_indices = arma::find(tempvec > temp_split);	// Indices for elements of testd.col(split) that are > node_split_mat(0,1) 
     }
     arma::uvec temp_pred_indices;						// vector of unsigned integers
-    arma::vec data_subset = testd.col(split);			// column of test_data indexed by split. Why not use tempvec? Equal and already defined.
-    data_subset=data_subset.elem(pred_indices);			// let data_subset be those elements of testd.col(split) <= or > temp_split depeding on whether rd=0.
+    //arma::vec data_subset = testd.col(split);			// column of test_data indexed by split. Why not use tempvec? Equal and already defined.
+    //data_subset=data_subset.elem(pred_indices);			// let data_subset be those elements of testd.col(split) <= or > temp_split depeding on whether rd=0.
     int n=node_split_mat.n_rows;						// n is number of rows of node_split_mat
     for(int j=1;j<n;j++){								// loop of length equal to number of rows of node_split_mat MINUS 1. Note no j=0.
       int curr_sv=node_split_mat(j,0);				// curr_sv is element in j+1^th row, 1st column of node_split_mat
       double split_p = node_split_mat(j,1);			// split_p is element in j+1^th row, 2nd column of node_split_mat
-      data_subset = testd.col(curr_sv-1);				// data_subset is curr_sv^th column of test data
+      arma::vec data_subset = testd.col(curr_sv-1);				// data_subset is curr_sv^th column of test data
       data_subset=data_subset.elem(pred_indices);		// data_subset is elements of curr_sv^th column of test data indexed by pred_indices
       if(node_split_mat(j,2)==0){									// If j+1^th column, 3rd row of node_split_mat (rd) is zero. i.e. split is to the left.
         //split is to the left
@@ -1217,7 +1244,7 @@ List resize_bigger_bcf( const List& x, int n ){
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
-arma::mat J_bcf(NumericMatrix treetable_temp,NumericMatrix obs_to_nodes_temp,NumericVector tree_term_nodes){
+arma::mat J_bcf(NumericMatrix obs_to_nodes_temp,NumericVector tree_term_nodes){
   //this function will make a binary nxb matrix where each column assigns observations to terminal nodes
   
   //create J_bcf matrix with correct dimensions and fill with zeros
@@ -1277,7 +1304,7 @@ arma::mat W_bcf(List sum_treetable ,List sum_obs_to_nodes,int n){
     
     int b_j=tree_term_nodes.size();											// b_j is number of terminal nodes in tree j
     //will make J_bcf as we go in BART-BMA no need to create it again here....
-    arma::mat Jmat=J_bcf(curr_tree,curr_obs_nodes,tree_term_nodes);				// create the J_bcf matrix where each column assigns observatins to terminal nodes. Function defined on line 786
+    arma::mat Jmat=J_bcf(curr_obs_nodes,tree_term_nodes);				// create the J_bcf matrix where each column assigns observatins to terminal nodes. Function defined on line 786
     //Rcout << "Get to 890.\n";
     //Rcout << "Number of rows of J_mat "<< Jmat.n_rows <<".\n";
     //Rcout << "Number of rows of curr_obs_nodes "<< curr_obs_nodes.nrow() <<".\n";
@@ -1317,7 +1344,7 @@ arma::mat W_tauround1_bcf(NumericMatrix treetable , NumericMatrix obs_to_nodes,i
     //will make J_bcf as we go in BART-BMA no need to create it again here....
     
     //Rcout << "number of rows of curr_obs_nodes = " << curr_obs_nodes.nrow() << ".\n";
-    arma::mat Jmat=J_bcf(curr_tree,curr_obs_nodes,tree_term_nodes);				// create the J_bcf matrix where each column assigns observatins to terminal nodes. Function defined on line 786
+    arma::mat Jmat=J_bcf(curr_obs_nodes,tree_term_nodes);				// create the J_bcf matrix where each column assigns observatins to terminal nodes. Function defined on line 786
     //Rcout << "Get to 890.\n";
     //Rcout << "Number of rows of J_mat "<< Jmat.n_rows <<".\n";
     //Rcout << "Number of rows of curr_obs_nodes "<< curr_obs_nodes.nrow() <<".\n";
@@ -1459,19 +1486,21 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
   NumericMatrix treemat_c=tree_mat;								// copy the input matrix, call it treemat_c
   
   NumericVector terminal_nodes=find_term_nodes_bcf(treetable_c);		// terminal_nodes gives indices of treetable_c elements that correspond to term_nodes.
-  IntegerVector change_node1;										// cerates an integer vector. THIS VECTOR IS NOT USED IN THIS FUNCTION
+  //IntegerVector change_node1;										// cerates an integer vector. THIS VECTOR IS NOT USED IN THIS FUNCTION
   int list_size=1000;												// create an integer initialied equal to 1000. Why 1000?
   std::vector<double> tree_lik(list_size);						// create a vector tree_lik of length 1000.
   List proposal_tree;												// create a list called proposal_tree
-  List ret(9);													// create a list ret of length 9
+  List ret(4);													// create a list ret of length 9
+  
+  
   bool no_tree_err=0;												// create a bool variable no_tree_err initialized equal to 0 (FALSE)
-  List likeliest_tree;											// create a list likeliest_tree
+  //List likeliest_tree;											// create a list likeliest_tree
   List tree_list(list_size);										// create a list, tree_list, of length 1000
   List tree_mat_list(list_size);									// create a list, tree_mat_list, of length 1000
   int count=0;													// create a variabke count, initialize equal to 0.
-  std::vector<int> tree_parent(list_size);						// create a vector, tree_parent, of length 1000
-  int best_sv;													// create a variable best_sv. Not initialized
-  double best_sp;													// create a variable best_sp. Not initialized
+  //std::vector<int> tree_parent(list_size);						// create a vector, tree_parent, of length 1000
+  //int best_sv;													// create a variable best_sv. Not initialized
+  //double best_sp;													// create a variable best_sp. Not initialized
   double tree_prior=0;											// create a variable tree_prior. Initialized equal to 0.
   //List changetree;												// create a list changetree
   double BIC;														// create a variable BIC
@@ -1490,9 +1519,11 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
     //loop over each terminal node												//
     arma::uvec grow_obs=find_term_obs_bcf(treemat_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of treemat_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node									//
-    NumericVector d1=unique(find_term_cols_bcf(treemat_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
+    //NumericVector d1=unique(find_term_cols_bcf(treemat_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
     arma::mat data_curr_node=data.rows(grow_obs);								// matrix consisting of first grow_obs rows of data. Note grow_obs changed on line 926, therefore not duplicating line 919.
-    double d=d1[0];																	// index of rightmost column of treemat_c with at least one element equal to terminal_nodes[l] (letter l)
+    //int d=d1[0];																	// index of rightmost column of treemat_c with at least one element equal to terminal_nodes[l] (letter l)
+    int d = find_term_cols_bcf(treemat_c,terminal_nodes[l]);
+    
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
     if(data_curr_node.n_rows<=min_num_obs_for_mu_split ){												// if data_curr_node has 2 rows or less.
       throw std::range_error("not enough obs in node to grow any further");	// throw an error message. Not enough observations.
@@ -1559,20 +1590,20 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
       //BIC=-2*(lik)+p*log(data.n_rows);						// data.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       if(BIC<lowest_BIC){														// if statement for updating lowest BIC...etc.
         lowest_BIC=BIC;														// update (input variable) lowest_BIC
-        best_sv=split_var;													// set a value for, or update best_sv
-        best_sp=split_point;												// set a value for, or update split_point
-        likeliest_tree=proposal_tree;										// set a value for, or update likeliest_tree
+        //best_sv=split_var;													// set a value for, or update best_sv
+        //best_sp=split_point;												// set a value for, or update split_point
+        //likeliest_tree=proposal_tree;										// set a value for, or update likeliest_tree
         tree_list[count]=proposal_tree[0];									// add an element to the list of tree tables
         tree_mat_list[count]=proposal_tree[1];								// add an element to the list of tree matrices
         tree_lik[count]=BIC;												// add an element to the vector of tree liklihoods (BICs)
-        tree_parent[count]=parent;											// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+        //tree_parent[count]=parent;											// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
         count++;															// increase the count
         if(count==(tree_list.size()-1)){									// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
           list_size=list_size*2;											// multiply list size by 2
           tree_list=resize_bigger_bcf(tree_list,list_size);					// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
           tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);			// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
           tree_lik.resize(list_size);										// increase tree_lik to twice its previous size
-          tree_parent.resize(list_size);									// increase tree_parent to twice its previous size
+          //tree_parent.resize(list_size);									// increase tree_parent to twice its previous size
         }
       }else{
         if((BIC)-(lowest_BIC)<=c){											// If in Occam's window (but not the new minimum BIC)
@@ -1583,14 +1614,14 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
           tree_list[count]=proposal_tree[0];								// add an element to the list of tree tables
           tree_mat_list[count]=proposal_tree[1];							// add an element to the list of tree matrices
           tree_lik[count]=BIC;											// add an element to the vector of tree liklihoods (BICs)
-          tree_parent[count]=parent;										// add an element to the vector tree_parent. NOTE: All elements will be equal to the inout value of parent which is not changed in this function.
+          //tree_parent[count]=parent;										// add an element to the vector tree_parent. NOTE: All elements will be equal to the inout value of parent which is not changed in this function.
           count++;														// increase the count
           if(count==(tree_list.size()-1)){								// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
             list_size=list_size*2;										// multiply list size by 2
             tree_list=resize_bigger_bcf(tree_list,list_size);				// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
             tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);		// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
             tree_lik.resize(list_size);									// increase tree_lik to twice its previous size
-            tree_parent.resize(list_size);								// increase tree_parent to twice its previous size
+            //tree_parent.resize(list_size);								// increase tree_parent to twice its previous size
           }
         }
       }
@@ -1599,9 +1630,11 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
   tree_list=resize_bcf(tree_list,count);				// remove the values in tree_list that aren't filled in
   tree_mat_list=resize_bcf(tree_mat_list,count);		// remove the values in tree_mat_list that aren't filled in
   tree_lik.resize(count);							// remove the values in tree_lik that aren't filled in
-  tree_parent.resize(count);						// remove the values in tree_parent that aren't filled in
+  //tree_parent.resize(count);						// remove the values in tree_parent that aren't filled in
+  IntegerVector tree_parent(count, parent);
   if(count>0){									// If these lists are nonempty
-    eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     NumericVector testlik =eval_model[0];		// testlik is tree_lik after removing models outside Occam's window
     List testtree =eval_model[1];				// testtree is tree_list after removing models outside Occam's window
     List testmat =eval_model[2];				// testmat is tree_mat_list after removing models outside Occam's window
@@ -1628,15 +1661,25 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
         testmat=temp_omat;			// reset testmat equal to temp_omat
         testpar=temp_oparent;		// reset testpar equal to temp_oparent
       }
-      ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
-      ret[1]=best_sv;					// second element of output list. Best splitting variable
-      ret[2]=best_sp;					// third element of ouput list. Best splitting point
-      ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
-      ret[4]=testtree;				// fifth element of output list. List of tree tables
-      ret[5]=testlik;					// sixth element of output list. Vector of BICs
-      ret[6]=testmat;					// seventh element of output list. List of tree matrices
-      ret[7]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
-      ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      // ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      // ret[1]=best_sv;					// second element of output list. Best splitting variable
+      // ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      // ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      // ret[4]=testtree;				// fifth element of output list. List of tree tables
+      // ret[5]=testlik;					// sixth element of output list. Vector of BICs
+      // ret[6]=testmat;					// seventh element of output list. List of tree matrices
+      // ret[7]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      // ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      // 
+      //ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      //ret[1]=best_sv;					// second element of output list. Best splitting variable
+      //ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      //ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      ret[0]=testtree;				// fifth element of output list. List of tree tables
+      ret[1]=testlik;					// sixth element of output list. Vector of BICs
+      ret[2]=testmat;					// seventh element of output list. List of tree matrices
+      ret[3]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      //ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
       
       return (ret);					// return the list ret
     }else{
@@ -1678,19 +1721,19 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
   //Rcout << "terminal_nodes[0] equals " << terminal_nodes[0] << ".\n" ;
   //Rcout << "length terminal_nodes equals " << terminal_nodes.size() << ".\n" ;
   
-  IntegerVector change_node1;													// create an IntegerVector. Initially all values are 0, but size not given.
+  //IntegerVector change_node1;													// create an IntegerVector. Initially all values are 0, but size not given.
   int list_size=1000;															// create a list of size 1000. Why 1000.
   std::vector<double> tree_lik(list_size);									// create a vector of size 1000
   List proposal_tree;															// create an empty list
-  List ret(9);																// create a list with 9 elements
+  List ret(4);																// create a list with 9 elements
   bool no_tree_err=0;															// create a boolean initialized equal to 0 (false).
   List likeliest_tree;														// create an empty list
   List tree_list(list_size);													// create a list of size 1000
   List tree_mat_list(list_size);												// create a list of size 1000
   int count=0;																// create an integer variable, initialized equal to 0.
-  std::vector<int> tree_parent(list_size);									// create an integer vector of size 1000
-  int best_sv;																// create an integer vector. Not initialized.
-  double best_sp;																// create a double variable
+  //std::vector<int> tree_parent(list_size);									// create an integer vector of size 1000
+  //int best_sv;																// create an integer vector. Not initialized.
+  //double best_sp;																// create a double variable
   double tree_prior=1;														// create a double variable, initialized equal to 0.
   //List changetree;															// create an empty list.
   double BIC;																	// create a double variable. Not initialized.
@@ -1714,12 +1757,14 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
     //loop over each terminal node
     arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node
-    NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
+    //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
     arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
     //arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
     
     arma::mat data_curr_node=x_moderate_a.rows(z_growvec);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
-    double d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
+    int d = find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]);
+    
+    //double d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
     if(data_curr_node.n_rows<= min_num_obs_for_tau_split){												// if data_curr_node has 2 rows or less.
       //Rcout << "terminal_nodes[l] equals " << terminal_nodes[l]<< ".\n" ;
@@ -1799,20 +1844,20 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
       //BIC=-2*(lik)+(p_other_mu+p)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
         lowest_BIC=BIC;											// update (input variable) lowest_BIC
-        best_sv=split_var;										// set a value for, or update best_sv
-        best_sp=split_point;									// set a value for, or update split_point
-        likeliest_tree=proposal_tree;							// set a value for, or update likeliest_tree
+        //best_sv=split_var;										// set a value for, or update best_sv
+        //best_sp=split_point;									// set a value for, or update split_point
+        //likeliest_tree=proposal_tree;							// set a value for, or update likeliest_tree
         tree_list[count]=proposal_tree[0];						// add an element to the list of tree tables
         tree_mat_list[count]=proposal_tree[1];					// add an element to the list of tree matrices
         tree_lik[count]=BIC;									// add an element to the vector of tree liklihoods (BICs)
-        tree_parent[count]=parent;								// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+        //tree_parent[count]=parent;								// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
         count++;												// increase the count
         if(count==(tree_list.size()-1)){						// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
           list_size=list_size*2;									// multiply list size by 2
           tree_list=resize_bigger_bcf(tree_list,list_size);			// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
           tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);	// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
           tree_lik.resize(list_size);								// increase tree_lik to twice its previous size
-          tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
+          //tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
         }
       }else{
         if((BIC)-(lowest_BIC)<=c){										// If in Occam's window (but not the new minimum BIC)
@@ -1824,14 +1869,14 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
           tree_list[count]=proposal_tree[0];							// add an element to the list of tree tables
           tree_mat_list[count]=proposal_tree[1];						// add an element to the list of tree matrices
           tree_lik[count]=BIC;										// add an element to the vector of tree liklihoods (BICs)
-          tree_parent[count]=parent;									// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+          //tree_parent[count]=parent;									// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
           count++;													// increase the count
           if(count==(tree_list.size()-1)){							// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
             list_size=list_size*2;									// multiply list size by 2
             tree_list=resize_bigger_bcf(tree_list,list_size);			// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
             tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);	// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
             tree_lik.resize(list_size);								// increase tree_lik to twice its previous size
-            tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
+            //tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
           }
         }
       }
@@ -1841,10 +1886,12 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
   tree_list=resize_bcf(tree_list,count);								// remove the values in tree_list that aren't filled in
   tree_mat_list=resize_bcf(tree_mat_list,count);						// remove the values in tree_mat_list that aren't filled in
   tree_lik.resize(count);											// remove the values in tree_lik that aren't filled in
-  tree_parent.resize(count);										// remove the values in tree_parent that aren't filled in
+  //tree_parent.resize(count);										// remove the values in tree_parent that aren't filled in
+  IntegerVector tree_parent(count, parent);
   if(count>0){													// If these lists are nonempty
     //Rcout << "count >0. error after 1532 .\n" ;
-    eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     NumericVector testlik =eval_model[0];						// testlik is tree_lik after removing models outside Occam's window
     List testtree =eval_model[1];    							// testtree is tree_list after removing models outside Occam's window
     List testmat =eval_model[2]; 								// testmat is tree_mat_list after removing models outside Occam's window
@@ -1871,15 +1918,27 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
         testmat=temp_omat;			// reset testmat equal to temp_omat
         testpar=temp_oparent;		// reset testpar equal to temp_oparent
       }
-      ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
-      ret[1]=best_sv;					// second element of output list. Best splitting variable
-      ret[2]=best_sp;					// third element of ouput list. Best splitting point
-      ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
-      ret[4]=testtree;				// fifth element of output list. List of tree tables
-      ret[5]=testlik;					// sixth element of output list. List of BICs
-      ret[6]=testmat;					// seventh element of output list. List of tree matrices
-      ret[7]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
-      ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      // ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      // ret[1]=best_sv;					// second element of output list. Best splitting variable
+      // ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      // ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      // ret[4]=testtree;				// fifth element of output list. List of tree tables
+      // ret[5]=testlik;					// sixth element of output list. List of BICs
+      // ret[6]=testmat;					// seventh element of output list. List of tree matrices
+      // ret[7]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      // ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      
+      //ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      //ret[1]=best_sv;					// second element of output list. Best splitting variable
+      //ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      //ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      ret[0]=testtree;				// fifth element of output list. List of tree tables
+      ret[1]=testlik;					// sixth element of output list. List of BICs
+      ret[2]=testmat;					// seventh element of output list. List of tree matrices
+      ret[3]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      //ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      
+      
       
       return (ret);					// return the list ret
     }else{
@@ -1920,19 +1979,19 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
   //Rcout << "terminal_nodes[0] equals " << terminal_nodes[0] << ".\n" ;
   //Rcout << "length terminal_nodes equals " << terminal_nodes.size() << ".\n" ;
   
-  IntegerVector change_node1;													// create an IntegerVector. Initially all values are 0, but size not given.
+  //IntegerVector change_node1;													// create an IntegerVector. Initially all values are 0, but size not given.
   int list_size=1000;															// create a list of size 1000. Why 1000.
   std::vector<double> tree_lik(list_size);									// create a vector of size 1000
   List proposal_tree;															// create an empty list
-  List ret(9);																// create a list with 9 elements
+  List ret(4);																// create a list with 9 elements
   bool no_tree_err=0;															// create a boolean initialized equal to 0 (false).
-  List likeliest_tree;														// create an empty list
+  //List likeliest_tree;														// create an empty list
   List tree_list(list_size);													// create a list of size 1000
   List tree_mat_list(list_size);												// create a list of size 1000
   int count=0;																// create an integer variable, initialized equal to 0.
-  std::vector<int> tree_parent(list_size);									// create an integer vector of size 1000
-  int best_sv;																// create an integer vector. Not initialized.
-  double best_sp;																// create a double variable
+  //std::vector<int> tree_parent(list_size);									// create an integer vector of size 1000
+  //int best_sv;																// create an integer vector. Not initialized.
+  //double best_sp;																// create a double variable
   double tree_prior=1;														// create a double variable, initialized equal to 0.
   //List changetree;															// create an empty list.
   double BIC;																	// create a double variable. Not initialized.
@@ -1959,7 +2018,7 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
     //loop over each terminal node
     arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node
-    NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
+    //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
     // Rcout << "tree_mat_tau_c = " << tree_mat_tau_c << ".\n";
     // Rcout << "terminal_nodes[l] = " << terminal_nodes[l] << ".\n";
     
@@ -1972,8 +2031,10 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
     // Rcout << "Line 1611. l = " << l << ".\n"; 
     
     //arma::mat data_curr_node=x_moderate_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
-    double d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
+    //double d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
     // Rcout << "d = " << d << ".\n";
+    
+    int d = find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]);
     
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
     if(data_curr_node.n_rows<=min_num_obs_for_tau_split){												// if data_curr_node has 2 rows or less.
@@ -1981,7 +2042,7 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
       //Rcout << "num obs in grow_obs" << grow_obs.n_elem<< ".\n" ;
       //Rcout << " num obs in data_curr_node" << data_curr_node.n_rows<< ".\n" ;
       //Rcout << " iteration number " << l<< ".\n" ;
-      throw std::range_error("not enough obs in node to grow any further Line 1360");	// throw an error message. Not enough observations.
+      throw std::range_error("not enough obs in node to grow any further");	// throw an error message. Not enough observations.
       //continue;
     }
     //Rcout << " iteration number " << l<< ".\n" ;
@@ -2131,20 +2192,20 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
       //BIC=-2*(lik)+(p_other_mu+p)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
         lowest_BIC=BIC;											// update (input variable) lowest_BIC
-        best_sv=split_var;										// set a value for, or update best_sv
-        best_sp=split_point;									// set a value for, or update split_point
-        likeliest_tree=proposal_tree;							// set a value for, or update likeliest_tree
+        //best_sv=split_var;										// set a value for, or update best_sv
+        //best_sp=split_point;									// set a value for, or update split_point
+        //likeliest_tree=proposal_tree;							// set a value for, or update likeliest_tree
         tree_list[count]=proposal_tree[0];						// add an element to the list of tree tables
         tree_mat_list[count]=proposal_tree[1];					// add an element to the list of tree matrices
         tree_lik[count]=BIC;									// add an element to the vector of tree liklihoods (BICs)
-        tree_parent[count]=parent;								// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+        //tree_parent[count]=parent;								// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
         count++;												// increase the count
         if(count==(tree_list.size()-1)){						// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
           list_size=list_size*2;									// multiply list size by 2
           tree_list=resize_bigger_bcf(tree_list,list_size);			// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
           tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);	// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
           tree_lik.resize(list_size);								// increase tree_lik to twice its previous size
-          tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
+          //tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
         }
       }else{
         if((BIC)-(lowest_BIC)<=c){										// If in Occam's window (but not the new minimum BIC)
@@ -2156,14 +2217,14 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
           tree_list[count]=proposal_tree[0];							// add an element to the list of tree tables
           tree_mat_list[count]=proposal_tree[1];						// add an element to the list of tree matrices
           tree_lik[count]=BIC;										// add an element to the vector of tree liklihoods (BICs)
-          tree_parent[count]=parent;									// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+          //tree_parent[count]=parent;									// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
           count++;													// increase the count
           if(count==(tree_list.size()-1)){							// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
             list_size=list_size*2;									// multiply list size by 2
             tree_list=resize_bigger_bcf(tree_list,list_size);			// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
             tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);	// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
             tree_lik.resize(list_size);								// increase tree_lik to twice its previous size
-            tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
+            //tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
           }
         }
       }
@@ -2174,10 +2235,13 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
   tree_list=resize_bcf(tree_list,count);								// remove the values in tree_list that aren't filled in
   tree_mat_list=resize_bcf(tree_mat_list,count);						// remove the values in tree_mat_list that aren't filled in
   tree_lik.resize(count);											// remove the values in tree_lik that aren't filled in
-  tree_parent.resize(count);										// remove the values in tree_parent that aren't filled in
+  //tree_parent.resize(count);										// remove the values in tree_parent that aren't filled in
+  IntegerVector tree_parent(count, parent);
+  
   if(count>0){													// If these lists are nonempty
     //Rcout << "count >0. error after 1532 .\n" ;
-    eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     NumericVector testlik =eval_model[0];						// testlik is tree_lik after removing models outside Occam's window
     List testtree =eval_model[1];    							// testtree is tree_list after removing models outside Occam's window
     List testmat =eval_model[2]; 								// testmat is tree_mat_list after removing models outside Occam's window
@@ -2204,15 +2268,26 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
         testmat=temp_omat;			// reset testmat equal to temp_omat
         testpar=temp_oparent;		// reset testpar equal to temp_oparent
       }
-      ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
-      ret[1]=best_sv;					// second element of output list. Best splitting variable
-      ret[2]=best_sp;					// third element of ouput list. Best splitting point
-      ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
-      ret[4]=testtree;				// fifth element of output list. List of tree tables
-      ret[5]=testlik;					// sixth element of output list. List of BICs
-      ret[6]=testmat;					// seventh element of output list. List of tree matrices
-      ret[7]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
-      ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      // ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      // ret[1]=best_sv;					// second element of output list. Best splitting variable
+      // ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      // ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      // ret[4]=testtree;				// fifth element of output list. List of tree tables
+      // ret[5]=testlik;					// sixth element of output list. List of BICs
+      // ret[6]=testmat;					// seventh element of output list. List of tree matrices
+      // ret[7]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      // ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      // 
+      //ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      //ret[1]=best_sv;					// second element of output list. Best splitting variable
+      //ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      //ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      ret[0]=testtree;				// fifth element of output list. List of tree tables
+      ret[1]=testlik;					// sixth element of output list. List of BICs
+      ret[2]=testmat;					// seventh element of output list. List of tree matrices
+      ret[3]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      //ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      
       
       return (ret);					// return the list ret
     }else{
@@ -2250,19 +2325,19 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
   arma::vec z_ar=Rcpp::as<arma::vec>(z);		// converts to arma vec
   
   NumericVector terminal_nodes=find_term_nodes_bcf(tree_table_tau_c);					// find term nodes function defined line 168. Gives index of values of treetable_c that are term nodes (indices from 1 to length of vector). Why not integer vector?
-  IntegerVector change_node1;													// create an IntegerVector. Initially all values are 0, but size not given.
+  //IntegerVector change_node1;													// create an IntegerVector. Initially all values are 0, but size not given.
   int list_size=1000;															// create a list of size 1000. Why 1000.
   std::vector<double> tree_lik(list_size);									// create a vector of size 1000
   List proposal_tree;															// create an empty list
-  List ret(9);																// create a list with 9 elements
+  List ret(4);																// create a list with 9 elements
   bool no_tree_err=0;															// create a boolean initialized equal to 0 (false).
-  List likeliest_tree;														// create an empty list
+  //List likeliest_tree;														// create an empty list
   List tree_list(list_size);													// create a list of size 1000
   List tree_mat_list(list_size);												// create a list of size 1000
   int count=0;																// create an integer variable, initialized equal to 0.
-  std::vector<int> tree_parent(list_size);									// create an integer vector of size 1000
-  int best_sv;																// create an integer vector. Not initialized.
-  double best_sp;																// create a double variable
+  //std::vector<int> tree_parent(list_size);									// create an integer vector of size 1000
+  //int best_sv;																// create an integer vector. Not initialized.
+  //double best_sp;																// create a double variable
   double tree_prior=1;														// create a double variable, initialized equal to 0.
   //List changetree;															// create an empty list.
   double BIC;																	// create a double variable. Not initialized.
@@ -2285,17 +2360,18 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
     //loop over each terminal node
     arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node
-    NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
+    //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
     arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
     //arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
     
     arma::mat data_curr_node=x_moderate_a.rows(z_growvec);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
     
     //arma::mat data_curr_node=x_moderate_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
-    double d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
+    //double d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
+    int d= find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]);
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
     if(data_curr_node.n_rows<=min_num_obs_for_tau_split){												// if data_curr_node has 2 rows or less.
-      throw std::range_error("not enough obs in node to grow any further Line 1602");	// throw an error message. Not enough observations.
+      throw std::range_error("not enough obs in node to grow any further");	// throw an error message. Not enough observations.
       //continue;
     }
     for(int k=0;k<w;k++){														// loop of length w, the number of rows of cp_mat
@@ -2516,20 +2592,20 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
       
       if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
         lowest_BIC=BIC;											// update (input variable) lowest_BIC
-        best_sv=split_var;										// set a value for, or update best_sv
-        best_sp=split_point;									// set a value for, or update split_point
-        likeliest_tree=proposal_tree;							// set a value for, or update likeliest_tree
+        //best_sv=split_var;										// set a value for, or update best_sv
+        //best_sp=split_point;									// set a value for, or update split_point
+        //likeliest_tree=proposal_tree;							// set a value for, or update likeliest_tree
         tree_list[count]=proposal_tree[0];						// add an element to the list of tree tables
         tree_mat_list[count]=proposal_tree[1];					// add an element to the list of tree matrices
         tree_lik[count]=BIC;									// add an element to the vector of tree liklihoods (BICs)
-        tree_parent[count]=parent;								// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+        //tree_parent[count]=parent;								// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
         count++;												// increase the count
         if(count==(tree_list.size()-1)){						// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
           list_size=list_size*2;									// multiply list size by 2
           tree_list=resize_bigger_bcf(tree_list,list_size);			// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
           tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);	// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
           tree_lik.resize(list_size);								// increase tree_lik to twice its previous size
-          tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
+          //tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
         }
       }else{
         if((BIC)-(lowest_BIC)<=c){										// If in Occam's window (but not the new minimum BIC)
@@ -2541,14 +2617,14 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
           tree_list[count]=proposal_tree[0];							// add an element to the list of tree tables
           tree_mat_list[count]=proposal_tree[1];						// add an element to the list of tree matrices
           tree_lik[count]=BIC;										// add an element to the vector of tree liklihoods (BICs)
-          tree_parent[count]=parent;									// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+          //tree_parent[count]=parent;									// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
           count++;													// increase the count
           if(count==(tree_list.size()-1)){							// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
             list_size=list_size*2;									// multiply list size by 2
             tree_list=resize_bigger_bcf(tree_list,list_size);			// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
             tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);	// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
             tree_lik.resize(list_size);								// increase tree_lik to twice its previous size
-            tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
+            //tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
           }
         }
       }
@@ -2557,9 +2633,12 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
   tree_list=resize_bcf(tree_list,count);								// remove the values in tree_list that aren't filled in
   tree_mat_list=resize_bcf(tree_mat_list,count);						// remove the values in tree_mat_list that aren't filled in
   tree_lik.resize(count);											// remove the values in tree_lik that aren't filled in
-  tree_parent.resize(count);										// remove the values in tree_parent that aren't filled in
+  //tree_parent.resize(count);										// remove the values in tree_parent that aren't filled in
+  IntegerVector tree_parent(count, parent);
+  
   if(count>0){													// If these lists are nonempty
-    eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     NumericVector testlik =eval_model[0];						// testlik is tree_lik after removing models outside Occam's window
     List testtree =eval_model[1];    							// testtree is tree_list after removing models outside Occam's window
     List testmat =eval_model[2]; 								// testmat is tree_mat_list after removing models outside Occam's window
@@ -2586,15 +2665,27 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
         testmat=temp_omat;			// reset testmat equal to temp_omat
         testpar=temp_oparent;		// reset testpar equal to temp_oparent
       }
-      ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
-      ret[1]=best_sv;					// second element of output list. Best splitting variable
-      ret[2]=best_sp;					// third element of ouput list. Best splitting point
-      ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
-      ret[4]=testtree;				// fifth element of output list. List of tree tables
-      ret[5]=testlik;					// sixth element of output list. List of BICs
-      ret[6]=testmat;					// seventh element of output list. List of tree matrices
-      ret[7]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
-      ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      // ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      // ret[1]=best_sv;					// second element of output list. Best splitting variable
+      // ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      // ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      // ret[4]=testtree;				// fifth element of output list. List of tree tables
+      // ret[5]=testlik;					// sixth element of output list. List of BICs
+      // ret[6]=testmat;					// seventh element of output list. List of tree matrices
+      // ret[7]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      // ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      // 
+      //ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      //ret[1]=best_sv;					// second element of output list. Best splitting variable
+      //ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      //ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      ret[0]=testtree;				// fifth element of output list. List of tree tables
+      ret[1]=testlik;					// sixth element of output list. List of BICs
+      ret[2]=testmat;					// seventh element of output list. List of tree matrices
+      ret[3]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      //ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      
+      
       
       return (ret);					// return the list ret
     }else{
@@ -2634,19 +2725,19 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
   NumericMatrix tree_mat_mu_c=tree_mat_mu;											// create a matric tree_mat_mu_c equal to the input matrix.
   
   NumericVector terminal_nodes=find_term_nodes_bcf(tree_table_mu_c);					// find term nodes function defined line 168. Gives index of values of treetable_c that are term nodes (indices from 1 to length of vector). Why not integer vector?
-  IntegerVector change_node1;													// create an IntegerVector. Initially all values are 0, but size not given.
+  //IntegerVector change_node1;													// create an IntegerVector. Initially all values are 0, but size not given.
   int list_size=1000;															// create a list of size 1000. Why 1000.
   std::vector<double> tree_lik(list_size);									// create a vector of size 1000
   List proposal_tree;															// create an empty list
-  List ret(9);																// create a list with 9 elements
+  List ret(4);																// create a list with 9 elements
   bool no_tree_err=0;															// create a boolean initialized equal to 0 (false).
-  List likeliest_tree;														// create an empty list
+  //List likeliest_tree;														// create an empty list
   List tree_list(list_size);													// create a list of size 1000
   List tree_mat_list(list_size);												// create a list of size 1000
   int count=0;																// create an integer variable, initialized equal to 0.
-  std::vector<int> tree_parent(list_size);									// create an integer vector of size 1000
-  int best_sv;																// create an integer vector. Not initialized.
-  double best_sp;																// create a double variable
+  //std::vector<int> tree_parent(list_size);									// create an integer vector of size 1000
+  //int best_sv;																// create an integer vector. Not initialized.
+  //double best_sp;																// create a double variable
   double tree_prior=1;														// create a double avriable, initialized equal to 0.
   //List changetree;															// create an empty list.
   double BIC;																	// create a double variable. Not initialized.
@@ -2671,12 +2762,15 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
     //loop over each terminal node
     arma::uvec grow_obs=find_term_obs_bcf(tree_mat_mu_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_mu_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node
-    NumericVector d1=unique(find_term_cols_bcf(tree_mat_mu_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
+    //NumericVector d1=unique(find_term_cols_bcf(tree_mat_mu_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
     arma::mat data_curr_node=x_control_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_control_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
-    double d=d1[0];																	// index of rightmost column of tree_mat_mu_c with at least one element equal to terminal_nodes[l] (letter l)
+    //double d=d1[0];																	// index of rightmost column of tree_mat_mu_c with at least one element equal to terminal_nodes[l] (letter l)
+    
+    int d = find_term_cols_bcf(tree_mat_mu_c,terminal_nodes[l]);
+    
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
     if(data_curr_node.n_rows<=min_num_obs_for_mu_split){												// if data_curr_node has 2 rows or less.
-      throw std::range_error("not enough obs in node to grow any further Line 1919");	// throw an error message. Not enough observations.
+      throw std::range_error("not enough obs in node to grow any further");	// throw an error message. Not enough observations.
       //continue;
     }
     // Rcout << "get to line 2398. l= " << l << ". \n";
@@ -2905,20 +2999,20 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
       
       if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
         lowest_BIC=BIC;											// update (input variable) lowest_BIC
-        best_sv=split_var;										// set a value for, or update best_sv
-        best_sp=split_point;									// set a value for, or update split_point
-        likeliest_tree=proposal_tree;							// set a value for, or update likeliest_tree
+        //best_sv=split_var;										// set a value for, or update best_sv
+        //best_sp=split_point;									// set a value for, or update split_point
+        //likeliest_tree=proposal_tree;							// set a value for, or update likeliest_tree
         tree_list[count]=proposal_tree[0];						// add an element to the list of tree tables
         tree_mat_list[count]=proposal_tree[1];					// add an element to the list of tree matrices
         tree_lik[count]=BIC;									// add an element to the vector of tree liklihoods (BICs)
-        tree_parent[count]=parent;								// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+        //tree_parent[count]=parent;								// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
         count++;												// increase the count
         if(count==(tree_list.size()-1)){						// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
           list_size=list_size*2;									// multiply list size by 2
           tree_list=resize_bigger_bcf(tree_list,list_size);			// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
           tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);	// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
           tree_lik.resize(list_size);								// increase tree_lik to twice its previous size
-          tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
+          //tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
         }
       }else{
         if((BIC)-(lowest_BIC)<=c){										// If in Occam's window (but not the new minimum BIC)
@@ -2930,14 +3024,14 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
           tree_list[count]=proposal_tree[0];							// add an element to the list of tree tables
           tree_mat_list[count]=proposal_tree[1];						// add an element to the list of tree matrices
           tree_lik[count]=BIC;										// add an element to the vector of tree liklihoods (BICs)
-          tree_parent[count]=parent;									// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+          //tree_parent[count]=parent;									// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
           count++;													// increase the count
           if(count==(tree_list.size()-1)){							// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
             list_size=list_size*2;									// multiply list size by 2
             tree_list=resize_bigger_bcf(tree_list,list_size);			// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
             tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);	// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
             tree_lik.resize(list_size);								// increase tree_lik to twice its previous size
-            tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
+            //tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
           }
         }
       }
@@ -2948,9 +3042,12 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
   tree_list=resize_bcf(tree_list,count);								// remove the values in tree_list that aren't filled in
   tree_mat_list=resize_bcf(tree_mat_list,count);						// remove the values in tree_mat_list that aren't filled in
   tree_lik.resize(count);											// remove the values in tree_lik that aren't filled in
-  tree_parent.resize(count);										// remove the values in tree_parent that aren't filled in
+  //tree_parent.resize(count);										// remove the values in tree_parent that aren't filled in
+  IntegerVector tree_parent(count, parent);
+  
   if(count>0){													// If these lists are nonempty
-    eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     NumericVector testlik =eval_model[0];						// testlik is tree_lik after removing models outside Occam's window
     List testtree =eval_model[1];    							// testtree is tree_list after removing models outside Occam's window
     List testmat =eval_model[2]; 								// testmat is tree_mat_list after removing models outside Occam's window
@@ -2977,15 +3074,27 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
         testmat=temp_omat;			// reset testmat equal to temp_omat
         testpar=temp_oparent;		// reset testpar equal to temp_oparent
       }
-      ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
-      ret[1]=best_sv;					// second element of output list. Best splitting variable
-      ret[2]=best_sp;					// third element of ouput list. Best splitting point
-      ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
-      ret[4]=testtree;				// fifth element of output list. List of tree tables
-      ret[5]=testlik;					// sixth element of output list. List of BICs
-      ret[6]=testmat;					// seventh element of output list. List of tree matrices
-      ret[7]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
-      ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      // ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      // ret[1]=best_sv;					// second element of output list. Best splitting variable
+      // ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      // ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      // ret[4]=testtree;				// fifth element of output list. List of tree tables
+      // ret[5]=testlik;					// sixth element of output list. List of BICs
+      // ret[6]=testmat;					// seventh element of output list. List of tree matrices
+      // ret[7]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      // ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      
+      //ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      //ret[1]=best_sv;					// second element of output list. Best splitting variable
+      //ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      //ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      ret[0]=testtree;				// fifth element of output list. List of tree tables
+      ret[1]=testlik;					// sixth element of output list. List of BICs
+      ret[2]=testmat;					// seventh element of output list. List of tree matrices
+      ret[3]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      //ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      
+      
       
       return (ret);					// return the list ret
     }else{
@@ -3718,10 +3827,10 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
         if(best_subset.size()==1){						// if get_best_split_bcf resulted in a (?no tree?) error.
           continue;									// skip to the next iteration of the iner for-loop.
         }
-        List temp_trees=best_subset[4];					// list of tree tables returned by get_best_split_bcf
-        List temp_mat=best_subset[6];					// list of tree matrices
-        lik_list=best_subset[5];						// vector of BICs
-        IntegerVector temp_parent=best_subset[7];		// ?vector with all elements equal to the input value of parent? (?-1?)
+        List temp_trees=best_subset[0];					// list of tree tables returned by get_best_split_bcf
+        List temp_mat=best_subset[2];					// list of tree matrices
+        lik_list=best_subset[1];						// vector of BICs
+        IntegerVector temp_parent=best_subset[3];		// ?vector with all elements equal to the input value of parent? (?-1?)
         if(temp_parent.size()!= temp_trees.size()){		// if length of temp_parent is not equal to the length of the list of tree tables.
           throw std::range_error("there should be a parent for each tree!!!");	// throw an error.
         }
@@ -3994,10 +4103,10 @@ List get_best_trees_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,Nume
       if(best_subset.size()==1){						// if get_best_split_bcf resulted in a (?no tree?) error.
         continue;									// skip to the next iteration of the iner for-loop.
       }
-      List temp_trees=best_subset[4];					// list of tree tables returned by get_best_split_bcf
-      List temp_mat=best_subset[6];					// list of tree matrices
-      lik_list=best_subset[5];						// vector of BICs
-      IntegerVector temp_parent=best_subset[7];		// ?vector with all elements equal to the input value of parent? (?-1?)
+      List temp_trees=best_subset[0];					// list of tree tables returned by get_best_split_bcf
+      List temp_mat=best_subset[2];					// list of tree matrices
+      lik_list=best_subset[1];						// vector of BICs
+      IntegerVector temp_parent=best_subset[3];		// ?vector with all elements equal to the input value of parent? (?-1?)
       if(temp_parent.size()!= temp_trees.size()){		// if length of temp_parent is not equal to the length of the list of tree tables.
         throw std::range_error("there should be a parent for each tree!!!");	// throw an error.
       }
@@ -4596,10 +4705,10 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
         continue;				// skip to the next iteration of the inner for-loop.
       }
       // Rcout << "Get to Line 3986 in get_best_trees_sum_mu_bcf.\n";
-      List temp_trees=best_subset[4];					// list of tree tables returned by get_best_split_sum
-      List temp_mat=best_subset[6];					// list of tree matrices
-      lik_list=best_subset[5];						// vector of BICs
-      IntegerVector temp_parent=best_subset[7];		// ?vector with all elements equal to the input value of parent? (?-1?)
+      List temp_trees=best_subset[0];					// list of tree tables returned by get_best_split_sum
+      List temp_mat=best_subset[2];					// list of tree matrices
+      lik_list=best_subset[1];						// vector of BICs
+      IntegerVector temp_parent=best_subset[3];		// ?vector with all elements equal to the input value of parent? (?-1?)
       if(temp_parent.size()!= temp_trees.size()){		// if length of temp_parent is not equal to the length of the list of tree tables.
         throw std::range_error("there should be a parent for each tree!!!");	// throw an error.
       }
@@ -5212,10 +5321,10 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
         continue;				// skip to the next iteration of the inner for-loop.
       }
       // Rcout << "Get to Line 3986 in get_best_trees_sum_mu_bcf.\n";
-      List temp_trees=best_subset[4];					// list of tree tables returned by get_best_split_sum
-      List temp_mat=best_subset[6];					// list of tree matrices
-      lik_list=best_subset[5];						// vector of BICs
-      IntegerVector temp_parent=best_subset[7];		// ?vector with all elements equal to the input value of parent? (?-1?)
+      List temp_trees=best_subset[0];					// list of tree tables returned by get_best_split_sum
+      List temp_mat=best_subset[2];					// list of tree matrices
+      lik_list=best_subset[1];						// vector of BICs
+      IntegerVector temp_parent=best_subset[3];		// ?vector with all elements equal to the input value of parent? (?-1?)
       if(temp_parent.size()!= temp_trees.size()){		// if length of temp_parent is not equal to the length of the list of tree tables.
         throw std::range_error("there should be a parent for each tree!!!");	// throw an error.
       }
@@ -5499,10 +5608,10 @@ List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numer
       if(best_subset.size()==1){						// if get_best_split_bcf resulted in a (?no tree?) error.
         continue;									// skip to the next iteration of the iner for-loop.
       }
-      List temp_trees=best_subset[4];					// list of tree tables returned by get_best_split_bcf
-      List temp_mat=best_subset[6];					// list of tree matrices
-      lik_list=best_subset[5];						// vector of BICs
-      IntegerVector temp_parent=best_subset[7];		// ?vector with all elements equal to the input value of parent? (?-1?)
+      List temp_trees=best_subset[0];					// list of tree tables returned by get_best_split_bcf
+      List temp_mat=best_subset[2];					// list of tree matrices
+      lik_list=best_subset[1];						// vector of BICs
+      IntegerVector temp_parent=best_subset[3];		// ?vector with all elements equal to the input value of parent? (?-1?)
       //Rcout << "Line 4293.\n";
       
       if(temp_parent.size()!= temp_trees.size()){		// if length of temp_parent is not equal to the length of the list of tree tables.
@@ -5984,10 +6093,10 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
         //Rcout << "There was a no tree error. \n";
         continue;				// skip to the next iteration of the inner for-loop.
       }
-      List temp_trees=best_subset[4];					// list of tree tables returned by get_best_split_sum
-      List temp_mat=best_subset[6];					// list of tree matrices
-      lik_list=best_subset[5];						// vector of BICs
-      IntegerVector temp_parent=best_subset[7];		// ?vector with all elements equal to the input value of parent? (?-1?...not -1 if past first round)
+      List temp_trees=best_subset[0];					// list of tree tables returned by get_best_split_sum
+      List temp_mat=best_subset[2];					// list of tree matrices
+      lik_list=best_subset[1];						// vector of BICs
+      IntegerVector temp_parent=best_subset[3];		// ?vector with all elements equal to the input value of parent? (?-1?...not -1 if past first round)
       if(temp_parent.size()!= temp_trees.size()){		// if length of temp_parent is not equal to the length of the list of tree tables.
         throw std::range_error("there should be a parent for each tree!!!");	// throw an error.
       }
@@ -6604,10 +6713,10 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
       if(best_subset.size()==1){	// if get_best_split_bcf resulted in a (?no ?sum-of? tree?) error.
         continue;				// skip to the next iteration of the inner for-loop.
       }
-      List temp_trees=best_subset[4];					// list of tree tables returned by get_best_split_sum
-      List temp_mat=best_subset[6];					// list of tree matrices
-      lik_list=best_subset[5];						// vector of BICs
-      IntegerVector temp_parent=best_subset[7];		// ?vector with all elements equal to the input value of parent? (?-1?)
+      List temp_trees=best_subset[0];					// list of tree tables returned by get_best_split_sum
+      List temp_mat=best_subset[2];					// list of tree matrices
+      lik_list=best_subset[1];						// vector of BICs
+      IntegerVector temp_parent=best_subset[3];		// ?vector with all elements equal to the input value of parent? (?-1?)
       if(temp_parent.size()!= temp_trees.size()){		// if length of temp_parent is not equal to the length of the list of tree tables.
         throw std::range_error("there should be a parent for each tree!!!");	// throw an error.
       }
@@ -7245,10 +7354,10 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
         continue;				// skip to the next iteration of the inner for-loop.
       }
       
-      List temp_trees=best_subset[4];					// list of tree tables returned by get_best_split_sum
-      List temp_mat=best_subset[6];					// list of tree matrices
-      lik_list=best_subset[5];						// vector of BICs
-      IntegerVector temp_parent=best_subset[7];		// ?vector with all elements equal to the input value of parent? (?-1?)
+      List temp_trees=best_subset[0];					// list of tree tables returned by get_best_split_sum
+      List temp_mat=best_subset[2];					// list of tree matrices
+      lik_list=best_subset[1];						// vector of BICs
+      IntegerVector temp_parent=best_subset[3];		// ?vector with all elements equal to the input value of parent? (?-1?)
       if(temp_parent.size()!= temp_trees.size()){		// if length of temp_parent is not equal to the length of the list of tree tables.
         throw std::range_error("there should be a parent for each tree!!!");	// throw an error.
       }
@@ -7590,15 +7699,15 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
   //
   
   
-  //	NumericMatrix treetable=start_tree_bcf(mu,sigma_mu);								// create matrix treetable (defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
+  //	NumericMatrix treetable=start_tree2_bcf(mu,sigma_mu);								// create matrix treetable (defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
   //	NumericMatrix treemat=start_matrix_bcf(data.nrow());								// line 623. Returns a data.nrow() by 1 matrix with all elements equal to 1
   //initialize the tree table and matrix
   
-  NumericMatrix treetable_mu=start_tree_bcf(mu_mu,sigma_mu_mu);								// create matrix treetable (defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
+  NumericMatrix treetable_mu=start_tree2_bcf();								// create matrix treetable (defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
   NumericMatrix treemat_mu=start_matrix_bcf(x_control.nrow());								// line 623. Returns a data.nrow() by 1 matrix with all elements equal to 1
   
   //	MIGHT NEED JUST NUMBER OF TREATED OBSERVATIONS for treemat_tau
-  NumericMatrix treetable_tau=start_tree_bcf(mu_tau,sigma_mu_tau);								// create matrix treetable (defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
+  NumericMatrix treetable_tau=start_tree2_bcf();								// create matrix treetable (defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
   
   // 	
   
@@ -7957,9 +8066,9 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       
       int count=0; 										// create a count variable. Initialized equal to zero.
       for(int k=0;k<curr_round_lik.size();k++){			// create a for-loop of length equal to the number of sum of tree models returned by get_best_trees_sum
-        tree_table_mu[count]=start_tree_bcf(mu_mu,sigma_mu_mu);		// add 1 by 7 matrix to the list tree_table. (start_tree_bcf defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
+        tree_table_mu[count]=start_tree2_bcf();		// add 1 by 7 matrix to the list tree_table. (start_tree_bcf defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
         tree_mat_mu[count]=start_matrix_bcf(n);				// Add matrix to list. start_matrix_bcf defined on line 623. Returns a n (number of obs) by 1 matrix with all elements equal to 1
-        tree_table_tau[count]=start_tree_bcf(mu_tau,sigma_mu_tau);		// add 1 by 7 matrix to the list tree_table. (start_tree_bcf defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
+        tree_table_tau[count]=start_tree2_bcf();		// add 1 by 7 matrix to the list tree_table. (start_tree_bcf defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
         tree_mat_tau[count]=start_matrix_bcf(n);				// Add matrix to list. start_matrix_bcf defined on line 623. Returns a n (number of obs) by 1 matrix with all elements equal to 1
         if(j==0){										// if in first round of for-loop
           temp_preds_outcome(_,k)=curr_round_preds_mu(_,k);		// let k+1^th column of temp_preds equal k+1^th column of curr_round_preds. This is the in-sample predictions from the k+1^th (sum-of-trees) model?
@@ -8489,7 +8598,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
         List prev_sum_trees_mat_tau(prev_sum_trees_mu.size());
         
         for(int p=0;p<curr_round_lik.size();p++){
-          prev_sum_trees_tau[p] = start_tree_bcf(0,0); // maybe should be empty list rather than list of empty trees?
+          prev_sum_trees_tau[p] = start_tree2_bcf(); // maybe should be empty list rather than list of empty trees?
           prev_sum_trees_mat_tau[p] = start_matrix_bcf(n); // maybe should be empty list? .. model shouldn't even have stub tree
         }
         prev_sum_tree_resids_mu=temp_sum_tree_resids_mu;											// let prev_sum_tree_resids equal the list of residual vectors (from the current round)
@@ -8829,9 +8938,9 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       
       int count=0; 										// create a count variable. Initialized equal to zero.
       for(int k=0;k<curr_round_lik.size();k++){			// create a for-loop of length equal to the number of sum of tree models returned by get_best_trees_sum
-        tree_table_mu[count]=start_tree_bcf(mu_mu,sigma_mu_mu);		// add 1 by 7 matrix to the list tree_table. (start_tree_bcf defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
+        tree_table_mu[count]=start_tree2_bcf();		// add 1 by 7 matrix to the list tree_table. (start_tree2_bcf defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
         tree_mat_mu[count]=start_matrix_bcf(n);				// Add matrix to list. start_matrix_bcf defined on line 623. Returns a n (number of obs) by 1 matrix with all elements equal to 1
-        tree_table_tau[count]=start_tree_bcf(mu_tau,sigma_mu_tau);		// add 1 by 7 matrix to the list tree_table. (start_tree_bcf defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
+        tree_table_tau[count]=start_tree2_bcf();		// add 1 by 7 matrix to the list tree_table. (start_tree2_bcf defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
         tree_mat_tau[count]=start_matrix_bcf(n);				// Add matrix to list. start_matrix_bcf defined on line 623. Returns a n (number of obs) by 1 matrix with all elements equal to 1
         if(j==0){										// if in first round of for-loop
           temp_preds_outcome(_,k)=prev_round_preds_mu(_,curr_round_parent[k])+z*curr_round_preds_tau(_,k);		// let k+1^th column of temp_preds equal k+1^th column of curr_round_preds. This is the in-sample predictions from the k+1^th (sum-of-trees) model?
@@ -9875,15 +9984,15 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
   //
   
   
-  //	NumericMatrix treetable=start_tree_bcf(mu,sigma_mu);								// create matrix treetable (defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
+  //	NumericMatrix treetable=start_tree2_bcf(mu,sigma_mu);								// create matrix treetable (defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
   //	NumericMatrix treemat=start_matrix_bcf(data.nrow());								// line 623. Returns a data.nrow() by 1 matrix with all elements equal to 1
   //initialize the tree table and matrix
   
-  NumericMatrix treetable_mu=start_tree_bcf(mu_mu,sigma_mu_mu);								// create matrix treetable (defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
+  NumericMatrix treetable_mu=start_tree2_bcf();								// create matrix treetable (defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
   NumericMatrix treemat_mu=start_matrix_bcf(x_control.nrow());								// line 623. Returns a data.nrow() by 1 matrix with all elements equal to 1
   
   //	MIGHT NEED JUST NUMBER OF TREATED OBSERVATIONS for treemat_tau
-  NumericMatrix treetable_tau=start_tree_bcf(mu_tau,sigma_mu_tau);								// create matrix treetable (defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
+  NumericMatrix treetable_tau=start_tree2_bcf();								// create matrix treetable (defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
   
   // 	
   
@@ -10600,9 +10709,9 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
           
           
         // create a for-loop of length equal to the number of sum of tree models returned by get_best_trees_sum
-        tree_table_mu[count]=start_tree_bcf(mu_mu,sigma_mu_mu);		// add 1 by 7 matrix to the list tree_table. (start_tree_bcf defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
+        tree_table_mu[count]=start_tree2_bcf();		// add 1 by 7 matrix to the list tree_table. (start_tree2_bcf defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
         tree_mat_mu[count]=start_matrix_bcf(n);				// Add matrix to list. start_matrix_bcf defined on line 623. Returns a n (number of obs) by 1 matrix with all elements equal to 1
-        tree_table_tau[count]=start_tree_bcf(mu_tau,sigma_mu_tau);		// add 1 by 7 matrix to the list tree_table. (start_tree_bcf defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
+        tree_table_tau[count]=start_tree2_bcf();		// add 1 by 7 matrix to the list tree_table. (start_tree2_bcf defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
         tree_mat_tau[count]=start_matrix_bcf(n);				// Add matrix to list. start_matrix_bcf defined on line 623. Returns a n (number of obs) by 1 matrix with all elements equal to 1
         if(j==0){										// if in first round of for-loop
           temp_preds_outcome(_,k)=curr_round_preds(_,k);		// let k+1^th column of temp_preds equal k+1^th column of curr_round_preds. This is the in-sample predictions from the k+1^th (sum-of-trees) model?
@@ -10695,9 +10804,9 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
           
           
           
-          tree_table_mu[count]=start_tree_bcf(mu_mu,sigma_mu_mu);		// add 1 by 7 matrix to the list tree_table. (start_tree_bcf defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
+          tree_table_mu[count]=start_tree2_bcf();		// add 1 by 7 matrix to the list tree_table. (start_tree2_bcf defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
           tree_mat_mu[count]=start_matrix_bcf(n);				// Add matrix to list. start_matrix_bcf defined on line 623. Returns a n (number of obs) by 1 matrix with all elements equal to 1
-          tree_table_tau[count]=start_tree_bcf(mu_tau,sigma_mu_tau);		// add 1 by 7 matrix to the list tree_table. (start_tree_bcf defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
+          tree_table_tau[count]=start_tree2_bcf();		// add 1 by 7 matrix to the list tree_table. (start_tree2_bcf defined on line 602). Returns 1 by 7 matrix with columns ("left daughter","right daughter","split var","split point","status","mean","std dev")) and 1st row values (0,0,0,0,-1,rand,0)
           tree_mat_tau[count]=start_matrix_bcf(n);				// Add matrix to list. start_matrix_bcf defined on line 623. Returns a n (number of obs) by 1 matrix with all elements equal to 1
           if(j==0){										// if in first round of for-loop
             //temp_preds_outcome(_,k)=prev_round_preds_mu(_,curr_round_parent[k])+z*curr_round_preds(_,k);		// let k+1^th column of temp_preds equal k+1^th column of curr_round_preds. This is the in-sample predictions from the k+1^th (sum-of-trees) model?
@@ -11668,7 +11777,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
       //   List prev_sum_trees_mat_tau(prev_sum_trees_mu.size());
       //   
       //   for(int p=0;p<curr_round_lik.size();p++){
-      //     prev_sum_trees_tau[p] = start_tree_bcf(0,0); // maybe should be empty list rather than list of empty trees?
+      //     prev_sum_trees_tau[p] = start_tree2_bcf(0,0); // maybe should be empty list rather than list of empty trees?
       //     prev_sum_trees_mat_tau[p] = start_matrix_bcf(n); // maybe should be empty list? .. model shouldn't even have stub tree
       //   }
       //   prev_sum_tree_resids_mu=temp_sum_tree_resids_mu;											// let prev_sum_tree_resids equal the list of residual vectors (from the current round)

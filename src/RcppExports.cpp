@@ -46,12 +46,12 @@ BEGIN_RCPP
 END_RCPP
 }
 // set_daughter_to_end_mat_bcf
-NumericMatrix set_daughter_to_end_mat_bcf(double d, NumericMatrix prior_tree_matrix_temp, double left_daughter, NumericVector ld_obs, NumericVector rd_obs);
+NumericMatrix set_daughter_to_end_mat_bcf(int d, NumericMatrix prior_tree_matrix_temp, double left_daughter, NumericVector ld_obs, NumericVector rd_obs);
 RcppExport SEXP _bcfbma_set_daughter_to_end_mat_bcf(SEXP dSEXP, SEXP prior_tree_matrix_tempSEXP, SEXP left_daughterSEXP, SEXP ld_obsSEXP, SEXP rd_obsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type d(dSEXP);
+    Rcpp::traits::input_parameter< int >::type d(dSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type prior_tree_matrix_temp(prior_tree_matrix_tempSEXP);
     Rcpp::traits::input_parameter< double >::type left_daughter(left_daughterSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type ld_obs(ld_obsSEXP);
@@ -201,7 +201,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // update_grow_obs_bcf
-NumericMatrix update_grow_obs_bcf(NumericMatrix prior_tree_matrix_temp, double grow_node, double left_daughter, double d, NumericVector ld_obs, NumericVector rd_obs);
+NumericMatrix update_grow_obs_bcf(NumericMatrix prior_tree_matrix_temp, double grow_node, double left_daughter, int d, NumericVector ld_obs, NumericVector rd_obs);
 RcppExport SEXP _bcfbma_update_grow_obs_bcf(SEXP prior_tree_matrix_tempSEXP, SEXP grow_nodeSEXP, SEXP left_daughterSEXP, SEXP dSEXP, SEXP ld_obsSEXP, SEXP rd_obsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -209,7 +209,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericMatrix >::type prior_tree_matrix_temp(prior_tree_matrix_tempSEXP);
     Rcpp::traits::input_parameter< double >::type grow_node(grow_nodeSEXP);
     Rcpp::traits::input_parameter< double >::type left_daughter(left_daughterSEXP);
-    Rcpp::traits::input_parameter< double >::type d(dSEXP);
+    Rcpp::traits::input_parameter< int >::type d(dSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type ld_obs(ld_obsSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type rd_obs(rd_obsSEXP);
     rcpp_result_gen = Rcpp::wrap(update_grow_obs_bcf(prior_tree_matrix_temp, grow_node, left_daughter, d, ld_obs, rd_obs));
@@ -217,14 +217,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // find_obs_to_update_grow_bcf
-NumericMatrix find_obs_to_update_grow_bcf(NumericMatrix prior_tree_matrix_temp, double left_daughter, double d, NumericVector ld_obs, NumericVector rd_obs);
+NumericMatrix find_obs_to_update_grow_bcf(NumericMatrix prior_tree_matrix_temp, double left_daughter, int d, NumericVector ld_obs, NumericVector rd_obs);
 RcppExport SEXP _bcfbma_find_obs_to_update_grow_bcf(SEXP prior_tree_matrix_tempSEXP, SEXP left_daughterSEXP, SEXP dSEXP, SEXP ld_obsSEXP, SEXP rd_obsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericMatrix >::type prior_tree_matrix_temp(prior_tree_matrix_tempSEXP);
     Rcpp::traits::input_parameter< double >::type left_daughter(left_daughterSEXP);
-    Rcpp::traits::input_parameter< double >::type d(dSEXP);
+    Rcpp::traits::input_parameter< int >::type d(dSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type ld_obs(ld_obsSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type rd_obs(rd_obsSEXP);
     rcpp_result_gen = Rcpp::wrap(find_obs_to_update_grow_bcf(prior_tree_matrix_temp, left_daughter, d, ld_obs, rd_obs));
@@ -246,7 +246,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // find_term_cols_bcf
-NumericVector find_term_cols_bcf(NumericMatrix tree_matrix_temp, int terminal_node);
+int find_term_cols_bcf(NumericMatrix tree_matrix_temp, int terminal_node);
 RcppExport SEXP _bcfbma_find_term_cols_bcf(SEXP tree_matrix_tempSEXP, SEXP terminal_nodeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -283,7 +283,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // grow_tree_bcf
-List grow_tree_bcf(arma::mat& xmat, NumericMatrix prior_tree_matrix, int grow_node, NumericMatrix prior_tree_table, int splitvar, double splitpoint, NumericVector grow_obs, double d);
+List grow_tree_bcf(arma::mat& xmat, NumericMatrix prior_tree_matrix, int grow_node, NumericMatrix prior_tree_table, int splitvar, double splitpoint, NumericVector grow_obs, int d);
 RcppExport SEXP _bcfbma_grow_tree_bcf(SEXP xmatSEXP, SEXP prior_tree_matrixSEXP, SEXP grow_nodeSEXP, SEXP prior_tree_tableSEXP, SEXP splitvarSEXP, SEXP splitpointSEXP, SEXP grow_obsSEXP, SEXP dSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -295,7 +295,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type splitvar(splitvarSEXP);
     Rcpp::traits::input_parameter< double >::type splitpoint(splitpointSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type grow_obs(grow_obsSEXP);
-    Rcpp::traits::input_parameter< double >::type d(dSEXP);
+    Rcpp::traits::input_parameter< int >::type d(dSEXP);
     rcpp_result_gen = Rcpp::wrap(grow_tree_bcf(xmat, prior_tree_matrix, grow_node, prior_tree_table, splitvar, splitpoint, grow_obs, d));
     return rcpp_result_gen;
 END_RCPP
@@ -361,6 +361,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type start_mean(start_meanSEXP);
     Rcpp::traits::input_parameter< double >::type start_sd(start_sdSEXP);
     rcpp_result_gen = Rcpp::wrap(start_tree_bcf(start_mean, start_sd));
+    return rcpp_result_gen;
+END_RCPP
+}
+// start_tree2_bcf
+NumericMatrix start_tree2_bcf();
+RcppExport SEXP _bcfbma_start_tree2_bcf() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(start_tree2_bcf());
     return rcpp_result_gen;
 END_RCPP
 }
@@ -445,15 +455,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // J_bcf
-arma::mat J_bcf(NumericMatrix treetable_temp, NumericMatrix obs_to_nodes_temp, NumericVector tree_term_nodes);
-RcppExport SEXP _bcfbma_J_bcf(SEXP treetable_tempSEXP, SEXP obs_to_nodes_tempSEXP, SEXP tree_term_nodesSEXP) {
+arma::mat J_bcf(NumericMatrix obs_to_nodes_temp, NumericVector tree_term_nodes);
+RcppExport SEXP _bcfbma_J_bcf(SEXP obs_to_nodes_tempSEXP, SEXP tree_term_nodesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type treetable_temp(treetable_tempSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type obs_to_nodes_temp(obs_to_nodes_tempSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type tree_term_nodes(tree_term_nodesSEXP);
-    rcpp_result_gen = Rcpp::wrap(J_bcf(treetable_temp, obs_to_nodes_temp, tree_term_nodes));
+    rcpp_result_gen = Rcpp::wrap(J_bcf(obs_to_nodes_temp, tree_term_nodes));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2056,13 +2065,14 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bcfbma_orderforOW__bcf", (DL_FUNC) &_bcfbma_orderforOW__bcf, 1},
     {"_bcfbma_get_tree_prior_bcf", (DL_FUNC) &_bcfbma_get_tree_prior_bcf, 4},
     {"_bcfbma_start_tree_bcf", (DL_FUNC) &_bcfbma_start_tree_bcf, 2},
+    {"_bcfbma_start_tree2_bcf", (DL_FUNC) &_bcfbma_start_tree2_bcf, 0},
     {"_bcfbma_start_matrix_bcf", (DL_FUNC) &_bcfbma_start_matrix_bcf, 1},
     {"_bcfbma_evaluate_model_occams_window_bcf", (DL_FUNC) &_bcfbma_evaluate_model_occams_window_bcf, 6},
     {"_bcfbma_get_testdata_term_obs_bcf", (DL_FUNC) &_bcfbma_get_testdata_term_obs_bcf, 3},
     {"_bcfbma_get_initial_resids", (DL_FUNC) &_bcfbma_get_initial_resids, 6},
     {"_bcfbma_resize_bcf", (DL_FUNC) &_bcfbma_resize_bcf, 2},
     {"_bcfbma_resize_bigger_bcf", (DL_FUNC) &_bcfbma_resize_bigger_bcf, 2},
-    {"_bcfbma_J_bcf", (DL_FUNC) &_bcfbma_J_bcf, 3},
+    {"_bcfbma_J_bcf", (DL_FUNC) &_bcfbma_J_bcf, 2},
     {"_bcfbma_mu_vector_bcf", (DL_FUNC) &_bcfbma_mu_vector_bcf, 2},
     {"_bcfbma_W_bcf", (DL_FUNC) &_bcfbma_W_bcf, 3},
     {"_bcfbma_W_tauround1_bcf", (DL_FUNC) &_bcfbma_W_tauround1_bcf, 3},

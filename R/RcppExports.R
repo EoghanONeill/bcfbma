@@ -109,6 +109,10 @@ start_tree_bcf <- function(start_mean, start_sd) {
     .Call(`_bcfbma_start_tree_bcf`, start_mean, start_sd)
 }
 
+start_tree2_bcf <- function() {
+    .Call(`_bcfbma_start_tree2_bcf`)
+}
+
 start_matrix_bcf <- function(n) {
     .Call(`_bcfbma_start_matrix_bcf`, n)
 }
@@ -133,8 +137,8 @@ resize_bigger_bcf <- function(x, n) {
     .Call(`_bcfbma_resize_bigger_bcf`, x, n)
 }
 
-J_bcf <- function(treetable_temp, obs_to_nodes_temp, tree_term_nodes) {
-    .Call(`_bcfbma_J_bcf`, treetable_temp, obs_to_nodes_temp, tree_term_nodes)
+J_bcf <- function(obs_to_nodes_temp, tree_term_nodes) {
+    .Call(`_bcfbma_J_bcf`, obs_to_nodes_temp, tree_term_nodes)
 }
 
 mu_vector_bcf <- function(sum_treetable, n) {
