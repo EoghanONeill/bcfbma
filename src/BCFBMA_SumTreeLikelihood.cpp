@@ -826,7 +826,7 @@ NumericVector get_testdata_term_obs_bcf(NumericMatrix test_data,NumericMatrix tr
   arma::mat arma_tree(tree_data.begin(), tree_data.nrow(), tree_data.ncol(), false);		// read matrix tree data, call it arma_tree
   arma::mat testd(test_data.begin(), test_data.nrow(), test_data.ncol(), false);			// read matrix test_data, call it testd
   NumericVector terminal_nodes=find_term_nodes_bcf(tree_data);								// find term nodes function defined line 168. Gives index of values of tree_data that are term nodes (indices from 1 to length of vector). Why not integer vector?
-  arma::vec arma_terminal_nodes=Rcpp::as<arma::vec>(terminal_nodes);						// convert terminal_nodes to arma_vec. Could use uvec
+  //arma::vec arma_terminal_nodes=Rcpp::as<arma::vec>(terminal_nodes);						// convert terminal_nodes to arma_vec. Could use uvec
   //NumericVector tree_predictions;															// this vector is not used anywhere. delete line?
   //for each internal node find the observations that belong to the terminal nodes
   NumericVector predictions(test_data.nrow());											// Create a vector of length equal to the number of rows of test_data. Not initialized.
@@ -836,7 +836,7 @@ NumericVector get_testdata_term_obs_bcf(NumericMatrix test_data,NumericMatrix tr
   }
 else{
   for(int i=0;i<terminal_nodes.size();i++){						// loop of same length as terminal_nodes
-    arma::mat subdata=testd;									// arma mat equal to testd (test data)
+    //arma::mat subdata=testd;									// arma mat equal to testd (test data)
     int curr_term=terminal_nodes[i];							// curr_term is i^th element of terminal_nodes
     int row_index;												// create row_index, not initialized
     int term_node=terminal_nodes[i];							// term_node is i^th element of terminal_nodes
@@ -972,7 +972,7 @@ List get_initial_resids(NumericMatrix test_data,
       arma::mat arma_tree(tree_data.begin(), tree_data.nrow(), tree_data.ncol(), false);
       arma::mat testd(x_control.begin(), x_control.nrow(), x_control.ncol(), false);
       NumericVector terminal_nodes=find_term_nodes_bcf(tree_data);
-      arma::vec arma_terminal_nodes=Rcpp::as<arma::vec>(terminal_nodes);
+      //arma::vec arma_terminal_nodes=Rcpp::as<arma::vec>(terminal_nodes);
       //NumericVector tree_predictions;
       //for each internal node find the observations that belong to the terminal nodes
       NumericVector predictions(x_control.nrow());
@@ -982,7 +982,7 @@ List get_initial_resids(NumericMatrix test_data,
       }
       else{
         for(int i=0;i<terminal_nodes.size();i++){
-          arma::mat subdata=testd;
+          //arma::mat subdata=testd;
           int curr_term=terminal_nodes[i];
           int row_index;
           int term_node=terminal_nodes[i];
@@ -1092,7 +1092,7 @@ List get_initial_resids(NumericMatrix test_data,
       arma::mat arma_tree(tree_data.begin(), tree_data.nrow(), tree_data.ncol(), false);
       arma::mat testd(test_data.begin(), test_data.nrow(), test_data.ncol(), false);
       NumericVector terminal_nodes=find_term_nodes_bcf(tree_data);
-      arma::vec arma_terminal_nodes=Rcpp::as<arma::vec>(terminal_nodes);
+      //arma::vec arma_terminal_nodes=Rcpp::as<arma::vec>(terminal_nodes);
       //NumericVector tree_predictions;
       //for each internal node find the observations that belong to the terminal nodes
       NumericVector predictions(test_data.nrow());
@@ -1102,7 +1102,7 @@ List get_initial_resids(NumericMatrix test_data,
       }
       else{
         for(int i=0;i<terminal_nodes.size();i++){
-          arma::mat subdata=testd;
+          //arma::mat subdata=testd;
           int curr_term=terminal_nodes[i];
           int row_index;
           int term_node=terminal_nodes[i];
@@ -1409,7 +1409,9 @@ double sumtree_likelihood_function_bcf_bcf(NumericVector y_temp,List sum_treetab
   aI.diag() = a_vec;
   
   arma::mat sec_term=WtW+aI;							//
-  arma::mat sec_term_inv=sec_term.i();					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+  //arma::mat sec_term_inv=sec_term.i();					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+  arma::mat sec_term_inv=inv_sympd(sec_term);					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+  
   //get t(J_bcf)inv(psi)y
   arma::mat third_term=Wmat.t()*y;						// W_bcf transpose Y
   //get m^TV^{-1}m
@@ -1461,7 +1463,9 @@ double sumtree_likelihood_tau_round1_bcf(NumericVector y_temp,NumericMatrix tree
   aI.diag() = a_vec;
   
   arma::mat sec_term=WtW+aI;							//
-  arma::mat sec_term_inv=sec_term.i();					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+  //arma::mat sec_term_inv=sec_term.i();					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+  arma::mat sec_term_inv=inv_sympd(sec_term);					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+  
   //get t(J_bcf)inv(psi)y
   arma::mat third_term=Wmat.t()*y;						// W_bcf transpose Y
   //get m^TV^{-1}m
