@@ -1298,14 +1298,16 @@ arma::mat W_bcf(List sum_treetable ,List sum_obs_to_nodes,int n){
   for(int j=0;j<sum_obs_to_nodes.size();j++){								// loop of length equal to that of sum_obs_to_nodes (presumably equals the number of trees in the sum)
     
     NumericMatrix curr_tree=sum_treetable[j];								// curr tree is j-1^th element of the list sum_treetable
-    //Rcout << "After Line 883.\n";
+    //Rcout << "After Line 1301.\n";
     NumericMatrix curr_obs_nodes=sum_obs_to_nodes[j];						// curr_pbs_nodes is j-1^th element of sum_obs_to_nodes
+    //Rcout << "Get to 1303.\n";
     NumericVector tree_term_nodes=find_term_nodes_bcf(curr_tree);				// tree_term_nodes gives indices of curr_tree elements that correspond to term_nodes.
+    //Rcout << "Get to 1305.\n";
     
     int b_j=tree_term_nodes.size();											// b_j is number of terminal nodes in tree j
     //will make J_bcf as we go in BART-BMA no need to create it again here....
     arma::mat Jmat=J_bcf(curr_obs_nodes,tree_term_nodes);				// create the J_bcf matrix where each column assigns observatins to terminal nodes. Function defined on line 786
-    //Rcout << "Get to 890.\n";
+    //Rcout << "Get to 1310.\n";
     //Rcout << "Number of rows of J_mat "<< Jmat.n_rows <<".\n";
     //Rcout << "Number of rows of curr_obs_nodes "<< curr_obs_nodes.nrow() <<".\n";
     //Rcout << "Number of rows of curr_tree "<< curr_tree.nrow() <<".\n";
@@ -1313,9 +1315,9 @@ arma::mat W_bcf(List sum_treetable ,List sum_obs_to_nodes,int n){
     //Rcout << "Number of cols of W_bcf "<< W_bcf.n_rows <<".\n";
     
     W_bcf.insert_cols(upsilon,Jmat);											// Add matrix J_bcf to right of W_bcf matrix
-    //Rcout << "Get to 893.\n";
+    //Rcout << "Get to 1318.\n";
     upsilon+=b_j;															// update point to add matrix to indez of last column +1
-    //Rcout << "Get to 900.\n";
+    //Rcout << "Get to 1320.\n";
     
   }
   
@@ -12057,4 +12059,3945 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
       return(ret);									// return the list
     }
   }
+}
+//###########################################################################################################################//
+
+// [[Rcpp::export]]
+
+List get_termobs_test_data_all(NumericMatrix test_data,NumericMatrix tree_data) {
+  // Function to make predictions from test data, given a single tree and the terminal node predictions, this function will be called
+  //for each tree accepted in Occam's Window.
+  
+  //test_data is a nxp matrix with the same variable names as the training data the model was built on
+  
+  //tree_data is the tree table with the tree information i.e. split points and split variables and terminal node mean values
+  
+  //term_node_means is a vector storing the terminal node mean values
+  
+  arma::mat arma_tree(tree_data.begin(), tree_data.nrow(), tree_data.ncol(), false);
+  arma::mat testd(test_data.begin(), test_data.nrow(), test_data.ncol(), false);
+  //NumericVector internal_nodes=find_internal_nodes_gs(tree_data);
+  NumericVector terminal_nodes=find_term_nodes_bcf(tree_data);
+  //arma::vec arma_terminal_nodes=Rcpp::as<arma::vec>(terminal_nodes);
+  //NumericVector tree_predictions;
+  
+  //now for each internal node find the observations that belong to the terminal nodes
+  
+  //NumericVector predictions(test_data.nrow());
+  List term_obs(terminal_nodes.size());
+  if(terminal_nodes.size()==1){
+    //double nodemean=tree_data(terminal_nodes[0]-1,5);				// let nodemean equal tree_data row terminal_nodes[i]^th row , 6th column. The minus 1 is because terminal nodes consists of indices starting at 1, but need indices to start at 0.
+    //predictions=rep(nodemean,test_data.nrow());
+    IntegerVector temp_obsvec = seq_len(test_data.nrow())-1;
+    term_obs[0]= temp_obsvec;
+  }
+  else{
+    for(int i=0;i<terminal_nodes.size();i++){
+      //arma::mat subdata=testd;
+      int curr_term=terminal_nodes[i];
+      int row_index;
+      int term_node=terminal_nodes[i];
+      
+      if(curr_term % 2==0){
+        //term node is left daughter
+        row_index=terminal_nodes[i];
+      }else{
+        //term node is right daughter
+        row_index=terminal_nodes[i]-1;
+      }
+      
+      //save the left and right node data into arma uvec
+      
+      arma::vec left_nodes=arma_tree.col(0);
+      arma::vec right_nodes=arma_tree.col(1);
+      arma::mat node_split_mat;    
+      node_split_mat.set_size(0,3);
+      
+      while(row_index!=1){
+        //for each terminal node work backwards and see if the parent node was a left or right node
+        //append split info to a matrix 
+        int rd=0;
+        arma::uvec parent_node=arma::find(left_nodes == term_node);
+        
+        if(parent_node.size()==0){
+          parent_node=arma::find(right_nodes == term_node);
+          rd=1;
+        }
+        
+        //want to cout parent node and append to node_split_mat
+        
+        node_split_mat.insert_rows(0,1);
+        node_split_mat(0,0)=tree_data(parent_node[0],2);
+        node_split_mat(0,1)=tree_data(parent_node[0],3);
+        node_split_mat(0,2)=rd;     
+        row_index=parent_node[0]+1;
+        term_node=parent_node[0]+1;
+      }
+      
+      //once we have the split info, loop through rows and find the subset indexes for that terminal node!
+      //then fill in the predicted value for that tree
+      //double prediction = tree_data(term_node,5);
+      arma::uvec pred_indices;
+      int split= node_split_mat(0,0)-1;
+      arma::vec tempvec = testd.col(split);
+      double temp_split = node_split_mat(0,1);
+      
+      if(node_split_mat(0,2)==0){
+        pred_indices = arma::find(tempvec <= temp_split);
+      }else{
+        pred_indices = arma::find(tempvec > temp_split);      
+      }
+      
+      arma::uvec temp_pred_indices;
+      arma::vec data_subset = testd.col(split);
+      data_subset=data_subset.elem(pred_indices);
+      
+      //now loop through each row of node_split_mat
+      int n=node_split_mat.n_rows;
+      
+      for(int j=1;j<n;j++){
+        int curr_sv=node_split_mat(j,0);
+        double split_p = node_split_mat(j,1);
+        
+        data_subset = testd.col(curr_sv-1);
+        data_subset=data_subset.elem(pred_indices);
+        
+        if(node_split_mat(j,2)==0){
+          //split is to the left
+          temp_pred_indices=arma::find(data_subset <= split_p);
+        }else{
+          //split is to the right
+          temp_pred_indices=arma::find(data_subset > split_p);
+        }
+        pred_indices=pred_indices.elem(temp_pred_indices);
+        
+        if(pred_indices.size()==0){
+          continue;
+        }
+        
+      }
+      
+      //double nodemean=tree_data(terminal_nodes[i]-1,5);
+      IntegerVector predind=as<IntegerVector>(wrap(pred_indices));
+      //predictions[predind]= nodemean;
+      term_obs[i]=predind;
+    } 
+  }
+  //List ret(3);
+  //ret[0] = terminal_nodes;
+  //ret[1] = term_obs;
+  //ret[2] = predictions;
+  return(term_obs);
+}
+//###########################################################################################################################//
+
+// [[Rcpp::export]]
+
+List get_termobs_test_data_treated(NumericMatrix test_data,NumericMatrix tree_data,NumericVector z_test) {
+  // Function to make predictions from test data, given a single tree and the terminal node predictions, this function will be called
+  //for each tree accepted in Occam's Window.
+  
+  //test_data is a nxp matrix with the same variable names as the training data the model was built on
+  
+  //tree_data is the tree table with the tree information i.e. split points and split variables and terminal node mean values
+  
+  //term_node_means is a vector storing the terminal node mean values
+  arma::vec z_a=Rcpp::as<arma::vec>(z_test);
+  arma::uvec treated_obs_a=arma::find(z_a==1);
+  IntegerVector treated_obs=wrap(treated_obs_a);
+  
+  
+  arma::mat arma_tree(tree_data.begin(), tree_data.nrow(), tree_data.ncol(), false);
+  arma::mat testd(test_data.begin(), test_data.nrow(), test_data.ncol(), false);
+  //NumericVector internal_nodes=find_internal_nodes_gs(tree_data);
+  NumericVector terminal_nodes=find_term_nodes_bcf(tree_data);
+  //arma::vec arma_terminal_nodes=Rcpp::as<arma::vec>(terminal_nodes);
+  //NumericVector tree_predictions;
+  
+  //now for each internal node find the observations that belong to the terminal nodes
+  
+  //NumericVector predictions(test_data.nrow());
+  //List term_obs(terminal_nodes.size());
+  List term_obs_treated(terminal_nodes.size());
+  if(terminal_nodes.size()==1){
+    //double nodemean=tree_data(terminal_nodes[0]-1,5);				// let nodemean equal tree_data row terminal_nodes[i]^th row , 6th column. The minus 1 is because terminal nodes consists of indices starting at 1, but need indices to start at 0.
+    //predictions=rep(nodemean,test_data.nrow());
+    //IntegerVector temp_obsvec = seq_len(test_data.nrow())-1;
+    //term_obs[0]= temp_obsvec;
+    term_obs_treated[0] = treated_obs; 
+  }
+  else{
+    for(int i=0;i<terminal_nodes.size();i++){
+      //arma::mat subdata=testd;
+      int curr_term=terminal_nodes[i];
+      int row_index;
+      int term_node=terminal_nodes[i];
+      
+      if(curr_term % 2==0){
+        //term node is left daughter
+        row_index=terminal_nodes[i];
+      }else{
+        //term node is right daughter
+        row_index=terminal_nodes[i]-1;
+      }
+      
+      //save the left and right node data into arma uvec
+      
+      arma::vec left_nodes=arma_tree.col(0);
+      arma::vec right_nodes=arma_tree.col(1);
+      arma::mat node_split_mat;    
+      node_split_mat.set_size(0,3);
+      
+      while(row_index!=1){
+        //for each terminal node work backwards and see if the parent node was a left or right node
+        //append split info to a matrix 
+        int rd=0;
+        arma::uvec parent_node=arma::find(left_nodes == term_node);
+        
+        if(parent_node.size()==0){
+          parent_node=arma::find(right_nodes == term_node);
+          rd=1;
+        }
+        
+        //want to cout parent node and append to node_split_mat
+        
+        node_split_mat.insert_rows(0,1);
+        node_split_mat(0,0)=tree_data(parent_node[0],2);
+        node_split_mat(0,1)=tree_data(parent_node[0],3);
+        node_split_mat(0,2)=rd;     
+        row_index=parent_node[0]+1;
+        term_node=parent_node[0]+1;
+      }
+      
+      //once we have the split info, loop through rows and find the subset indexes for that terminal node!
+      //then fill in the predicted value for that tree
+      //double prediction = tree_data(term_node,5);
+      arma::uvec pred_indices;
+      int split= node_split_mat(0,0)-1;
+      arma::vec tempvec = testd.col(split);
+      double temp_split = node_split_mat(0,1);
+      
+      if(node_split_mat(0,2)==0){
+        pred_indices = arma::find(tempvec <= temp_split);
+      }else{
+        pred_indices = arma::find(tempvec > temp_split);      
+      }
+      
+      arma::uvec temp_pred_indices;
+      arma::vec data_subset = testd.col(split);
+      data_subset=data_subset.elem(pred_indices);
+      
+      //now loop through each row of node_split_mat
+      int n=node_split_mat.n_rows;
+      
+      for(int j=1;j<n;j++){
+        int curr_sv=node_split_mat(j,0);
+        double split_p = node_split_mat(j,1);
+        
+        data_subset = testd.col(curr_sv-1);
+        data_subset=data_subset.elem(pred_indices);
+        
+        if(node_split_mat(j,2)==0){
+          //split is to the left
+          temp_pred_indices=arma::find(data_subset <= split_p);
+        }else{
+          //split is to the right
+          temp_pred_indices=arma::find(data_subset > split_p);
+        }
+        pred_indices=pred_indices.elem(temp_pred_indices);
+        
+        if(pred_indices.size()==0){
+          continue;
+        }
+        
+      }
+      
+      //double nodemean=tree_data(terminal_nodes[i]-1,5);
+      IntegerVector predind=as<IntegerVector>(wrap(pred_indices));
+      //predictions[predind]= nodemean;
+      //term_obs[i]=predind;
+      IntegerVector predind_treated = intersect(predind,treated_obs);
+      term_obs_treated[i]=predind_treated;
+    }
+  }
+  //List ret(4);
+  //ret[0] = terminal_nodes;
+  //ret[1] = term_obs;
+  //ret[2] = predictions;
+  //ret[3] = term_obs_treated;
+  return(term_obs_treated);
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+
+List get_termobs_testdata_overall_all(List overall_sum_trees,NumericMatrix test_data){
+  //List overall_term_nodes_trees(overall_sum_trees.size());
+  List overall_term_obs_trees(overall_sum_trees.size());
+  //List overall_predictions(overall_sum_trees.size());
+  for(int i=0;i<overall_sum_trees.size();i++){
+    //for each set of trees loop over individual trees
+    SEXP s = overall_sum_trees[i];
+    NumericVector test_preds_sum_tree;
+    if(is<List>(s)){
+      //if current set of trees contains more than one tree...usually does!
+      List sum_tree=overall_sum_trees[i];        
+      //save all info in list of list format the same as the trees.       
+      //List term_nodes_trees(sum_tree.size());
+      List term_obs_trees(sum_tree.size());
+      //NumericMatrix predictions(num_obs,sum_tree.size());
+      for(int k=0;k<sum_tree.size();k++){ 
+        NumericMatrix tree_table=sum_tree[k];
+        List tree_info=get_termobs_test_data_all(test_data, tree_table);
+        //NumericVector term_nodes=tree_info[0];
+        //term_nodes_trees[k]=term_nodes;
+        term_obs_trees[k]=tree_info;
+        //NumericVector term_preds=tree_info[2];
+        //predictions(_,k)=term_preds;
+      } 
+      //overall_term_nodes_trees[i]=term_nodes_trees;
+      overall_term_obs_trees[i]= term_obs_trees;
+      //overall_predictions[i]=predictions;
+    }else{
+      NumericMatrix sum_tree=overall_sum_trees[i];
+      List tree_info=get_termobs_test_data_all(test_data, sum_tree);
+      //overall_term_nodes_trees[i]=tree_info[0];
+      List term_obs_tree=tree_info;
+      //NumericVector term_preds=tree_info[2];
+      //NumericVector predictions=term_preds;   
+      overall_term_obs_trees[i]= term_obs_tree;
+      //overall_predictions[i]=predictions;
+    }  
+  }
+  //List ret(3);
+  //ret[0]=overall_term_nodes_trees;
+  //ret[1]=overall_term_obs_trees;
+  //ret[2]=overall_predictions;
+  return(overall_term_obs_trees);
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+List get_termobs_testdata_overall_treated(List overall_sum_trees,NumericMatrix test_data, NumericVector z_test){
+  //List overall_term_nodes_trees(overall_sum_trees.size());
+  //List overall_term_obs_trees(overall_sum_trees.size());
+  //List overall_predictions(overall_sum_trees.size());
+  List overall_term_obs_trees_treated(overall_sum_trees.size());
+  for(int i=0;i<overall_sum_trees.size();i++){
+    //for each set of trees loop over individual trees
+    SEXP s = overall_sum_trees[i];
+    
+    NumericVector test_preds_sum_tree;
+    if(is<List>(s)){
+      //if current set of trees contains more than one tree...usually does!
+      List sum_tree=overall_sum_trees[i];        
+      //save all info in list of list format the same as the trees.       
+      //List term_nodes_trees(sum_tree.size());
+      //List term_obs_trees(sum_tree.size());
+      List term_obs_trees_treated(sum_tree.size());
+      //NumericMatrix predictions(num_obs,sum_tree.size());
+      for(int k=0;k<sum_tree.size();k++){
+        NumericMatrix tree_table=sum_tree[k];
+        List tree_info=get_termobs_test_data_treated(test_data, tree_table,z_test);
+        //NumericVector term_nodes=tree_info[0];
+        //term_nodes_trees[k]=term_nodes;
+        //term_obs_trees[k]=tree_info[1];
+        //NumericVector term_preds=tree_info[2];
+        //predictions(_,k)=term_preds;
+        term_obs_trees_treated[k]=tree_info;
+        
+      } 
+      //overall_term_nodes_trees[i]=term_nodes_trees;
+      //overall_term_obs_trees[i]= term_obs_trees;
+      overall_term_obs_trees_treated[i]= term_obs_trees_treated;
+      //overall_predictions[i]=predictions;
+    }else{
+      
+      NumericMatrix sum_tree=overall_sum_trees[i];
+      List tree_info=get_termobs_test_data_treated(test_data, sum_tree,z_test);
+      
+      //overall_term_nodes_trees[i]=tree_info[0];
+      //List term_obs_tree=tree_info[1];
+      //NumericVector term_preds=tree_info[2];
+      //NumericVector predictions=term_preds;
+      List term_obs_tree_treated=tree_info;
+      //overall_term_obs_trees[i]= term_obs_tree;
+      //overall_predictions[i]=predictions;
+      overall_term_obs_trees_treated[i]= term_obs_tree_treated;
+    }  
+  }    
+  //List ret(4);
+  //ret[0]=overall_term_nodes_trees;
+  //ret[1]=overall_term_obs_trees;
+  //ret[2]=overall_predictions;
+  //ret[3]=overall_term_obs_trees_treated;
+  return(overall_term_obs_trees_treated);
+}
+//###########################################################################################################################//
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+
+arma::mat get_J_test(List curr_termobs,NumericVector tree_term_nodes, int n){
+  //this function will make a binary nxb matrix where each column assigns observations to terminal nodes
+  
+  //create J matrix with correct dimensions and fill with zeros
+  arma::mat Jmat(n, tree_term_nodes.size());
+  Jmat.zeros();
+  
+  //for each terminal node get the observations associated with it and set column
+  for(int i=0;i<tree_term_nodes.size();i++){
+    //double tn=tree_term_nodes[i];
+    //arma::uvec term_obs=find_term_obs(obs_to_nodes_temp,tn);
+    //assign term_obs to the correct index of J
+    IntegerVector term_obs2=curr_termobs[i];
+    NumericVector obs_col(n);
+    obs_col[term_obs2]=1;
+    arma::vec colmat=Rcpp::as<arma::vec>(obs_col);
+    Jmat.col(i)= colmat;
+    
+    // arma::vec  colmat=arma::zeros(Jmat.n_rows) ;// colmattest(Jmat.n_rows,0);
+    // colmat.elem(term_obs).fill(1);
+    // Jmat.col(i)= colmat;
+  }
+  return(Jmat);
+}
+//###########################################################################################################################//
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+
+arma::mat get_W_test(List sum_treetable ,List termobs_testdata_onemodel,int n){
+  //this will take in a list of obs to node matrices for each tree in the sum make the J matrix assigning observations to terminal nodes
+  //J is an nxb_j matrix. It will then iteratively append the J matrix to itself to get the overall W matrix which has dimensions nxsumb_j
+  
+  //create empty matrix to which we will append individual J matrices
+  arma::mat W(n,0);
+  int upsilon=0;
+  for(int j=0;j<sum_treetable.size();j++){
+    
+    NumericMatrix curr_tree=sum_treetable[j];
+    List curr_termobs=termobs_testdata_onemodel[j];
+    NumericVector tree_term_nodes=find_term_nodes_bcf(curr_tree);
+    int b_j=tree_term_nodes.size();
+    //will make J as we go in BART-BMA no need to create it again here....
+    arma::mat Jmat=get_J_test(curr_termobs,tree_term_nodes,n);
+    W.insert_cols(upsilon,Jmat);
+    upsilon+=b_j;
+  }
+  
+  return(W);
+  // ret[1]=mu_vec;
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+NumericVector preds_bcfbma_lin_alg_insamp(List overall_sum_trees_mu,List overall_sum_trees_tau,
+                    List overall_sum_mat_mu,List overall_sum_mat_tau,
+                    NumericVector y,NumericVector BIC_weights,
+                    int num_iter,int num_obs,double a_mu,double a_tau,double sigma,
+                    double mu_mu_mu,double mu_mu_tau,double nu,
+                    double lambda,//List resids_mu,List resids_tau, 
+                    NumericVector z){
+  //Rcout << "Line 12501.\n";
+  arma::mat preds_all_models_arma(num_obs,BIC_weights.size()); 
+  
+  // for all sums of trees
+  
+  NumericVector BICi=-0.5*BIC_weights;
+  double max_BIC=max(BICi);
+  arma::vec z_ar=Rcpp::as<arma::vec>(z);		// converts to arma vec	
+  
+  
+  arma::vec yvec=Rcpp::as<arma::vec>(y);			// convert input y_temp to arma vec called yvec
+  arma::mat y_arma(num_obs,1);										// create a matrix with num_obs (number of observations) rows and 1 column
+  y_arma.col(0)=yvec;										// set first column of y_arma equal to yvec
+  //get exponent
+  //double expon=(num_obs+nu)/2;								// set the expoenent (equation 5 in the paper)
+  //get y_arma^Tpsi^{-1}y_arma
+  // arma::mat psi_inv=psi.i();
+  arma::mat yty=y_arma.t()*y_arma;								// yty = y_arma transpose y_arma (sum of squares)
+  
+  //Rcout << "Line 12520.\n";
+  
+  
+  for(int i=0;i<overall_sum_mat_mu.size();i++){
+    //make W_bcf and mu matrices for the sum of trees
+    //Rcout << "Line 12525.\n";
+    
+    arma::mat Wmat_mu=W_bcf(overall_sum_trees_mu[i],overall_sum_mat_mu[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    //Rcout << "Wmat_mu works.\n";
+    arma::mat Wmat_tau=W_bcf(overall_sum_trees_tau[i],overall_sum_mat_tau[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    //Rcout << "Wmat_tau works.\n";
+    
+    double b_mu=Wmat_mu.n_cols;
+    double b_tau=Wmat_tau.n_cols;
+    //Wmat_tau.each_col()%=z_ar;
+    arma::mat DiagZ_Wmat_tau= Wmat_tau.each_col()%z_ar;
+    
+    
+    arma::mat Wmat = join_rows(Wmat_mu,DiagZ_Wmat_tau);
+    
+    double b=Wmat.n_cols;									// b is number of columns of W_bcf matrix (omega in the paper)
+    
+    //get t(y_arma)inv(psi)J_bcf
+    //arma::mat ytW=y_arma.t()*Wmat;								// y_arma transpose W_bcf
+    //get t(J_bcf)inv(psi)J_bcf  
+    arma::mat WtW=Wmat.t()*Wmat;							// W_bcf transpose W_bcf
+    //get jpsij +aI
+    arma::mat aI(b,b);									// create b by b matrix called aI. NOT INIIALIZED. 
+    aI=aI.eye();										// a times b by b identity matrix. The .eye() turns aI into an identity matrix.
+    arma::vec a_vec_mu = a_mu*arma::ones<arma::vec>(b_mu);
+    arma::vec a_vec_tau = a_tau*arma::ones<arma::vec>(b_tau);
+    arma::vec a_vec(b);
+    a_vec.head(b_mu) = a_vec_mu;
+    a_vec.tail(b_tau) = a_vec_tau;
+    aI.diag() = a_vec;
+    
+    arma::mat sec_term=WtW+aI;							//
+    //arma::mat sec_term_inv=sec_term.i();					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    //arma::mat sec_term_inv=inv_sympd(sec_term);					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    
+    //get t(J_bcf)inv(psi)y_arma
+    arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
+    //get m^TV^{-1}m
+    //arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
+    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    
+    //Rcout << "Line 12563.\n";
+    
+    //arma::mat zeromat(arma::size(Wmat_mu),arma::fill::zeros);
+    //arma::mat zeromat(num_obs ,b_mu ,arma::fill::zeros);
+    arma::mat zeromat=arma::zeros<arma::mat>(num_obs ,b_mu);
+    arma::mat Vmat = join_rows(zeromat,Wmat_tau);
+    
+    //arma::vec preds_temp_arma= Vmat*sec_term_inv*Wmat.t()*y_arma;
+    //arma::vec preds_temp_arma= Vmat*inv_sympd(sec_term)*Wmat.t()*y_arma;
+    arma::vec preds_temp_arma= Vmat*inv_sympd(sec_term)*third_term;
+    
+    //Rcout << "Line 12573.\n";
+    
+    double weight=exp(BICi[i]-(max_BIC+log(sum(exp(BICi-max_BIC)))));
+    
+    preds_all_models_arma.col(i)=preds_temp_arma*weight;
+  
+  }
+  //Rcout << "Line 12580.\n";
+  
+  arma::colvec predicted_values=sum(preds_all_models_arma,1);
+  return(wrap(predicted_values));
+  
+    
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+NumericVector preds_bcfbma_lin_alg_outsamp(List overall_sum_trees_mu,List overall_sum_trees_tau,
+                                          List overall_sum_mat_mu,List overall_sum_mat_tau,
+                                          NumericVector y,NumericVector BIC_weights,
+                                          int num_iter,int num_obs,double a_mu,double a_tau,double sigma,
+                                          double mu_mu_mu,double mu_mu_tau,double nu,
+                                          double lambda,//List resids_mu,List resids_tau, 
+                                          NumericVector z,
+                                          NumericMatrix test_data, NumericMatrix test_pihat, 
+                                          NumericVector z_test,int include_pi2, int num_propscores,
+                                          int num_test_obs){
+  
+  
+  if(test_pihat.ncol() != num_propscores){
+    throw std::range_error("Number of sets of propensity score estimates must be equal to that used in fitting the original BCFBMA models");
+  }
+  if(z_test.size() != test_data.nrow()){	// If the number of rows in the test data covariate matrix is not equal to that of the test data treatment indicator variable
+    throw std::range_error("Test data covariates and test data treatment indicator variable must have the same number of observations."); 
+  }
+  if(test_data.nrow() != test_pihat.nrow()){	// If the number of rows in the test data covariate matrix is not equal to that of the test data propensity score estimates matrix
+    throw std::range_error("Test data covariates and test data propensity score estimates must have the same number of observations."); 
+  }
+  // Add test propensity scores to test data matrix
+  arma::mat T1(test_data.begin(), test_data.nrow(), test_data.ncol(), false);				// copy the covariate test_data matrix into an arma mat
+  arma::mat pihat_a_test(test_pihat.begin(), test_pihat.nrow(), test_pihat.ncol(), false);				// copy the test_pihat matrix into an arma mat
+  arma::mat x_control_test_a=T1;				// create a copy of test_data arma mat called x_control_test_a
+  if((include_pi2==0)| (include_pi2==2) ){
+    if(test_pihat.nrow()>0 ){
+      x_control_test_a.insert_cols(0,pihat_a_test);		// add propensity scores as new leftmost columns of x_control_test_a
+    }
+  }
+  NumericMatrix x_control_test=wrap(x_control_test_a);	// convert x_control_test_a to a NumericMatrix called x_control_test
+  // Name the matrix without the estimated propensity scores x_moderate_test.[CAN REMOVE THE DUPLICATION AND ADD x_control_test, x_moderate_test, and include_pi as input parameters later]
+  //NumericMatrix x_moderate_test = test_data;	// x_moderate_test matrix is the covariate test_data without the propensity scores
+  arma::mat x_moderate_test_a=T1;			// create arma mat copy of x_moderate_test.
+  if((include_pi2==1)| (include_pi2==2) ){
+    if(test_pihat.nrow()>0 ){
+      x_moderate_test_a.insert_cols(0,pihat_a_test);		// add propensity scores as new leftmost columns of x_control_a
+    }
+  }
+  NumericMatrix x_moderate_test=wrap(x_moderate_test_a);	// convert x_control_test_a to a NumericMatrix called x_control_test
+  
+  
+  //Rcout <<"Line 12625.\n";
+  
+  
+  //List termobs_testdata_overall_mu= get_termobs_testdata_overall_all(overall_sum_trees_mu,test_data);
+  List termobs_testdata_overall_tau= get_termobs_testdata_overall_all(overall_sum_trees_tau,test_data);
+  
+  //treated terminal node observations
+  //alternative for testing
+  //List treated_termobs_testdata_overall_tau= get_termobs_testdata_overall_treated(overall_sum_trees_tau,test_data,z_test);
+  
+  
+  arma::mat preds_all_models_arma(num_test_obs,BIC_weights.size()); 
+  
+  // for all sums of trees
+  
+  NumericVector BICi=-0.5*BIC_weights;
+  double max_BIC=max(BICi);
+  arma::vec z_ar=Rcpp::as<arma::vec>(z);		// converts to arma vec	
+  
+  
+  arma::vec yvec=Rcpp::as<arma::vec>(y);			// convert input y_temp to arma vec called yvec
+  arma::mat y_arma(num_obs,1);										// create a matrix with num_obs (number of observations) rows and 1 column
+  y_arma.col(0)=yvec;										// set first column of y_arma equal to yvec
+  //get exponent
+  //double expon=(num_obs+nu)/2;								// set the expoenent (equation 5 in the paper)
+  //get y_arma^Tpsi^{-1}y_arma
+  // arma::mat psi_inv=psi.i();
+  arma::mat yty=y_arma.t()*y_arma;								// yty = y_arma transpose y_arma (sum of squares)
+  
+  
+  //Rcout <<"Line 12654.\n";
+  
+  for(int i=0;i<overall_sum_mat_mu.size();i++){
+    //make W_bcf and mu matrices for the sum of trees
+    
+    arma::mat Wmat_mu=W_bcf(overall_sum_trees_mu[i],overall_sum_mat_mu[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    //Rcout << "Wmat_mu works.\n";
+    arma::mat Wmat_tau=W_bcf(overall_sum_trees_tau[i],overall_sum_mat_tau[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    //Rcout << "Wmat_tau works.\n";
+    //Rcout <<"Line 12664.\n";
+    
+    double b_mu=Wmat_mu.n_cols;
+    double b_tau=Wmat_tau.n_cols;
+    //Rcout <<"Line 12668.\n";
+    
+    Wmat_tau.each_col()%=z_ar;
+    //Rcout <<"Line 12671.\n";
+    
+    arma::mat Wmat = join_rows(Wmat_mu,Wmat_tau);
+    //Rcout <<"Line 12674.\n";
+    
+    double b=Wmat.n_cols;									// b is number of columns of W_bcf matrix (omega in the paper)
+    
+    
+    
+    //arma::mat W_tilde_mu=get_W_test(overall_sum_trees_mu[i],termobs_testdata_overall_mu[i],num_test_obs);
+    arma::mat W_tilde_tau=get_W_test(overall_sum_trees_tau[i],termobs_testdata_overall_tau[i],num_test_obs);
+    
+    //alternative would be to obtain Diag(Ztest)Wtest 
+    //arma::mat DiagZtestWtest=get_W_test(overall_sum_trees_tau[i],treated_termobs_testdata_overall_tau[i],num_test_obs);
+    //but don't use DiagZtestWtest in this function
+    
+    //Rcout <<"Line 12679.\n";
+    
+    
+    
+    
+    
+    
+    
+    //get t(y_arma)inv(psi)J_bcf
+    //arma::mat ytW=y_arma.t()*Wmat;								// y_arma transpose W_bcf
+    //get t(J_bcf)inv(psi)J_bcf  
+    arma::mat WtW=Wmat.t()*Wmat;							// W_bcf transpose W_bcf
+    //get jpsij +aI
+    arma::mat aI(b,b);									// create b by b matrix called aI. NOT INIIALIZED. 
+    aI=aI.eye();										// a times b by b identity matrix. The .eye() turns aI into an identity matrix.
+    arma::vec a_vec_mu = a_mu*arma::ones<arma::vec>(b_mu);
+    arma::vec a_vec_tau = a_tau*arma::ones<arma::vec>(b_tau);
+    arma::vec a_vec(b);
+    a_vec.head(b_mu) = a_vec_mu;
+    a_vec.tail(b_tau) = a_vec_tau;
+    aI.diag() = a_vec;
+    
+    arma::mat sec_term=WtW+aI;							//
+    //arma::mat sec_term_inv=sec_term.i();					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    //arma::mat sec_term_inv=inv_sympd(sec_term);					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    
+    //get t(J_bcf)inv(psi)y_arma
+    arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
+    //get m^TV^{-1}m
+    //arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
+    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    
+    //Rcout <<"Line 12713.\n";
+    
+    //arma::mat zeromat(arma::size(Wmat_mu),arma::fill::zeros);
+    //arma::mat zeromat(num_obs ,b_mu ,arma::fill::zeros);
+    arma::mat zeromat=arma::zeros<arma::mat>(num_test_obs,b_mu);
+    arma::mat Vmat = join_rows(zeromat,W_tilde_tau);
+    
+    //arma::vec preds_temp_arma= Vmat*sec_term_inv*Wmat.t()*y_arma;
+    //arma::vec preds_temp_arma= Vmat*inv_sympd(sec_term)*Wmat.t()*y_arma;
+    arma::vec preds_temp_arma= Vmat*inv_sympd(sec_term)*third_term;
+    
+    
+    double weight=exp(BICi[i]-(max_BIC+log(sum(exp(BICi-max_BIC)))));
+    
+    preds_all_models_arma.col(i)=preds_temp_arma*weight;
+    
+  }
+  //Rcout <<"Line 12729.\n";
+  
+  arma::colvec predicted_values=sum(preds_all_models_arma,1);
+  return(wrap(predicted_values));
+  
+  
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+List mean_vars_lin_alg_insamp_bcf(List overall_sum_trees_mu,List overall_sum_trees_tau,
+                                          List overall_sum_mat_mu,List overall_sum_mat_tau,
+                                          NumericVector y,NumericVector BIC_weights,
+                                          int num_iter,int num_obs,double a_mu,double a_tau,double sigma,
+                                          double mu_mu_mu,double mu_mu_tau,double nu,
+                                          double lambda,//List resids_mu,List resids_tau, 
+                                          NumericVector z){
+  //Rcout << "Line 12501.\n";
+  arma::mat preds_all_models_arma(num_obs,BIC_weights.size()); 
+  arma::mat weighted_preds_all_models_arma(num_obs,BIC_weights.size());
+  
+  // for all sums of trees
+  
+  NumericVector BICi=-0.5*BIC_weights;
+  double max_BIC=max(BICi);
+  
+  List covar_matrices(BIC_weights.size());
+  NumericVector model_weights(BIC_weights.size());
+  
+  arma::vec z_ar=Rcpp::as<arma::vec>(z);		// converts to arma vec	
+  
+  
+  arma::vec yvec=Rcpp::as<arma::vec>(y);			// convert input y_temp to arma vec called yvec
+  arma::mat y_arma(num_obs,1);										// create a matrix with num_obs (number of observations) rows and 1 column
+  y_arma.col(0)=yvec;										// set first column of y_arma equal to yvec
+  //get exponent
+  //double expon=(num_obs+nu)/2;								// set the expoenent (equation 5 in the paper)
+  //get y_arma^Tpsi^{-1}y_arma
+  // arma::mat psi_inv=psi.i();
+  arma::mat yty=y_arma.t()*y_arma;								// yty = y_arma transpose y_arma (sum of squares)
+  
+  //Rcout << "Line 12520.\n";
+  
+  
+  for(int i=0;i<overall_sum_mat_mu.size();i++){
+    //make W_bcf and mu matrices for the sum of trees
+    //Rcout << "Line 12525.\n";
+    
+    arma::mat Wmat_mu=W_bcf(overall_sum_trees_mu[i],overall_sum_mat_mu[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    //Rcout << "Wmat_mu works.\n";
+    arma::mat Wmat_tau=W_bcf(overall_sum_trees_tau[i],overall_sum_mat_tau[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    //Rcout << "Wmat_tau works.\n";
+    
+    double b_mu=Wmat_mu.n_cols;
+    double b_tau=Wmat_tau.n_cols;
+    //Wmat_tau.each_col()%=z_ar;
+    arma::mat DiagZ_Wmat_tau= Wmat_tau.each_col()%z_ar;
+    
+    
+    arma::mat Wmat = join_rows(Wmat_mu,DiagZ_Wmat_tau);
+    
+    double b=Wmat.n_cols;									// b is number of columns of W_bcf matrix (omega in the paper)
+    
+    //get t(y_arma)inv(psi)J_bcf
+    arma::mat ytW=y_arma.t()*Wmat;								// y_arma transpose W_bcf
+    //get t(J_bcf)inv(psi)J_bcf  
+    arma::mat WtW=Wmat.t()*Wmat;							// W_bcf transpose W_bcf
+    //get jpsij +aI
+    arma::vec a_vec_mu = a_mu*arma::ones<arma::vec>(b_mu);
+    arma::vec a_vec_tau = a_tau*arma::ones<arma::vec>(b_tau);
+    arma::vec a_vec(b);
+    a_vec.head(b_mu) = a_vec_mu;
+    a_vec.tail(b_tau) = a_vec_tau;
+    arma::mat aI(b,b);									// create b by b matrix called aI. NOT INIIALIZED. 
+    aI=aI.eye();										// a times b by b identity matrix. The .eye() turns aI into an identity matrix.
+    aI.diag() = a_vec;
+    //arma::mat aI=arma::diagmat(a_vec);
+    
+    arma::mat sec_term=WtW+aI;							//
+    //arma::mat sec_term_inv=sec_term.i();					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    arma::mat sec_term_inv=inv_sympd(sec_term);					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    
+    //get t(J_bcf)inv(psi)y_arma
+    arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
+    //get m^TV^{-1}m
+    arma::mat mvm= ytW*sec_term_inv*third_term;		// matrix expression in middle of equation 5
+    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    
+    //Rcout << "Line 12563.\n";
+    
+    //arma::mat zeromat(arma::size(Wmat_mu),arma::fill::zeros);
+    //arma::mat zeromat(num_obs ,b_mu ,arma::fill::zeros);
+    arma::mat zeromat=arma::zeros<arma::mat>(num_obs ,b_mu);
+    arma::mat Vmat = join_rows(zeromat,Wmat_tau);
+    
+    //arma::vec preds_temp_arma= Vmat*sec_term_inv*Wmat.t()*y_arma;
+    //arma::vec preds_temp_arma= Vmat*inv_sympd(sec_term)*Wmat.t()*y_arma;
+    //arma::vec preds_temp_arma= Vmat*inv_sympd(sec_term)*third_term;
+    arma::vec preds_temp_arma= Vmat*sec_term_inv*third_term;
+    arma::mat covar_t=as_scalar((1/(nu+num_obs))*(nu*lambda+yty-mvm))*(Vmat*sec_term_inv*(Vmat.t()));
+    
+    
+    //or (possibly faster)
+    //arma::mat V_M_inv = Vmat*sec_term_inv;
+    //arma::vec preds_temp_arma= V_M_inv*third_term;
+    //arma::mat covar_t=as_scalar((1/(nu+num_obs))*(nu*lambda+yty-mvm))*(V_M_inv*(Vmat.t()));
+    
+    arma::vec eigval;
+    arma::mat eigvec;
+    
+    arma::eig_sym(eigval, eigvec, covar_t);
+    
+    for(unsigned int j=0; j<eigval.size(); j++){
+      eigval[j] = sqrt(eigval[j]);
+    } 
+    
+    arma::mat eigdiagmat = arma::diagmat(eigval);
+    
+    arma::mat right_decomp_mat=eigdiagmat*eigvec.t();
+    
+    //Rcout << "Line 12573.\n";
+    
+    double weight=exp(BICi[i]-(max_BIC+log(sum(exp(BICi-max_BIC)))));
+    
+    model_weights[i]=weight;
+    weighted_preds_all_models_arma.col(i)=preds_temp_arma*weight;
+    preds_all_models_arma.col(i)=preds_temp_arma;
+    covar_matrices[i]= right_decomp_mat;
+    
+  }
+  //Rcout << "Line 12580.\n";
+  
+  arma::colvec predicted_values=sum(weighted_preds_all_models_arma,1);
+  
+  List ret(4);
+  ret[0]=wrap(predicted_values);
+  ret[1]=model_weights;
+  ret[2]=wrap(preds_all_models_arma.t());
+  ret[3]=covar_matrices;
+  
+  return(ret);
+  
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+List mean_vars_lin_alg_outsamp_bcf(List overall_sum_trees_mu,List overall_sum_trees_tau,
+                                           List overall_sum_mat_mu,List overall_sum_mat_tau,
+                                           NumericVector y,NumericVector BIC_weights,
+                                           int num_iter,int num_obs,double a_mu,double a_tau,double sigma,
+                                           double mu_mu_mu,double mu_mu_tau,double nu,
+                                           double lambda,//List resids_mu,List resids_tau, 
+                                           NumericVector z,
+                                           NumericMatrix test_data, NumericMatrix test_pihat, 
+                                           NumericVector z_test,int include_pi2, int num_propscores,
+                                           int num_test_obs){
+  
+  
+  if(test_pihat.ncol() != num_propscores){
+    throw std::range_error("Number of sets of propensity score estimates must be equal to that used in fitting the original BCFBMA models");
+  }
+  if(z_test.size() != test_data.nrow()){	// If the number of rows in the test data covariate matrix is not equal to that of the test data treatment indicator variable
+    throw std::range_error("Test data covariates and test data treatment indicator variable must have the same number of observations."); 
+  }
+  if(test_data.nrow() != test_pihat.nrow()){	// If the number of rows in the test data covariate matrix is not equal to that of the test data propensity score estimates matrix
+    throw std::range_error("Test data covariates and test data propensity score estimates must have the same number of observations."); 
+  }
+  // Add test propensity scores to test data matrix
+  arma::mat T1(test_data.begin(), test_data.nrow(), test_data.ncol(), false);				// copy the covariate test_data matrix into an arma mat
+  arma::mat pihat_a_test(test_pihat.begin(), test_pihat.nrow(), test_pihat.ncol(), false);				// copy the test_pihat matrix into an arma mat
+  arma::mat x_control_test_a=T1;				// create a copy of test_data arma mat called x_control_test_a
+  if((include_pi2==0)| (include_pi2==2) ){
+    if(test_pihat.nrow()>0 ){
+      x_control_test_a.insert_cols(0,pihat_a_test);		// add propensity scores as new leftmost columns of x_control_test_a
+    }
+  }
+  NumericMatrix x_control_test=wrap(x_control_test_a);	// convert x_control_test_a to a NumericMatrix called x_control_test
+  // Name the matrix without the estimated propensity scores x_moderate_test.[CAN REMOVE THE DUPLICATION AND ADD x_control_test, x_moderate_test, and include_pi as input parameters later]
+  //NumericMatrix x_moderate_test = test_data;	// x_moderate_test matrix is the covariate test_data without the propensity scores
+  arma::mat x_moderate_test_a=T1;			// create arma mat copy of x_moderate_test.
+  if((include_pi2==1)| (include_pi2==2) ){
+    if(test_pihat.nrow()>0 ){
+      x_moderate_test_a.insert_cols(0,pihat_a_test);		// add propensity scores as new leftmost columns of x_control_a
+    }
+  }
+  NumericMatrix x_moderate_test=wrap(x_moderate_test_a);	// convert x_control_test_a to a NumericMatrix called x_control_test
+  
+  
+  //Rcout <<"Line 12625.\n";
+  
+  
+  //List termobs_testdata_overall_mu= get_termobs_testdata_overall_all(overall_sum_trees_mu,test_data);
+  List termobs_testdata_overall_tau= get_termobs_testdata_overall_all(overall_sum_trees_tau,test_data);
+  
+  //treated terminal node observations
+  //alternative for testing
+  //List treated_termobs_testdata_overall_tau= get_termobs_testdata_overall_treated(overall_sum_trees_tau,test_data,z_test);
+  
+  
+  arma::mat preds_all_models_arma(num_test_obs,BIC_weights.size()); 
+  arma::mat weighted_preds_all_models_arma(num_test_obs,BIC_weights.size());
+  
+  // for all sums of trees
+  
+  NumericVector BICi=-0.5*BIC_weights;
+  double max_BIC=max(BICi);
+  
+  List covar_matrices(BIC_weights.size());
+  NumericVector model_weights(BIC_weights.size());
+  
+  arma::vec z_ar=Rcpp::as<arma::vec>(z);		// converts to arma vec	
+  
+  
+  arma::vec yvec=Rcpp::as<arma::vec>(y);			// convert input y_temp to arma vec called yvec
+  arma::mat y_arma(num_obs,1);										// create a matrix with num_obs (number of observations) rows and 1 column
+  y_arma.col(0)=yvec;										// set first column of y_arma equal to yvec
+  //get exponent
+  //double expon=(num_obs+nu)/2;								// set the expoenent (equation 5 in the paper)
+  //get y_arma^Tpsi^{-1}y_arma
+  // arma::mat psi_inv=psi.i();
+  arma::mat yty=y_arma.t()*y_arma;								// yty = y_arma transpose y_arma (sum of squares)
+  
+  
+  //Rcout <<"Line 12654.\n";
+  
+  for(int i=0;i<overall_sum_mat_mu.size();i++){
+    //make W_bcf and mu matrices for the sum of trees
+    
+    arma::mat Wmat_mu=W_bcf(overall_sum_trees_mu[i],overall_sum_mat_mu[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    //Rcout << "Wmat_mu works.\n";
+    arma::mat Wmat_tau=W_bcf(overall_sum_trees_tau[i],overall_sum_mat_tau[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    //Rcout << "Wmat_tau works.\n";
+    //Rcout <<"Line 12664.\n";
+    
+    double b_mu=Wmat_mu.n_cols;
+    double b_tau=Wmat_tau.n_cols;
+    //Rcout <<"Line 12668.\n";
+    
+    Wmat_tau.each_col()%=z_ar;
+    //Rcout <<"Line 12671.\n";
+    
+    arma::mat Wmat = join_rows(Wmat_mu,Wmat_tau);
+    //Rcout <<"Line 12674.\n";
+    
+    double b=Wmat.n_cols;									// b is number of columns of W_bcf matrix (omega in the paper)
+    
+    
+    
+    //arma::mat W_tilde_mu=get_W_test(overall_sum_trees_mu[i],termobs_testdata_overall_mu[i],num_test_obs);
+    arma::mat W_tilde_tau=get_W_test(overall_sum_trees_tau[i],termobs_testdata_overall_tau[i],num_test_obs);
+    
+    //alternative would be to obtain Diag(Ztest)Wtest 
+    //arma::mat DiagZtestWtest=get_W_test(overall_sum_trees_tau[i],treated_termobs_testdata_overall_tau[i],num_test_obs);
+    //but don't use DiagZtestWtest in this function
+    
+    //Rcout <<"Line 12679.\n";
+    
+    
+    
+    
+    
+    
+    
+    //get t(y_arma)inv(psi)J_bcf
+    arma::mat ytW=y_arma.t()*Wmat;								// y_arma transpose W_bcf
+    //get t(J_bcf)inv(psi)J_bcf  
+    arma::mat WtW=Wmat.t()*Wmat;							// W_bcf transpose W_bcf
+    //get jpsij +aI
+    arma::mat aI(b,b);									// create b by b matrix called aI. NOT INIIALIZED. 
+    aI=aI.eye();										// a times b by b identity matrix. The .eye() turns aI into an identity matrix.
+    arma::vec a_vec_mu = a_mu*arma::ones<arma::vec>(b_mu);
+    arma::vec a_vec_tau = a_tau*arma::ones<arma::vec>(b_tau);
+    arma::vec a_vec(b);
+    a_vec.head(b_mu) = a_vec_mu;
+    a_vec.tail(b_tau) = a_vec_tau;
+    aI.diag() = a_vec;
+    
+    arma::mat sec_term=WtW+aI;							//
+    //arma::mat sec_term_inv=sec_term.i();					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    arma::mat sec_term_inv=inv_sympd(sec_term);					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    
+    //get t(J_bcf)inv(psi)y_arma
+    arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
+    //get m^TV^{-1}m
+    arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
+    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    
+    //Rcout <<"Line 12713.\n";
+    
+    //arma::mat zeromat(arma::size(Wmat_mu),arma::fill::zeros);
+    //arma::mat zeromat(num_obs ,b_mu ,arma::fill::zeros);
+    arma::mat zeromat=arma::zeros<arma::mat>(num_test_obs,b_mu);
+    arma::mat Vmat = join_rows(zeromat,W_tilde_tau);
+    
+    //arma::vec preds_temp_arma= Vmat*sec_term_inv*Wmat.t()*y_arma;
+    //arma::vec preds_temp_arma= Vmat*inv_sympd(sec_term)*Wmat.t()*y_arma;
+    arma::vec preds_temp_arma= Vmat*sec_term_inv*third_term;
+    arma::mat covar_t=as_scalar((1/(nu+num_obs))*(nu*lambda+yty-mvm))*(Vmat*sec_term_inv*(Vmat.t()));
+    
+    
+    //or (possibly faster)
+    //arma::mat V_M_inv = Vmat*sec_term_inv;
+    //arma::vec preds_temp_arma= V_M_inv*third_term;
+    //arma::mat covar_t=as_scalar((1/(nu+num_obs))*(nu*lambda+yty-mvm))*(V_M_inv*(Vmat.t()));
+    
+    arma::vec eigval;
+    arma::mat eigvec;
+    
+    arma::eig_sym(eigval, eigvec, covar_t);
+    
+    for(unsigned int j=0; j<eigval.size(); j++){
+      eigval[j] = sqrt(eigval[j]);
+    } 
+    arma::mat eigdiagmat = arma::diagmat(eigval);
+    
+    arma::mat right_decomp_mat=eigdiagmat*eigvec.t();
+    
+    //Rcout << "Line 12573.\n";
+    
+    double weight=exp(BICi[i]-(max_BIC+log(sum(exp(BICi-max_BIC)))));
+    
+    model_weights[i]=weight;
+    weighted_preds_all_models_arma.col(i)=preds_temp_arma*weight;
+    preds_all_models_arma.col(i)=preds_temp_arma;
+    covar_matrices[i]= right_decomp_mat;
+    
+  }
+  //Rcout <<"Line 12729.\n";
+  
+  arma::colvec predicted_values=sum(weighted_preds_all_models_arma,1);
+  List ret(4);
+  ret[0]=wrap(predicted_values);
+  ret[1]=model_weights;
+  ret[2]=wrap(preds_all_models_arma.t());
+  ret[3]=covar_matrices;
+  
+  return(ret);  
+  
+}
+//###########################################################################################################################//
+#include <algorithm>
+#include <cmath>
+#include <vector>
+
+template<typename T>
+static inline double Lerp(T v0, T v1, T t)
+{
+  return (1 - t)*v0 + t*v1;
+}
+
+//###########################################################################################################################//
+template<typename T>
+static inline std::vector<T> Quantile2(const std::vector<T>& inData, const std::vector<T>& probs)
+{
+  // function from https://stackoverflow.com/questions/11964552/finding-quartiles
+  if (inData.empty())
+  {
+    return std::vector<T>();
+  }
+  
+  if (1 == inData.size())
+  {
+    return std::vector<T>(1, inData[0]);
+  }
+  
+  std::vector<T> data = inData;
+  std::sort(data.begin(), data.end());
+  std::vector<T> quantiles;
+  
+  for (size_t i = 0; i < probs.size(); ++i)
+  {
+    T poi = Lerp<T>(-0.5, data.size() - 0.5, probs[i]);
+    
+    size_t left = std::max(int64_t(std::floor(poi)), int64_t(0));
+    size_t right = std::min(int64_t(std::ceil(poi)), int64_t(data.size() - 1));
+    
+    T datLeft = data.at(left);
+    T datRight = data.at(right);
+    
+    T quantile = Lerp<T>(datLeft, datRight, poi - left);
+    
+    quantiles.push_back(quantile);
+  }
+  
+  return quantiles;
+}
+
+//###########################################################################################################################//
+
+#include <RcppArmadilloExtensions/rmultinom.h>
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+List pred_ints_lin_alg_outsamp_bcf(List overall_sum_trees_mu,List overall_sum_trees_tau,
+                                   List overall_sum_mat_mu,List overall_sum_mat_tau,
+                                   NumericVector y,NumericVector BIC_weights,
+                                   int num_iter,int num_obs,double a_mu,double a_tau,double sigma,
+                                   double mu_mu_mu,double mu_mu_tau,double nu,
+                                   double lambda,//List resids_mu,List resids_tau, 
+                                   NumericVector z,
+                                   NumericMatrix test_data, NumericMatrix test_pihat, 
+                                   NumericVector z_test,int include_pi2, int num_propscores,
+                                   int num_test_obs, double lower_prob, double upper_prob){
+  
+  
+  if(test_pihat.ncol() != num_propscores){
+    throw std::range_error("Number of sets of propensity score estimates must be equal to that used in fitting the original BCFBMA models");
+  }
+  if(z_test.size() != test_data.nrow()){	// If the number of rows in the test data covariate matrix is not equal to that of the test data treatment indicator variable
+    throw std::range_error("Test data covariates and test data treatment indicator variable must have the same number of observations."); 
+  }
+  if(test_data.nrow() != test_pihat.nrow()){	// If the number of rows in the test data covariate matrix is not equal to that of the test data propensity score estimates matrix
+    throw std::range_error("Test data covariates and test data propensity score estimates must have the same number of observations."); 
+  }
+  // Add test propensity scores to test data matrix
+  arma::mat T1(test_data.begin(), test_data.nrow(), test_data.ncol(), false);				// copy the covariate test_data matrix into an arma mat
+  arma::mat pihat_a_test(test_pihat.begin(), test_pihat.nrow(), test_pihat.ncol(), false);				// copy the test_pihat matrix into an arma mat
+  arma::mat x_control_test_a=T1;				// create a copy of test_data arma mat called x_control_test_a
+  if((include_pi2==0)| (include_pi2==2) ){
+    if(test_pihat.nrow()>0 ){
+      x_control_test_a.insert_cols(0,pihat_a_test);		// add propensity scores as new leftmost columns of x_control_test_a
+    }
+  }
+  NumericMatrix x_control_test=wrap(x_control_test_a);	// convert x_control_test_a to a NumericMatrix called x_control_test
+  // Name the matrix without the estimated propensity scores x_moderate_test.[CAN REMOVE THE DUPLICATION AND ADD x_control_test, x_moderate_test, and include_pi as input parameters later]
+  //NumericMatrix x_moderate_test = test_data;	// x_moderate_test matrix is the covariate test_data without the propensity scores
+  arma::mat x_moderate_test_a=T1;			// create arma mat copy of x_moderate_test.
+  if((include_pi2==1)| (include_pi2==2) ){
+    if(test_pihat.nrow()>0 ){
+      x_moderate_test_a.insert_cols(0,pihat_a_test);		// add propensity scores as new leftmost columns of x_control_a
+    }
+  }
+  NumericMatrix x_moderate_test=wrap(x_moderate_test_a);	// convert x_control_test_a to a NumericMatrix called x_control_test
+  
+  
+  //Rcout <<"Line 12625.\n";
+  
+  
+  //List termobs_testdata_overall_mu= get_termobs_testdata_overall_all(overall_sum_trees_mu,test_data);
+  List termobs_testdata_overall_tau= get_termobs_testdata_overall_all(overall_sum_trees_tau,test_data);
+  
+  
+
+  
+  
+  //NumericMatrix preds_all_models(num_test_obs,BIC_weights.size());
+  arma::mat preds_all_models_arma(num_test_obs,BIC_weights.size());
+  arma::mat weighted_preds_all_models_arma(num_test_obs,BIC_weights.size());
+  
+  // for all sums of trees
+  
+  NumericVector BICi=-0.5*BIC_weights;
+  double max_BIC=max(BICi);
+  
+  
+  NumericVector post_weights(BIC_weights.size());
+  
+  for(int k=0;k<BIC_weights.size();k++){
+    
+    //NumericVector BICi=-0.5*BIC_weights;
+    //double max_BIC=max(BICi);
+    double weight=exp(BICi[k]-(max_BIC+log(sum(exp(BICi-max_BIC)))));
+    post_weights[k]=weight;
+    //int num_its_to_sample = round(weight*(num_iter));
+    
+  }
+  
+  //int num_models= BIC_weights.size();
+  
+  IntegerVector num_its_to_sample = RcppArmadillo::rmultinom(num_iter,post_weights);
+  //IntegerVector num_its_sum = cumsum(num_its_to_sample);
+  
+  
+  arma::mat draws_for_preds(0,num_test_obs);
+  //arma::mat draws_for_preds(num_iter,num_test_obs);
+  
+  arma::vec z_ar=Rcpp::as<arma::vec>(z);		// converts to arma vec	
+  
+  arma::vec yvec=Rcpp::as<arma::vec>(y);
+  arma::mat y_arma(num_obs,1);
+  y_arma.col(0)=yvec;
+  //get exponent
+  //double expon=(n+nu)/2;
+  //get y^Tpsi^{-1}y
+  // arma::mat psi_inv=psi.i();
+  
+  
+  arma::mat yty=y_arma.t()*y_arma;
+  
+  arma::mat I_test(num_test_obs,num_test_obs);
+  I_test=I_test.eye();
+  
+  for(int i=0;i<overall_sum_mat_mu.size();i++){
+    //make W_bcf and mu matrices for the sum of trees
+    
+    int num_its_temp = num_its_to_sample[i];
+    if(num_its_temp==0){
+      continue;
+    }
+    
+    arma::mat Wmat_mu=W_bcf(overall_sum_trees_mu[i],overall_sum_mat_mu[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    //Rcout << "Wmat_mu works.\n";
+    arma::mat Wmat_tau=W_bcf(overall_sum_trees_tau[i],overall_sum_mat_tau[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    //Rcout << "Wmat_tau works.\n";
+    //Rcout <<"Line 12664.\n";
+    
+    double b_mu=Wmat_mu.n_cols;
+    double b_tau=Wmat_tau.n_cols;
+    //Rcout <<"Line 12668.\n";
+    
+    Wmat_tau.each_col()%=z_ar;
+    //Rcout <<"Line 12671.\n";
+    
+    arma::mat Wmat = join_rows(Wmat_mu,Wmat_tau);
+    //Rcout <<"Line 12674.\n";
+    
+    double b=Wmat.n_cols;									// b is number of columns of W_bcf matrix (omega in the paper)
+    
+    
+    
+    //arma::mat W_tilde_mu=get_W_test(overall_sum_trees_mu[i],termobs_testdata_overall_mu[i],num_test_obs);
+    arma::mat W_tilde_tau=get_W_test(overall_sum_trees_tau[i],termobs_testdata_overall_tau[i],num_test_obs);
+    
+    //alternative would be to obtain Diag(Ztest)Wtest 
+    //arma::mat DiagZtestWtest=get_W_test(overall_sum_trees_tau[i],treated_termobs_testdata_overall_tau[i],num_test_obs);
+    //but don't use DiagZtestWtest in this function
+    
+    //Rcout <<"Line 12679.\n";
+    
+    
+    
+    
+    
+    
+    
+    //get t(y_arma)inv(psi)J_bcf
+    arma::mat ytW=y_arma.t()*Wmat;								// y_arma transpose W_bcf
+    //get t(J_bcf)inv(psi)J_bcf  
+    arma::mat WtW=Wmat.t()*Wmat;							// W_bcf transpose W_bcf
+    //get jpsij +aI
+    arma::mat aI(b,b);									// create b by b matrix called aI. NOT INIIALIZED. 
+    aI=aI.eye();										// a times b by b identity matrix. The .eye() turns aI into an identity matrix.
+    arma::vec a_vec_mu = a_mu*arma::ones<arma::vec>(b_mu);
+    arma::vec a_vec_tau = a_tau*arma::ones<arma::vec>(b_tau);
+    arma::vec a_vec(b);
+    a_vec.head(b_mu) = a_vec_mu;
+    a_vec.tail(b_tau) = a_vec_tau;
+    aI.diag() = a_vec;
+    
+    arma::mat sec_term=WtW+aI;							//
+    //arma::mat sec_term_inv=sec_term.i();					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    arma::mat sec_term_inv=inv_sympd(sec_term);					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    
+    //get t(J_bcf)inv(psi)y_arma
+    arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
+    //get m^TV^{-1}m
+    arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
+    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    
+    //Rcout <<"Line 12713.\n";
+    
+    //arma::mat zeromat(arma::size(Wmat_mu),arma::fill::zeros);
+    //arma::mat zeromat(num_obs ,b_mu ,arma::fill::zeros);
+    arma::mat zeromat=arma::zeros<arma::mat>(num_test_obs,b_mu);
+    arma::mat Vmat = join_rows(zeromat,W_tilde_tau);
+    
+    //arma::vec preds_temp_arma= Vmat*sec_term_inv*Wmat.t()*y_arma;
+    //arma::vec preds_temp_arma= Vmat*inv_sympd(sec_term)*Wmat.t()*y_arma;
+    arma::vec preds_temp_arma= Vmat*sec_term_inv*third_term;
+    arma::mat covar_t=as_scalar((1/(nu+num_obs))*(nu*lambda+yty-mvm))*(Vmat*sec_term_inv*(Vmat.t()));
+    
+    
+    //or (possibly faster)
+    //arma::mat V_M_inv = Vmat*sec_term_inv;
+    //arma::vec preds_temp_arma= V_M_inv*third_term;
+    //arma::mat covar_t=as_scalar((1/(nu+num_obs))*(nu*lambda+yty-mvm))*(V_M_inv*(Vmat.t()));
+    
+    
+    
+    //Rcout << "Line 12573.\n";
+    
+    weighted_preds_all_models_arma.col(i)=preds_temp_arma*post_weights[i];
+    preds_all_models_arma.col(i)=preds_temp_arma;
+    
+    // Rcout << "Line 4468. i= "<< i << ".\n";
+    
+    
+    //int num_its_to_sample = round(weight*(num_iter));
+    
+
+    // arma::uword m = num_test_obs;
+    // arma::vec U = arma::chi2rnd(nu+num_obs,num_its_temp);
+    // U = sqrt(nu+num_obs / U);
+    // arma::mat Y = arma::mvnrnd( arma::colvec(m, arma::fill::zeros), covar_t,num_its_temp);
+    // arma::mat temp_draws(m, num_its_temp);
+    // // Rcout << "Line 4478. i= "<< i << ".\n";
+    // 
+    // for ( arma::uword i = 0; i < temp_draws.n_cols; ++i ) {
+    //   temp_draws.col(i) = preds_temp_arma + Y.col(i) * U[i];
+    // }
+    // Rcout << "Line 4483. i= "<< i << ".\n";
+    
+    
+    
+    
+    //int num_its_to_sample = round(weight*(num_iter));
+    //int num_its_temp = num_its_to_sample[i];
+    
+    arma::uword m = num_test_obs;
+    arma::vec U = arma::chi2rnd(nu+num_obs,num_its_temp);
+    U = sqrt(nu+num_obs / U);
+    arma::mat Y = mvnrnd( arma::vec(m, arma::fill::zeros), covar_t,num_its_temp);
+    //arma::mat temp_draws(m, num_its_temp);
+    //for ( arma::uword i = 0; i < temp_draws.n_cols; ++i ) {
+    //  temp_draws.col(i) = preds_temp_arma + Y.col(i) * U[i];
+    //}
+    arma::rowvec Ut=U.t();
+    Y.each_row() %= Ut;
+    arma::mat temp_draws = arma::repmat(preds_temp_arma, 1, num_its_temp) +  Y;
+    
+    
+    
+    
+    
+    
+    // arma::mat temp_draws(m, num_its_temp);
+    // // Rcout << "Line 4478. i= "<< i << ".\n";
+    // 
+    // for ( arma::uword i = 0; i < temp_draws.n_cols; ++i ) {
+    //   temp_draws.col(i) = preds_temp_arma + Y.col(i) * U[i];
+    // }
+    
+    // Rcout << "number of rows of preds_temp_arma = " << preds_temp_arma.n_rows << ".\n";
+    // Rcout << "number of rows of temp_LY = " << temp_LY.n_rows << ".\n";
+    // 
+    // Rcout << "number of rows of draws_for_preds = " << draws_for_preds.n_rows << ".\n";
+    // Rcout << "number of rows of temp_draws = " << temp_draws.n_rows << ".\n";
+    //
+    
+    
+    draws_for_preds = join_cols(draws_for_preds,temp_draws.t());
+    // if(i==0){
+    //   draws_for_preds.rows(0,num_its_sum[i]-1)=temp_draws;
+    // }else{
+    //   draws_for_preds.rows(num_its_sum[i-1],num_its_sum[i]-1)=temp_draws;
+    // }
+    
+  }
+  
+  
+  //arma::colvec predicted_values;
+  // Rcout << "Line 4491";
+  
+  //arma::mat M1(preds_all_models.begin(), preds_all_models.nrow(), preds_all_models.ncol(), false);
+  arma::colvec predicted_values=sum(weighted_preds_all_models_arma,1);
+  
+  //NumericMatrix draws_wrapped= wrap(draws_for_preds);
+  NumericMatrix output(3, num_test_obs);
+  //NumericVector probs_for_quantiles =  NumericVector::create(lower_prob, 0.5, upper_prob);
+  std::vector<double> probs_for_quantiles {lower_prob, 0.5, upper_prob};
+  
+  
+  
+  // Rcout << "Line 4492";
+  //Rcout << "probs_for_quantiles = " << probs_for_quantiles << ".\n";
+  typedef std::vector<double> stdvec;
+  
+  for(int i=0;i<num_test_obs;i++){
+    //output(_,i)=Quantile(draws_wrapped(_,i), probs_for_quantiles);
+    std::vector<double> tempcol= arma::conv_to<stdvec>::from(draws_for_preds.col(i));
+    std::vector<double> tempquant= Quantile2(tempcol, probs_for_quantiles);
+    NumericVector tempforoutput = wrap(tempquant);
+    output(_,i)= tempforoutput;
+    
+  }  
+  
+  List ret(2);
+  ret[0]= output;
+  ret[1]= wrap(predicted_values);
+  
+  
+  return(ret);
+  
+}
+
+//###########################################################################################################################//
+
+
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+List pred_ints_lin_alg_insamp_bcf(List overall_sum_trees_mu,List overall_sum_trees_tau,
+                              List overall_sum_mat_mu,List overall_sum_mat_tau,
+                              NumericVector y,NumericVector BIC_weights,
+                              int num_iter,int num_obs,double a_mu,double a_tau,double sigma,
+                              double mu_mu_mu,double mu_mu_tau,double nu,
+                              double lambda,//List resids_mu,List resids_tau, 
+                              NumericVector z,
+                              double lower_prob, double upper_prob){
+  
+  
+  //Rcout << "Line 12501.\n";
+  arma::mat preds_all_models_arma(num_obs,BIC_weights.size()); 
+  arma::mat weighted_preds_all_models_arma(num_obs,BIC_weights.size());
+  
+  // for all sums of trees
+  
+  NumericVector BICi=-0.5*BIC_weights;
+  double max_BIC=max(BICi);
+  
+  
+  arma::vec z_ar=Rcpp::as<arma::vec>(z);		// converts to arma vec	
+  
+  
+  arma::vec yvec=Rcpp::as<arma::vec>(y);			// convert input y_temp to arma vec called yvec
+  arma::mat y_arma(num_obs,1);										// create a matrix with num_obs (number of observations) rows and 1 column
+  y_arma.col(0)=yvec;										// set first column of y_arma equal to yvec
+  //get exponent
+  //double expon=(num_obs+nu)/2;								// set the expoenent (equation 5 in the paper)
+  //get y_arma^Tpsi^{-1}y_arma
+  // arma::mat psi_inv=psi.i();
+  arma::mat yty=y_arma.t()*y_arma;								// yty = y_arma transpose y_arma (sum of squares)
+  
+  
+  
+  NumericVector post_weights(BIC_weights.size());
+  
+  for(int k=0;k<BIC_weights.size();k++){
+    
+    //NumericVector BICi=-0.5*BIC_weights;
+    //double max_BIC=max(BICi);
+    double weight=exp(BICi[k]-(max_BIC+log(sum(exp(BICi-max_BIC)))));
+    post_weights[k]=weight;
+    //int num_its_to_sample = round(weight*(num_iter));
+    
+  }
+  
+  //int num_models= BIC_weights.size();
+  
+  IntegerVector num_its_to_sample = RcppArmadillo::rmultinom(num_iter,post_weights);
+  
+  
+  
+  arma::mat draws_for_preds(0,num_obs);
+  
+  
+  for(int i=0;i<overall_sum_mat_mu.size();i++){
+    //make W_bcf and mu matrices for the sum of trees
+    //Rcout << "Line 12525.\n";
+    int num_its_temp = num_its_to_sample[i];
+    if(num_its_temp==0){
+      continue;
+    }
+    
+    
+    arma::mat Wmat_mu=W_bcf(overall_sum_trees_mu[i],overall_sum_mat_mu[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    //Rcout << "Wmat_mu works.\n";
+    arma::mat Wmat_tau=W_bcf(overall_sum_trees_tau[i],overall_sum_mat_tau[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    //Rcout << "Wmat_tau works.\n";
+    
+    double b_mu=Wmat_mu.n_cols;
+    double b_tau=Wmat_tau.n_cols;
+    //Wmat_tau.each_col()%=z_ar;
+    arma::mat DiagZ_Wmat_tau= Wmat_tau.each_col()%z_ar;
+    
+    
+    arma::mat Wmat = join_rows(Wmat_mu,DiagZ_Wmat_tau);
+    
+    double b=Wmat.n_cols;									// b is number of columns of W_bcf matrix (omega in the paper)
+    
+    //get t(y_arma)inv(psi)J_bcf
+    arma::mat ytW=y_arma.t()*Wmat;								// y_arma transpose W_bcf
+    //get t(J_bcf)inv(psi)J_bcf  
+    arma::mat WtW=Wmat.t()*Wmat;							// W_bcf transpose W_bcf
+    //get jpsij +aI
+    arma::mat aI(b,b);									// create b by b matrix called aI. NOT INIIALIZED. 
+    aI=aI.eye();										// a times b by b identity matrix. The .eye() turns aI into an identity matrix.
+    arma::vec a_vec_mu = a_mu*arma::ones<arma::vec>(b_mu);
+    arma::vec a_vec_tau = a_tau*arma::ones<arma::vec>(b_tau);
+    arma::vec a_vec(b);
+    a_vec.head(b_mu) = a_vec_mu;
+    a_vec.tail(b_tau) = a_vec_tau;
+    aI.diag() = a_vec;
+    
+    arma::mat sec_term=WtW+aI;							//
+    //arma::mat sec_term_inv=sec_term.i();					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    arma::mat sec_term_inv=inv_sympd(sec_term);					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    
+    //get t(J_bcf)inv(psi)y_arma
+    arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
+    //get m^TV^{-1}m
+    arma::mat mvm= ytW*sec_term_inv*third_term;		// matrix expression in middle of equation 5
+    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    
+    //Rcout << "Line 12563.\n";
+    
+    //arma::mat zeromat(arma::size(Wmat_mu),arma::fill::zeros);
+    //arma::mat zeromat(num_obs ,b_mu ,arma::fill::zeros);
+    arma::mat zeromat=arma::zeros<arma::mat>(num_obs ,b_mu);
+    arma::mat Vmat = join_rows(zeromat,Wmat_tau);
+    
+    //arma::vec preds_temp_arma= Vmat*sec_term_inv*Wmat.t()*y_arma;
+    //arma::vec preds_temp_arma= Vmat*inv_sympd(sec_term)*Wmat.t()*y_arma;
+    //arma::vec preds_temp_arma= Vmat*inv_sympd(sec_term)*third_term;
+    arma::vec preds_temp_arma= Vmat*sec_term_inv*third_term;
+    arma::mat covar_t=as_scalar((1/(nu+num_obs))*(nu*lambda+yty-mvm))*(Vmat*sec_term_inv*(Vmat.t()));
+    
+    
+    //or (possibly faster)
+    //arma::mat V_M_inv = Vmat*sec_term_inv;
+    //arma::vec preds_temp_arma= V_M_inv*third_term;
+    //arma::mat covar_t=as_scalar((1/(nu+num_obs))*(nu*lambda+yty-mvm))*(V_M_inv*(Vmat.t()));
+    
+    weighted_preds_all_models_arma.col(i)=preds_temp_arma*post_weights[i];
+    
+    preds_all_models_arma.col(i)=preds_temp_arma;
+    
+    
+    
+    //int num_its_to_sample = round(weight*(num_iter));
+
+    arma::uword m = num_obs;
+    arma::vec U = arma::chi2rnd(nu+num_obs,num_its_temp);
+    U = sqrt(nu+num_obs / U);
+    arma::mat Y = mvnrnd( arma::vec(m, arma::fill::zeros), covar_t,num_its_temp);
+    arma::mat temp_draws(m, num_its_temp);
+    for ( arma::uword i = 0; i < temp_draws.n_cols; ++i ) {
+      temp_draws.col(i) = preds_temp_arma + Y.col(i) * U[i];
+    }
+    //arma::rowvec Ut=U.t();
+    //Y.each_row() %= Ut;
+    //arma::mat temp_draws = arma::repmat(preds_temp_arma, 1, num_its_temp) +  Y;
+    
+    
+    
+    
+    
+    draws_for_preds = join_cols(draws_for_preds,temp_draws.t());
+    // if(i==0){
+    //   draws_for_preds.rows(0,num_its_sum[i]-1)=temp_draws;
+    // }else{
+    //   draws_for_preds.rows(num_its_sum[i-1],num_its_sum[i]-1)=temp_draws;
+    // }
+    
+  }
+  
+  //arma::colvec predicted_values;
+  
+  //arma::mat M1(preds_all_models.begin(), preds_all_models.nrow(), preds_all_models.ncol(), false);
+  arma::colvec predicted_values=sum(weighted_preds_all_models_arma,1);
+  
+  //NumericMatrix draws_wrapped= wrap(draws_for_preds);
+  NumericMatrix output(3, num_obs);
+  //NumericVector probs_for_quantiles =  NumericVector::create(lower_prob, 0.5, upper_prob);
+  std::vector<double> probs_for_quantiles {lower_prob, 0.5, upper_prob};
+  
+  
+  
+  typedef std::vector<double> stdvec;
+  
+  for(int i=0;i<num_obs;i++){
+    //output(_,i)=Quantile(draws_wrapped(_,i), probs_for_quantiles);
+    std::vector<double> tempcol= arma::conv_to<stdvec>::from(draws_for_preds.col(i));
+    std::vector<double> tempquant= Quantile2(tempcol, probs_for_quantiles);
+    NumericVector tempforoutput = wrap(tempquant);
+    output(_,i)= tempforoutput;
+    
+  }  
+  
+  List ret(2);
+  ret[0]= output;
+  ret[1]= wrap(predicted_values);
+  
+  
+  
+  return(ret);
+}
+//###########################################################################################################################//
+
+// [[Rcpp::export]]
+
+arma::field<arma::uvec> get_termobs_test_data_fields_bcf(NumericMatrix test_data,NumericMatrix tree_data) {
+  // Function to make predictions from test data, given a single tree and the terminal node predictions, this function will be called
+  //for each tree accepted in Occam's Window.
+  
+  //test_data is a nxp matrix with the same variable names as the training data the model was built on
+  
+  //tree_data is the tree table with the tree information i.e. split points and split variables and terminal node mean values
+  
+  //term_node_means is a vector storing the terminal node mean values
+  
+  arma::mat arma_tree(tree_data.begin(), tree_data.nrow(), tree_data.ncol(), false);
+  arma::mat testd(test_data.begin(), test_data.nrow(), test_data.ncol(), false);
+  //NumericVector internal_nodes=find_internal_nodes_gs(tree_data);
+  NumericVector terminal_nodes=find_term_nodes_bcf(tree_data);
+  //arma::vec arma_terminal_nodes=Rcpp::as<arma::vec>(terminal_nodes);
+  //NumericVector tree_predictions;
+  
+  //now for each internal node find the observations that belong to the terminal nodes
+  
+  //NumericVector predictions(test_data.nrow());
+  //List term_obs(terminal_nodes.size());
+  arma::field<arma::uvec> term_obsF(terminal_nodes.size());
+  
+  if(terminal_nodes.size()==1){
+    //double nodemean=tree_data(terminal_nodes[0]-1,5);				// let nodemean equal tree_data row terminal_nodes[i]^th row , 6th column. The minus 1 is because terminal nodes consists of indices starting at 1, but need indices to start at 0.
+    //predictions=rep(nodemean,test_data.nrow());
+    IntegerVector temp_obsvec = seq_len(test_data.nrow())-1;
+    term_obsF(0)= Rcpp::as<arma::uvec>(temp_obsvec);
+  }
+  else{
+    for(int i=0;i<terminal_nodes.size();i++){
+      //arma::mat subdata=testd;
+      int curr_term=terminal_nodes[i];
+      int row_index;
+      int term_node=terminal_nodes[i];
+      
+      if(curr_term % 2==0){
+        //term node is left daughter
+        row_index=terminal_nodes[i];
+      }else{
+        //term node is right daughter
+        row_index=terminal_nodes[i]-1;
+      }
+      
+      //save the left and right node data into arma uvec
+      
+      arma::vec left_nodes=arma_tree.col(0);
+      arma::vec right_nodes=arma_tree.col(1);
+      arma::mat node_split_mat;    
+      node_split_mat.set_size(0,3);
+      
+      while(row_index!=1){
+        //for each terminal node work backwards and see if the parent node was a left or right node
+        //append split info to a matrix 
+        int rd=0;
+        arma::uvec parent_node=arma::find(left_nodes == term_node);
+        
+        if(parent_node.size()==0){
+          parent_node=arma::find(right_nodes == term_node);
+          rd=1;
+        }
+        
+        //want to cout parent node and append to node_split_mat
+        
+        node_split_mat.insert_rows(0,1);
+        node_split_mat(0,0)=tree_data(parent_node[0],2);
+        node_split_mat(0,1)=tree_data(parent_node[0],3);
+        node_split_mat(0,2)=rd;     
+        row_index=parent_node[0]+1;
+        term_node=parent_node[0]+1;
+      }
+      
+      //once we have the split info, loop through rows and find the subset indexes for that terminal node!
+      //then fill in the predicted value for that tree
+      //double prediction = tree_data(term_node,5);
+      arma::uvec pred_indices;
+      int split= node_split_mat(0,0)-1;
+      arma::vec tempvec = testd.col(split);
+      double temp_split = node_split_mat(0,1);
+      
+      if(node_split_mat(0,2)==0){
+        pred_indices = arma::find(tempvec <= temp_split);
+      }else{
+        pred_indices = arma::find(tempvec > temp_split);      
+      }
+      
+      arma::uvec temp_pred_indices;
+      arma::vec data_subset = testd.col(split);
+      data_subset=data_subset.elem(pred_indices);
+      
+      //now loop through each row of node_split_mat
+      int n=node_split_mat.n_rows;
+      
+      for(int j=1;j<n;j++){
+        int curr_sv=node_split_mat(j,0);
+        double split_p = node_split_mat(j,1);
+        
+        data_subset = testd.col(curr_sv-1);
+        data_subset=data_subset.elem(pred_indices);
+        
+        if(node_split_mat(j,2)==0){
+          //split is to the left
+          temp_pred_indices=arma::find(data_subset <= split_p);
+        }else{
+          //split is to the right
+          temp_pred_indices=arma::find(data_subset > split_p);
+        }
+        pred_indices=pred_indices.elem(temp_pred_indices);
+        
+        if(pred_indices.size()==0){
+          continue;
+        }
+        
+      }
+      
+      //double nodemean=tree_data(terminal_nodes[i]-1,5);
+      IntegerVector predind=as<IntegerVector>(wrap(pred_indices));
+      //predictions[predind]= nodemean;
+      term_obsF(i)=Rcpp::as<arma::uvec>(predind);
+    } 
+  }
+  //List ret(1);
+  //ret[0] = term_obs;
+  
+  //ret[0] = terminal_nodes;
+  //ret[1] = term_obs;
+  //ret[2] = predictions;
+  return(term_obsF);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// [[Rcpp::depends(RcppArmadillo)]]
+
+arma::field<arma::field<arma::field<arma::uvec>>> get_termobs_testdata_fields_overall_bcf(List overall_sum_trees,NumericMatrix test_data){
+  
+  //List overall_term_nodes_trees(overall_sum_trees.size());
+  //  List overall_term_obs_trees(overall_sum_trees.size());
+  //List overall_predictions(overall_sum_trees.size());
+  
+  arma::field<arma::field<arma::field<arma::uvec>>> OutputF(overall_sum_trees.size()) ;
+  
+  for(int i=0;i<overall_sum_trees.size();i++){
+    //for each set of trees loop over individual trees
+    SEXP s = overall_sum_trees[i];
+    
+    NumericVector test_preds_sum_tree;
+    if(is<List>(s)){
+      //if current set of trees contains more than one tree...usually does!
+      List sum_tree=overall_sum_trees[i];        
+      //save all info in list of list format the same as the trees.       
+      //List term_nodes_trees(sum_tree.size());
+      //List term_obs_trees(sum_tree.size());
+      arma::field<arma::field<arma::uvec>> term_obs_treesF(sum_tree.size());
+      //NumericMatrix predictions(num_obs,sum_tree.size());
+      
+      for(int k=0;k<sum_tree.size();k++){          
+        NumericMatrix tree_table=sum_tree[k];
+        arma::field<arma::uvec> tree_infoF=get_termobs_test_data_fields_bcf(test_data, tree_table) ;
+        //NumericVector term_nodes=tree_info[0];
+        //term_nodes_trees[k]=term_nodes;
+        term_obs_treesF(k)=tree_infoF;
+        //umericVector term_preds=tree_info[2];
+        //predictions(_,k)=term_preds;
+      } 
+      //overall_term_nodes_trees[i]=term_nodes_trees;
+      OutputF(i)= term_obs_treesF;
+      //overall_predictions[i]=predictions;
+    }else{
+      NumericMatrix sum_tree=overall_sum_trees[i];
+      arma::field<arma::uvec> tree_infoF=get_termobs_test_data_fields_bcf(test_data, sum_tree) ;
+      //overall_term_nodes_trees[i]=tree_info[0];
+      //List term_obs_trees(1);
+      arma::field<arma::field<arma::uvec>> term_obs_treesF(1);
+      term_obs_treesF(0)=tree_infoF ;
+      //NumericVector term_preds=tree_info[2];
+      //NumericVector predictions=term_preds;   
+      OutputF(i)= term_obs_treesF;
+      //overall_predictions[i]=predictions;
+    }  
+  }    
+  //List ret(1);
+  //ret[0]=overall_term_nodes_trees;
+  //ret[0]=overall_term_obs_trees;
+  //ret[2]=overall_predictions;
+  return(OutputF);
+}
+//###########################################################################################################################//
+
+// [[Rcpp::plugins(openmp)]]
+// Protect against compilers without OpenMP
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+List pred_ints_lin_alg_fields_outsamp_bcf(List overall_sum_trees_mu,List overall_sum_trees_tau,
+                                   List overall_sum_mat_mu,List overall_sum_mat_tau,
+                                   NumericVector y,NumericVector BIC_weights,
+                                   int num_iter,int num_obs,double a_mu,double a_tau,double sigma,
+                                   double mu_mu_mu,double mu_mu_tau,double nu,
+                                   double lambda,//List resids_mu,List resids_tau, 
+                                   NumericVector z,
+                                   NumericMatrix test_data, NumericMatrix test_pihat, 
+                                   NumericVector z_test,int include_pi2, int num_propscores,
+                                   int num_test_obs, double lower_prob, double upper_prob, 
+                                   int num_cores){
+  
+  
+  if(test_pihat.ncol() != num_propscores){
+    throw std::range_error("Number of sets of propensity score estimates must be equal to that used in fitting the original BCFBMA models");
+  }
+  if(z_test.size() != test_data.nrow()){	// If the number of rows in the test data covariate matrix is not equal to that of the test data treatment indicator variable
+    throw std::range_error("Test data covariates and test data treatment indicator variable must have the same number of observations."); 
+  }
+  if(test_data.nrow() != test_pihat.nrow()){	// If the number of rows in the test data covariate matrix is not equal to that of the test data propensity score estimates matrix
+    throw std::range_error("Test data covariates and test data propensity score estimates must have the same number of observations."); 
+  }
+  // Add test propensity scores to test data matrix
+  arma::mat T1(test_data.begin(), test_data.nrow(), test_data.ncol(), false);				// copy the covariate test_data matrix into an arma mat
+  arma::mat pihat_a_test(test_pihat.begin(), test_pihat.nrow(), test_pihat.ncol(), false);				// copy the test_pihat matrix into an arma mat
+  arma::mat x_control_test_a=T1;				// create a copy of test_data arma mat called x_control_test_a
+  if((include_pi2==0)| (include_pi2==2) ){
+    if(test_pihat.nrow()>0 ){
+      x_control_test_a.insert_cols(0,pihat_a_test);		// add propensity scores as new leftmost columns of x_control_test_a
+    }
+  }
+  NumericMatrix x_control_test=wrap(x_control_test_a);	// convert x_control_test_a to a NumericMatrix called x_control_test
+  // Name the matrix without the estimated propensity scores x_moderate_test.[CAN REMOVE THE DUPLICATION AND ADD x_control_test, x_moderate_test, and include_pi as input parameters later]
+  //NumericMatrix x_moderate_test = test_data;	// x_moderate_test matrix is the covariate test_data without the propensity scores
+  arma::mat x_moderate_test_a=T1;			// create arma mat copy of x_moderate_test.
+  if((include_pi2==1)| (include_pi2==2) ){
+    if(test_pihat.nrow()>0 ){
+      x_moderate_test_a.insert_cols(0,pihat_a_test);		// add propensity scores as new leftmost columns of x_control_a
+    }
+  }
+  NumericMatrix x_moderate_test=wrap(x_moderate_test_a);	// convert x_control_test_a to a NumericMatrix called x_control_test
+  
+  
+  //Rcout <<"Line 12625.\n";
+  
+  arma::field<arma::field<arma::field<arma::uvec>>> termobs_testdata_overallF_tau=get_termobs_testdata_fields_overall_bcf(overall_sum_trees_tau,x_moderate_test);
+  
+  //List termobs_testdata_overall_mu= get_termobs_testdata_overall_all(overall_sum_trees_mu,test_data);
+  List termobs_testdata_overall_tau= get_termobs_testdata_overall_all(overall_sum_trees_tau,test_data);
+  
+  
+  
+  
+  
+  //NumericMatrix preds_all_models(num_test_obs,BIC_weights.size());
+  arma::mat preds_all_models_arma(num_test_obs,BIC_weights.size());
+  arma::mat weighted_preds_all_models_arma(num_test_obs,BIC_weights.size());
+  
+  // for all sums of trees
+  
+  NumericVector BICi=-0.5*BIC_weights;
+  double max_BIC=max(BICi);
+  
+  
+  NumericVector post_weights(BIC_weights.size());
+  
+  for(int k=0;k<BIC_weights.size();k++){
+    
+    //NumericVector BICi=-0.5*BIC_weights;
+    //double max_BIC=max(BICi);
+    double weight=exp(BICi[k]-(max_BIC+log(sum(exp(BICi-max_BIC)))));
+    post_weights[k]=weight;
+    //int num_its_to_sample = round(weight*(num_iter));
+    
+  }
+  
+  //int num_models= BIC_weights.size();
+  
+  
+  arma::vec post_weights_arma = as<arma::vec>(post_weights);
+  
+  IntegerVector num_its_to_sample = RcppArmadillo::rmultinom(num_iter,post_weights);
+  IntegerVector num_its_sum = cumsum(num_its_to_sample);
+  arma::vec num_its_to_sample_arma = as<arma::vec>(num_its_to_sample);
+  arma::vec num_its_sum_arma = as<arma::vec>(num_its_sum);
+  
+  //arma::mat draws_for_preds(0,num_test_obs);
+  //arma::mat draws_for_preds(num_iter,num_test_obs);
+  arma::mat draws_for_preds(num_iter,num_test_obs);
+  
+  arma::vec z_ar=Rcpp::as<arma::vec>(z);		// converts to arma vec	
+  
+  arma::vec yvec=Rcpp::as<arma::vec>(y);
+  arma::mat y_arma(num_obs,1);
+  y_arma.col(0)=yvec;
+  //get exponent
+  //double expon=(n+nu)/2;
+  //get y^Tpsi^{-1}y
+  // arma::mat psi_inv=psi.i();
+  
+  
+  arma::mat yty=y_arma.t()*y_arma;
+  
+  arma::mat I_test(num_test_obs,num_test_obs);
+  I_test=I_test.eye();
+  
+  
+  
+  //create field (armadillo list) of models
+  //each model is a field (armadillo list) of trees represented by matrices
+  arma::field<arma::field<arma::mat>> modelsF_mu(overall_sum_trees_mu.size());
+  for(int i=0;i<overall_sum_trees_mu.size();i++){
+    List temp_tree_list = overall_sum_trees_mu[i];
+    //Rcout << "Line 5661.\n";
+    
+    arma::field<arma::mat> treesF(temp_tree_list.size());
+    for(int q=0;q<temp_tree_list.size();q++){
+      //Rcout << "Line 5663.\n";
+      arma::mat temp_tree_mat = Rcpp::as<arma::mat>(temp_tree_list[q]);
+      treesF(q)=temp_tree_mat;
+    }
+    //Rcout << "Line 5669.\n";
+    
+    modelsF_mu(i)=treesF;
+  }
+  
+  
+  arma::field<arma::field<arma::mat>> matsF_mu(overall_sum_mat_mu.size());
+  for(int i=0;i<overall_sum_mat_mu.size();i++){
+    List temp_tree_list = overall_sum_mat_mu[i];
+    arma::field<arma::mat> treesF(temp_tree_list.size());
+    for(int q=0;q<temp_tree_list.size();q++){
+      arma::mat temp_tree_mat = Rcpp::as<arma::mat>(temp_tree_list[q]);
+      treesF(q)=temp_tree_mat;
+    }
+    matsF_mu(i)=treesF;
+  }
+  
+  
+  
+  
+  
+  
+  //create field (armadillo list) of models
+  //each model is a field (armadillo list) of trees represented by matrices
+  arma::field<arma::field<arma::mat>> modelsF_tau(overall_sum_trees_tau.size());
+  for(int i=0;i<overall_sum_trees_tau.size();i++){
+    List temp_tree_list = overall_sum_trees_tau[i];
+    //Rcout << "Line 5661.\n";
+    
+    arma::field<arma::mat> treesF(temp_tree_list.size());
+    for(int q=0;q<temp_tree_list.size();q++){
+      //Rcout << "Line 5663.\n";
+      arma::mat temp_tree_mat = Rcpp::as<arma::mat>(temp_tree_list[q]);
+      treesF(q)=temp_tree_mat;
+    }
+    //Rcout << "Line 5669.\n";
+    
+    modelsF_tau(i)=treesF;
+  }
+  
+  
+  arma::field<arma::field<arma::mat>> matsF_tau(overall_sum_mat_tau.size());
+  for(int i=0;i<overall_sum_mat_tau.size();i++){
+    List temp_tree_list = overall_sum_mat_tau[i];
+    arma::field<arma::mat> treesF(temp_tree_list.size());
+    for(int q=0;q<temp_tree_list.size();q++){
+      arma::mat temp_tree_mat = Rcpp::as<arma::mat>(temp_tree_list[q]);
+      treesF(q)=temp_tree_mat;
+    }
+    matsF_tau(i)=treesF;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+#pragma omp parallel num_threads(num_cores)
+#pragma omp for
+  for(int i=0;i<overall_sum_mat_mu.size();i++){
+    //make W_bcf and mu matrices for the sum of trees
+    
+    //arma::mat Wmat_mu=W_bcf(overall_sum_trees_mu[i],overall_sum_mat_mu[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    //Rcout << "Wmat_mu works.\n";
+    
+    int num_its_temp = num_its_to_sample_arma[i];
+    if(num_its_temp==0){
+      continue;
+    }
+    
+    arma::mat Wmat_mu(num_obs,0);
+    int upsilon=0;
+    for(int j=0;j<modelsF_mu(i).n_elem;j++){
+      
+      arma::mat curr_tree=(modelsF_mu(i))(j);
+      arma::mat curr_obs_nodes=(matsF_mu(i))(j);
+      //NumericVector tree_term_nodes=find_term_nodes(curr_tree);
+      arma::vec colmat=curr_tree.col(4);
+      arma::uvec term_nodes=arma::find(colmat==-1);
+      term_nodes=term_nodes+1;
+      
+      int b_j=term_nodes.n_elem;
+      //begin J function
+      
+      //will make J as we go in BART-BMA no need to create it again here....
+      // arma::mat Jmat=J(curr_obs_nodes,tree_term_nodes);
+      arma::mat tree_matrix_temp = (matsF_mu(i))(j);
+      arma::mat Jmat(tree_matrix_temp.n_rows, b_j);
+      Jmat.zeros();
+      
+      //for each terminal node get the observations associated with it and set column
+      for(int q=0;q<b_j;q++){
+        //double tn=term_nodes[q];
+        //arma::uvec term_obs=find_term_obs(obs_to_nodes_temp,tn);
+        
+        //begin find_term_obs
+        
+        //arma::mat arma_tree_mat(tree_matrix_temp.begin(),tree_matrix_temp.nrow(), tree_matrix_temp.ncol(), false); 
+        //for reference arma_tree_mat == matsF(i)(j) == tree_matrix_temp
+        
+        arma::uvec term_obs;
+        
+        for(int r=0;r<tree_matrix_temp.n_cols;r++){
+          //arma::vec colmat=arma_tree_mat.col(r);
+          arma::vec colmat=tree_matrix_temp.col(r);
+          term_obs=arma::find(colmat==term_nodes[q]);
+          if(term_obs.size()>0){
+            break;
+          }
+        }
+        
+        //end find_term_obs
+        
+        
+        //assign term_obs to the correct index of J
+        //NumericVector term_obs2=as<NumericVector>(wrap(term_obs));
+        //NumericVector obs_col(obs_to_nodes_temp.nrow());
+        arma::vec obs_col= arma::zeros<arma::vec>(tree_matrix_temp.n_rows);
+        //Rcout << "Line 5747.\n";
+        obs_col.elem(term_obs)= arma::ones<arma::vec>(term_obs.n_elem);
+        //Rcout << "Line 5749.\n";
+        //arma::vec colmat=Rcpp::as<arma::vec>(obs_col);
+        Jmat.col(q)= obs_col;
+        
+        // arma::vec  colmat=arma::zeros(Jmat.n_rows) ;// colmattest(Jmat.n_rows,0);
+        // colmat.elem(term_obs).fill(1);
+        // Jmat.col(i)= colmat;
+      }
+      
+      
+      
+      
+      Wmat_mu.insert_cols(upsilon,Jmat);
+      upsilon+=b_j;
+    }
+    
+  
+  
+  
+  
+  
+    
+    //arma::mat Wmat_tau=W_bcf(overall_sum_trees_tau[i],overall_sum_mat_tau[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    
+    
+    arma::mat Wmat_tau(num_obs,0);
+    int upsilon2=0;
+    for(int j=0;j<modelsF_tau(i).n_elem;j++){
+      
+      arma::mat curr_tree=(modelsF_tau(i))(j);
+      arma::mat curr_obs_nodes=(matsF_tau(i))(j);
+      //NumericVector tree_term_nodes=find_term_nodes(curr_tree);
+      arma::vec colmat=curr_tree.col(4);
+      arma::uvec term_nodes=arma::find(colmat==-1);
+      term_nodes=term_nodes+1;
+      
+      int b_j=term_nodes.n_elem;
+      //begin J function
+      
+      //will make J as we go in BART-BMA no need to create it again here....
+      // arma::mat Jmat=J(curr_obs_nodes,tree_term_nodes);
+      arma::mat tree_matrix_temp = (matsF_tau(i))(j);
+      arma::mat Jmat(tree_matrix_temp.n_rows, b_j);
+      Jmat.zeros();
+      
+      //for each terminal node get the observations associated with it and set column
+      for(int q=0;q<b_j;q++){
+        //double tn=term_nodes[q];
+        //arma::uvec term_obs=find_term_obs(obs_to_nodes_temp,tn);
+        
+        //begin find_term_obs
+        
+        //arma::mat arma_tree_mat(tree_matrix_temp.begin(),tree_matrix_temp.nrow(), tree_matrix_temp.ncol(), false); 
+        //for reference arma_tree_mat == matsF(i)(j) == tree_matrix_temp
+        
+        arma::uvec term_obs;
+        
+        for(int r=0;r<tree_matrix_temp.n_cols;r++){
+          //arma::vec colmat=arma_tree_mat.col(r);
+          arma::vec colmat=tree_matrix_temp.col(r);
+          term_obs=arma::find(colmat==term_nodes[q]);
+          if(term_obs.size()>0){
+            break;
+          }
+        }
+        
+        //end find_term_obs
+        
+        
+        //assign term_obs to the correct index of J
+        //NumericVector term_obs2=as<NumericVector>(wrap(term_obs));
+        //NumericVector obs_col(obs_to_nodes_temp.nrow());
+        arma::vec obs_col= arma::zeros<arma::vec>(tree_matrix_temp.n_rows);
+        //Rcout << "Line 5747.\n";
+        obs_col.elem(term_obs)= arma::ones<arma::vec>(term_obs.n_elem);
+        //Rcout << "Line 5749.\n";
+        //arma::vec colmat=Rcpp::as<arma::vec>(obs_col);
+        Jmat.col(q)= obs_col;
+        
+        // arma::vec  colmat=arma::zeros(Jmat.n_rows) ;// colmattest(Jmat.n_rows,0);
+        // colmat.elem(term_obs).fill(1);
+        // Jmat.col(i)= colmat;
+      }
+      
+      
+      
+      
+      Wmat_tau.insert_cols(upsilon2,Jmat);
+      upsilon2+=b_j;
+    }
+    
+    
+    
+    
+    arma::mat W_tilde_tau(num_test_obs,0);
+    int upsilon3=0;
+    for(int j=0;j<modelsF_tau(i).n_elem;j++){
+      
+      arma::mat  curr_tree=(modelsF_tau(i))(j);
+      arma::field<arma::uvec> curr_termobs=(termobs_testdata_overallF_tau(i))(j);
+      
+      //begin find termnodes
+      //NumericVector tree_term_nodes=find_term_nodes(curr_tree);
+      
+      //arma::mat arma_tree(tree_table.begin(),tree_table.nrow(), tree_table.ncol(), false); 
+      arma::vec colmat=curr_tree.col(4);
+      arma::uvec term_nodes=arma::find(colmat==-1);
+      term_nodes=term_nodes+1;
+      
+      //return(wrap(term_nodes));
+      //Rcout << "Line 5782.\n";
+      
+      //end find termnodes
+      
+      int b_j=term_nodes.size();
+      //will make J as we go in BART-BMA no need to create it again here....
+      //arma::mat Jmat=get_J_test(curr_termobs,tree_term_nodes,n);
+      //arma::mat Jmat=get_J_test(curr_termobs,term_nodes,num_test_obs);
+      
+      //begin J test function
+      arma::mat Jmat(num_test_obs, term_nodes.n_elem);
+      Jmat.zeros();
+      
+      //for each terminal node get the observations associated with it and set column
+      for(int q=0;q<term_nodes.n_elem;q++){
+        //double tn=tree_term_nodes[q];
+        //arma::uvec term_obs=find_term_obs(obs_to_nodes_temp,tn);
+        //assign term_obs to the correct index of J
+        arma::uvec term_obs2=curr_termobs(q);
+        arma::vec obs_col= arma::zeros<arma::vec>(num_test_obs);
+        //Rcout << "Line 5809.\n";
+        obs_col.elem(term_obs2)=arma::ones<arma::vec>(term_obs2.n_elem);
+        //Rcout << "Line 5811.\n";
+        //arma::vec colmat=Rcpp::as<arma::vec>(obs_col);
+        Jmat.col(q)= obs_col;
+        
+        // arma::vec  colmat=arma::zeros(Jmat.n_rows) ;// colmattest(Jmat.n_rows,0);
+        // colmat.elem(term_obs).fill(1);
+        // Jmat.col(q)= colmat;
+      }
+      //return(Jmat);
+      
+      //end J test function
+      
+      W_tilde_tau.insert_cols(upsilon3,Jmat);
+      upsilon3+=b_j;
+    }
+    
+    
+    
+    
+    
+    
+    
+    //Rcout << "Wmat_tau works.\n";
+    //Rcout <<"Line 12664.\n";
+    
+    double b_mu=Wmat_mu.n_cols;
+    double b_tau=Wmat_tau.n_cols;
+    //Rcout <<"Line 12668.\n";
+    
+    Wmat_tau.each_col()%=z_ar;
+    //Rcout <<"Line 12671.\n";
+    
+    arma::mat Wmat = join_rows(Wmat_mu,Wmat_tau);
+    //Rcout <<"Line 12674.\n";
+    
+    double b=Wmat.n_cols;									// b is number of columns of W_bcf matrix (omega in the paper)
+    
+    
+    
+    //arma::mat W_tilde_mu=get_W_test(overall_sum_trees_mu[i],termobs_testdata_overall_mu[i],num_test_obs);
+    //arma::mat W_tilde_tau=get_W_test(overall_sum_trees_tau[i],termobs_testdata_overall_tau[i],num_test_obs);
+    
+    //alternative would be to obtain Diag(Ztest)Wtest 
+    //arma::mat DiagZtestWtest=get_W_test(overall_sum_trees_tau[i],treated_termobs_testdata_overall_tau[i],num_test_obs);
+    //but don't use DiagZtestWtest in this function
+    
+    //Rcout <<"Line 12679.\n";
+    
+    
+    
+    
+    
+    
+    
+    //get t(y_arma)inv(psi)J_bcf
+    arma::mat ytW=y_arma.t()*Wmat;								// y_arma transpose W_bcf
+    //get t(J_bcf)inv(psi)J_bcf  
+    arma::mat WtW=Wmat.t()*Wmat;							// W_bcf transpose W_bcf
+    //get jpsij +aI
+    arma::mat aI(b,b);									// create b by b matrix called aI. NOT INIIALIZED. 
+    aI=aI.eye();										// a times b by b identity matrix. The .eye() turns aI into an identity matrix.
+    arma::vec a_vec_mu = a_mu*arma::ones<arma::vec>(b_mu);
+    arma::vec a_vec_tau = a_tau*arma::ones<arma::vec>(b_tau);
+    arma::vec a_vec(b);
+    a_vec.head(b_mu) = a_vec_mu;
+    a_vec.tail(b_tau) = a_vec_tau;
+    aI.diag() = a_vec;
+    
+    arma::mat sec_term=WtW+aI;							//
+    //arma::mat sec_term_inv=sec_term.i();					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    arma::mat sec_term_inv=inv_sympd(sec_term);					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    
+    //get t(J_bcf)inv(psi)y_arma
+    arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
+    //get m^TV^{-1}m
+    arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
+    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    
+    //Rcout <<"Line 12713.\n";
+    
+    //arma::mat zeromat(arma::size(Wmat_mu),arma::fill::zeros);
+    //arma::mat zeromat(num_obs ,b_mu ,arma::fill::zeros);
+    arma::mat zeromat=arma::zeros<arma::mat>(num_test_obs,b_mu);
+    arma::mat Vmat = join_rows(zeromat,W_tilde_tau);
+    
+    //arma::vec preds_temp_arma= Vmat*sec_term_inv*Wmat.t()*y_arma;
+    //arma::vec preds_temp_arma= Vmat*inv_sympd(sec_term)*Wmat.t()*y_arma;
+    arma::vec preds_temp_arma= Vmat*sec_term_inv*third_term;
+    arma::mat covar_t=as_scalar((1/(nu+num_obs))*(nu*lambda+yty-mvm))*(Vmat*sec_term_inv*(Vmat.t()));
+    
+    
+    //or (possibly faster)
+    //arma::mat V_M_inv = Vmat*sec_term_inv;
+    //arma::vec preds_temp_arma= V_M_inv*third_term;
+    //arma::mat covar_t=as_scalar((1/(nu+num_obs))*(nu*lambda+yty-mvm))*(V_M_inv*(Vmat.t()));
+    
+    
+    
+    //Rcout << "Line 12573.\n";
+    
+    weighted_preds_all_models_arma.col(i)=preds_temp_arma*post_weights_arma[i];
+    preds_all_models_arma.col(i)=preds_temp_arma;
+    
+    // Rcout << "Line 4468. i= "<< i << ".\n";
+    
+    
+    //int num_its_to_sample = round(weight*(num_iter));
+    
+
+    // arma::uword m = num_test_obs;
+    // arma::vec U = arma::chi2rnd(nu+num_obs,num_its_temp);
+    // U = sqrt(nu+num_obs / U);
+    // arma::mat Y = arma::mvnrnd( arma::colvec(m, arma::fill::zeros), covar_t,num_its_temp);
+    // arma::mat temp_draws(m, num_its_temp);
+    // // Rcout << "Line 4478. i= "<< i << ".\n";
+    // 
+    // for ( arma::uword i = 0; i < temp_draws.n_cols; ++i ) {
+    //   temp_draws.col(i) = preds_temp_arma + Y.col(i) * U[i];
+    // }
+    // Rcout << "Line 4483. i= "<< i << ".\n";
+    
+    
+    
+    
+    //int num_its_to_sample = round(weight*(num_iter));
+    //int num_its_temp = num_its_to_sample[i];
+    
+    arma::uword m = num_test_obs;
+    arma::vec U = arma::chi2rnd(nu+num_obs,num_its_temp);
+    U = sqrt(nu+num_obs / U);
+    arma::mat Y = mvnrnd( arma::vec(m, arma::fill::zeros), covar_t,num_its_temp);
+    //arma::mat temp_draws(m, num_its_temp);
+    //for ( arma::uword i = 0; i < temp_draws.n_cols; ++i ) {
+    //  temp_draws.col(i) = preds_temp_arma + Y.col(i) * U[i];
+    //}
+    arma::rowvec Ut=U.t();
+    Y.each_row() %= Ut;
+    arma::mat temp_draws = arma::repmat(preds_temp_arma, 1, num_its_temp) +  Y;
+    
+    
+    
+    //draws_for_preds = join_cols(draws_for_preds,temp_draws.t());
+    if(i==0){
+      draws_for_preds.rows(0,num_its_sum_arma[i]-1)=temp_draws.t();
+    }else{
+      draws_for_preds.rows(num_its_sum_arma[i-1],num_its_sum_arma[i]-1)=temp_draws.t();
+    }
+    
+    // arma::mat temp_draws(m, num_its_temp);
+    // // Rcout << "Line 4478. i= "<< i << ".\n";
+    // 
+    // for ( arma::uword i = 0; i < temp_draws.n_cols; ++i ) {
+    //   temp_draws.col(i) = preds_temp_arma + Y.col(i) * U[i];
+    // }
+    
+    // Rcout << "number of rows of preds_temp_arma = " << preds_temp_arma.n_rows << ".\n";
+    // Rcout << "number of rows of temp_LY = " << temp_LY.n_rows << ".\n";
+    // 
+    // Rcout << "number of rows of draws_for_preds = " << draws_for_preds.n_rows << ".\n";
+    // Rcout << "number of rows of temp_draws = " << temp_draws.n_rows << ".\n";
+    //
+    
+
+    
+    
+  }
+  
+#pragma omp barrier  
+
+  //arma::colvec predicted_values;
+  // Rcout << "Line 4491";
+  
+  //arma::mat M1(preds_all_models.begin(), preds_all_models.nrow(), preds_all_models.ncol(), false);
+  arma::colvec predicted_values=sum(weighted_preds_all_models_arma,1);
+  
+  //NumericMatrix draws_wrapped= wrap(draws_for_preds);
+  NumericMatrix output(3, num_test_obs);
+  //NumericVector probs_for_quantiles =  NumericVector::create(lower_prob, 0.5, upper_prob);
+  std::vector<double> probs_for_quantiles {lower_prob, 0.5, upper_prob};
+  
+  
+  
+  // Rcout << "Line 4492";
+  //Rcout << "probs_for_quantiles = " << probs_for_quantiles << ".\n";
+  typedef std::vector<double> stdvec;
+  
+  for(int i=0;i<num_test_obs;i++){
+    //output(_,i)=Quantile(draws_wrapped(_,i), probs_for_quantiles);
+    std::vector<double> tempcol= arma::conv_to<stdvec>::from(draws_for_preds.col(i));
+    std::vector<double> tempquant= Quantile2(tempcol, probs_for_quantiles);
+    NumericVector tempforoutput = wrap(tempquant);
+    output(_,i)= tempforoutput;
+    
+  }  
+  
+  List ret(2);
+  ret[0]= output;
+  ret[1]= wrap(predicted_values);
+  
+  
+  return(ret);
+  
+}
+
+//###########################################################################################################################//
+
+// [[Rcpp::plugins(openmp)]]
+// Protect against compilers without OpenMP
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+List pred_ints_lin_alg_fields_insamp_bcf(List overall_sum_trees_mu,List overall_sum_trees_tau,
+                                  List overall_sum_mat_mu,List overall_sum_mat_tau,
+                                  NumericVector y,NumericVector BIC_weights,
+                                  int num_iter,int num_obs,double a_mu,double a_tau,double sigma,
+                                  double mu_mu_mu,double mu_mu_tau,double nu,
+                                  double lambda,//List resids_mu,List resids_tau, 
+                                  NumericVector z,
+                                  double lower_prob, double upper_prob, 
+                                  int num_cores){
+  
+  
+  //Rcout << "Line 14403.\n";
+  arma::mat preds_all_models_arma(num_obs,BIC_weights.size()); 
+  arma::mat weighted_preds_all_models_arma(num_obs,BIC_weights.size());
+  
+  // for all sums of trees
+  
+  NumericVector BICi=-0.5*BIC_weights;
+  double max_BIC=max(BICi);
+  
+  
+  
+  
+  NumericVector post_weights(BIC_weights.size());
+  
+  for(int k=0;k<BIC_weights.size();k++){
+    
+    //NumericVector BICi=-0.5*BIC_weights;
+    //double max_BIC=max(BICi);
+    double weight=exp(BICi[k]-(max_BIC+log(sum(exp(BICi-max_BIC)))));
+    post_weights[k]=weight;
+    //int num_its_to_sample = round(weight*(num_iter));
+    
+  }
+  
+  
+  arma::vec post_weights_arma = as<arma::vec>(post_weights);
+  
+  //int num_models= BIC_weights.size();
+  
+  IntegerVector num_its_to_sample = RcppArmadillo::rmultinom(num_iter,post_weights);
+  IntegerVector num_its_sum = cumsum(num_its_to_sample);
+  arma::vec num_its_to_sample_arma = as<arma::vec>(num_its_to_sample);
+  arma::vec num_its_sum_arma = as<arma::vec>(num_its_sum);
+  
+  //arma::mat draws_for_preds(0,num_obs);
+  //arma::mat draws_for_preds(num_iter,num_obs);
+  arma::mat draws_for_preds(num_iter,num_obs);  
+  
+  
+  //arma::mat draws_for_preds(num_obs,0);
+  
+  
+  arma::vec z_ar=Rcpp::as<arma::vec>(z);		// converts to arma vec	
+  
+  
+  arma::vec yvec=Rcpp::as<arma::vec>(y);			// convert input y_temp to arma vec called yvec
+  arma::mat y_arma(num_obs,1);										// create a matrix with num_obs (number of observations) rows and 1 column
+  y_arma.col(0)=yvec;										// set first column of y_arma equal to yvec
+  //get exponent
+  //double expon=(num_obs+nu)/2;								// set the expoenent (equation 5 in the paper)
+  //get y_arma^Tpsi^{-1}y_arma
+  // arma::mat psi_inv=psi.i();
+  arma::mat yty=y_arma.t()*y_arma;								// yty = y_arma transpose y_arma (sum of squares)
+  
+
+
+  //create field (armadillo list) of models
+  //each model is a field (armadillo list) of trees represented by matrices
+  arma::field<arma::field<arma::mat>> modelsF_mu(overall_sum_trees_mu.size());
+  for(int i=0;i<overall_sum_trees_mu.size();i++){
+    List temp_tree_list = overall_sum_trees_mu[i];
+    
+    arma::field<arma::mat> treesF(temp_tree_list.size());
+    for(int q=0;q<temp_tree_list.size();q++){
+      //Rcout << "Line 5663.\n";
+      arma::mat temp_tree_mat = Rcpp::as<arma::mat>(temp_tree_list[q]);
+      treesF(q)=temp_tree_mat;
+    }
+    //Rcout << "Line 5669.\n";
+    
+    modelsF_mu(i)=treesF;
+  }
+  
+  //Rcout << "Line 14476.\n";
+  
+  arma::field<arma::field<arma::mat>> matsF_mu(overall_sum_mat_mu.size());
+  for(int i=0;i<overall_sum_mat_mu.size();i++){
+    List temp_tree_list = overall_sum_mat_mu[i];
+    arma::field<arma::mat> treesF(temp_tree_list.size());
+    for(int q=0;q<temp_tree_list.size();q++){
+      arma::mat temp_tree_mat = Rcpp::as<arma::mat>(temp_tree_list[q]);
+      treesF(q)=temp_tree_mat;
+    }
+    matsF_mu(i)=treesF;
+  }
+  
+  
+  
+  //Rcout << "Line 14491.\n";
+  
+  
+  
+  //create field (armadillo list) of models
+  //each model is a field (armadillo list) of trees represented by matrices
+  arma::field<arma::field<arma::mat>> modelsF_tau(overall_sum_trees_tau.size());
+  for(int i=0;i<overall_sum_trees_tau.size();i++){
+    List temp_tree_list = overall_sum_trees_tau[i];
+    //Rcout << "Line 5661.\n";
+    
+    arma::field<arma::mat> treesF(temp_tree_list.size());
+    for(int q=0;q<temp_tree_list.size();q++){
+      //Rcout << "Line 5663.\n";
+      arma::mat temp_tree_mat = Rcpp::as<arma::mat>(temp_tree_list[q]);
+      treesF(q)=temp_tree_mat;
+    }
+    //Rcout << "Line 5669.\n";
+    
+    modelsF_tau(i)=treesF;
+  }
+  
+  
+  arma::field<arma::field<arma::mat>> matsF_tau(overall_sum_mat_tau.size());
+  for(int i=0;i<overall_sum_mat_tau.size();i++){
+    List temp_tree_list = overall_sum_mat_tau[i];
+    arma::field<arma::mat> treesF(temp_tree_list.size());
+    for(int q=0;q<temp_tree_list.size();q++){
+      arma::mat temp_tree_mat = Rcpp::as<arma::mat>(temp_tree_list[q]);
+      treesF(q)=temp_tree_mat;
+    }
+    matsF_tau(i)=treesF;
+  }
+  
+  
+  
+  
+#pragma omp parallel num_threads(num_cores)
+#pragma omp for
+  for(int i=0;i<overall_sum_mat_mu.size();i++){
+    int num_its_temp = num_its_to_sample_arma[i];
+    if(num_its_temp==0){
+      continue;
+    }
+      
+    
+    //make W_bcf and mu matrices for the sum of trees
+    //Rcout << "Line 14532.\n";
+    
+    arma::mat Wmat_mu(num_obs,0);
+    int upsilon=0;
+    for(int j=0;j<modelsF_mu(i).n_elem;j++){
+      
+      arma::mat curr_tree=(modelsF_mu(i))(j);
+      arma::mat curr_obs_nodes=(matsF_mu(i))(j);
+      //NumericVector tree_term_nodes=find_term_nodes(curr_tree);
+      arma::vec colmat=curr_tree.col(4);
+      arma::uvec term_nodes=arma::find(colmat==-1);
+      term_nodes=term_nodes+1;
+      
+      int b_j=term_nodes.n_elem;
+      //begin J function
+      
+      //will make J as we go in BART-BMA no need to create it again here....
+      // arma::mat Jmat=J(curr_obs_nodes,tree_term_nodes);
+      arma::mat tree_matrix_temp = (matsF_mu(i))(j);
+      arma::mat Jmat(tree_matrix_temp.n_rows, b_j);
+      Jmat.zeros();
+      
+      //for each terminal node get the observations associated with it and set column
+      for(int q=0;q<b_j;q++){
+        //double tn=term_nodes[q];
+        //arma::uvec term_obs=find_term_obs(obs_to_nodes_temp,tn);
+        
+        //begin find_term_obs
+        
+        //arma::mat arma_tree_mat(tree_matrix_temp.begin(),tree_matrix_temp.nrow(), tree_matrix_temp.ncol(), false); 
+        //for reference arma_tree_mat == matsF(i)(j) == tree_matrix_temp
+        
+        arma::uvec term_obs;
+        
+        for(int r=0;r<tree_matrix_temp.n_cols;r++){
+          //arma::vec colmat=arma_tree_mat.col(r);
+          arma::vec colmat=tree_matrix_temp.col(r);
+          term_obs=arma::find(colmat==term_nodes[q]);
+          if(term_obs.size()>0){
+            break;
+          }
+        }
+        
+        //end find_term_obs
+        
+        
+        //assign term_obs to the correct index of J
+        //NumericVector term_obs2=as<NumericVector>(wrap(term_obs));
+        //NumericVector obs_col(obs_to_nodes_temp.nrow());
+        arma::vec obs_col= arma::zeros<arma::vec>(tree_matrix_temp.n_rows);
+        //Rcout << "Line 5747.\n";
+        obs_col.elem(term_obs)= arma::ones<arma::vec>(term_obs.n_elem);
+        //Rcout << "Line 5749.\n";
+        //arma::vec colmat=Rcpp::as<arma::vec>(obs_col);
+        Jmat.col(q)= obs_col;
+        
+        // arma::vec  colmat=arma::zeros(Jmat.n_rows) ;// colmattest(Jmat.n_rows,0);
+        // colmat.elem(term_obs).fill(1);
+        // Jmat.col(i)= colmat;
+      }
+      
+      
+      
+      
+      Wmat_mu.insert_cols(upsilon,Jmat);
+      upsilon+=b_j;
+    }
+    
+    
+    
+    
+    
+    
+    
+    //arma::mat Wmat_tau=W_bcf(overall_sum_trees_tau[i],overall_sum_mat_tau[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    
+    
+    arma::mat Wmat_tau(num_obs,0);
+    int upsilon2=0;
+    for(int j=0;j<modelsF_tau(i).n_elem;j++){
+      
+      arma::mat curr_tree=(modelsF_tau(i))(j);
+      arma::mat curr_obs_nodes=(matsF_tau(i))(j);
+      //NumericVector tree_term_nodes=find_term_nodes(curr_tree);
+      arma::vec colmat=curr_tree.col(4);
+      arma::uvec term_nodes=arma::find(colmat==-1);
+      term_nodes=term_nodes+1;
+      
+      int b_j=term_nodes.n_elem;
+      //begin J function
+      
+      //will make J as we go in BART-BMA no need to create it again here....
+      // arma::mat Jmat=J(curr_obs_nodes,tree_term_nodes);
+      arma::mat tree_matrix_temp = (matsF_tau(i))(j);
+      arma::mat Jmat(tree_matrix_temp.n_rows, b_j);
+      Jmat.zeros();
+      
+      //for each terminal node get the observations associated with it and set column
+      for(int q=0;q<b_j;q++){
+        //double tn=term_nodes[q];
+        //arma::uvec term_obs=find_term_obs(obs_to_nodes_temp,tn);
+        
+        //begin find_term_obs
+        
+        //arma::mat arma_tree_mat(tree_matrix_temp.begin(),tree_matrix_temp.nrow(), tree_matrix_temp.ncol(), false); 
+        //for reference arma_tree_mat == matsF(i)(j) == tree_matrix_temp
+        
+        arma::uvec term_obs;
+        
+        for(int r=0;r<tree_matrix_temp.n_cols;r++){
+          //arma::vec colmat=arma_tree_mat.col(r);
+          arma::vec colmat=tree_matrix_temp.col(r);
+          term_obs=arma::find(colmat==term_nodes[q]);
+          if(term_obs.size()>0){
+            break;
+          }
+        }
+        
+        //end find_term_obs
+        
+        
+        //assign term_obs to the correct index of J
+        //NumericVector term_obs2=as<NumericVector>(wrap(term_obs));
+        //NumericVector obs_col(obs_to_nodes_temp.nrow());
+        arma::vec obs_col= arma::zeros<arma::vec>(tree_matrix_temp.n_rows);
+        //Rcout << "Line 5747.\n";
+        obs_col.elem(term_obs)= arma::ones<arma::vec>(term_obs.n_elem);
+        //Rcout << "Line 5749.\n";
+        //arma::vec colmat=Rcpp::as<arma::vec>(obs_col);
+        Jmat.col(q)= obs_col;
+        
+        // arma::vec  colmat=arma::zeros(Jmat.n_rows) ;// colmattest(Jmat.n_rows,0);
+        // colmat.elem(term_obs).fill(1);
+        // Jmat.col(i)= colmat;
+      }
+      
+      
+      
+      
+      Wmat_tau.insert_cols(upsilon2,Jmat);
+      upsilon2+=b_j;
+    }
+    
+    
+    
+
+    
+    //Rcout << "Line 14679.\n";
+    
+    
+    
+    double b_mu=Wmat_mu.n_cols;
+    double b_tau=Wmat_tau.n_cols;
+    //Wmat_tau.each_col()%=z_ar;
+    
+    
+    //Rcout << "Line 14688.\n";
+    //Rcout << "b_tau = " << b_tau << ".\n";
+    //Rcout << "Wmat_tau.n_rows = " << Wmat_tau.n_rows << ".\n";
+    
+    //Rcout << "z_ar.n_elem = " << z_ar.n_elem << ".\n";
+    
+    arma::mat DiagZ_Wmat_tau= Wmat_tau.each_col()%z_ar;
+    //Rcout << "Line 14693.\n";
+    
+    
+    arma::mat Wmat = join_rows(Wmat_mu,DiagZ_Wmat_tau);
+    
+    double b=Wmat.n_cols;									// b is number of columns of W_bcf matrix (omega in the paper)
+    
+    //get t(y_arma)inv(psi)J_bcf
+    arma::mat ytW=y_arma.t()*Wmat;								// y_arma transpose W_bcf
+    //get t(J_bcf)inv(psi)J_bcf  
+    arma::mat WtW=Wmat.t()*Wmat;							// W_bcf transpose W_bcf
+    //get jpsij +aI
+    arma::mat aI(b,b);									// create b by b matrix called aI. NOT INIIALIZED. 
+    aI=aI.eye();										// a times b by b identity matrix. The .eye() turns aI into an identity matrix.
+    arma::vec a_vec_mu = a_mu*arma::ones<arma::vec>(b_mu);
+    arma::vec a_vec_tau = a_tau*arma::ones<arma::vec>(b_tau);
+    arma::vec a_vec(b);
+    a_vec.head(b_mu) = a_vec_mu;
+    a_vec.tail(b_tau) = a_vec_tau;
+    aI.diag() = a_vec;
+    
+    arma::mat sec_term=WtW+aI;							//
+    //arma::mat sec_term_inv=sec_term.i();					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    arma::mat sec_term_inv=inv_sympd(sec_term);					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    
+    //get t(J_bcf)inv(psi)y_arma
+    arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
+    //get m^TV^{-1}m
+    arma::mat mvm= ytW*sec_term_inv*third_term;		// matrix expression in middle of equation 5
+    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    
+    //Rcout << "Line 14724.\n";
+    
+    //arma::mat zeromat(arma::size(Wmat_mu),arma::fill::zeros);
+    //arma::mat zeromat(num_obs ,b_mu ,arma::fill::zeros);
+    arma::mat zeromat=arma::zeros<arma::mat>(num_obs ,b_mu);
+    arma::mat Vmat = join_rows(zeromat,Wmat_tau);
+    
+    //arma::vec preds_temp_arma= Vmat*sec_term_inv*Wmat.t()*y_arma;
+    //arma::vec preds_temp_arma= Vmat*inv_sympd(sec_term)*Wmat.t()*y_arma;
+    //arma::vec preds_temp_arma= Vmat*inv_sympd(sec_term)*third_term;
+    arma::vec preds_temp_arma= Vmat*sec_term_inv*third_term;
+    arma::mat covar_t=as_scalar((1/(nu+num_obs))*(nu*lambda+yty-mvm))*(Vmat*sec_term_inv*(Vmat.t()));
+    
+    
+    //or (possibly faster)
+    //arma::mat V_M_inv = Vmat*sec_term_inv;
+    //arma::vec preds_temp_arma= V_M_inv*third_term;
+    //arma::mat covar_t=as_scalar((1/(nu+num_obs))*(nu*lambda+yty-mvm))*(V_M_inv*(Vmat.t()));
+    
+    weighted_preds_all_models_arma.col(i)=preds_temp_arma*post_weights_arma[i];
+    
+    preds_all_models_arma.col(i)=preds_temp_arma;
+    
+    
+    //Rcout << "Line 14748.\n";
+    
+    //int num_its_to_sample = round(weight*(num_iter));
+    //Rcout << "num_its_temp = " << num_its_temp << ".\n";
+    
+    arma::uword m = num_obs;
+    arma::vec U = arma::chi2rnd(nu+num_obs,num_its_temp);
+    //Rcout << "U.n_elem = " << U.n_elem << ".\n";
+    
+    U = sqrt(nu+num_obs / U);
+    // 
+    // arma::vec D_diags(m);
+    // arma::mat Lchol(m,m);
+    // for(int j1 = 0; j1 < m; j1++){
+    //   if(j1==0){
+    //     D_diags(0)=covar_t(0,0);
+    //     Lchol(arma::span(j1+1,m-1),j1 )= (covar_t(arma::span(j1+1,m-1),j1 ))/D_diags(j1);
+    //     //Rcout << "Line 14793.\n";
+    //     
+    //     //for(int k1 = j1+1; k1 < m-1; k1++){
+    //     //  Lchol(k1,j1)=covar_t(k1,j1)/D_diags(j1) ;
+    //     //}
+    //   }else{
+    //     arma::vec tempv(j1);
+    //     for(int i1 = 0; i1 < j1; i1++){
+    //       tempv(i1)=Lchol(j1,i1)*D_diags(i1);
+    //     }
+    //     //arma:: mat templc = Lchol(j1,arma::span(0,j1-1));
+    //     //D_diags(j1)=covar_t(j1,j1)-templc*tempv;
+    //     //Rcout << "Line 14806.\n";
+    //     
+    //     D_diags(j1)=covar_t(j1,j1)-as_scalar(Lchol(j1,arma::span(0,j1-1))*tempv);
+    //     //Rcout << "Line 14809.\n";
+    //     if(j1<m-1){
+    //     Lchol(arma::span(j1+1,m-1),j1 )= (covar_t(arma::span(j1+1,m-1),j1 )-  (Lchol(arma::span(j1+1,m-1),arma::span(0,j1-1)))*tempv)/D_diags(j1);
+    //     }
+    //     //for(int k1 = j1+1; k1 < covar_t.n_cols; k1++){
+    //     //  Lchol(k1,j1)=(covar_t(k1,j1)- *tempv)/D_diags(j1) ;
+    //     //}
+    //     
+    //   }
+    // }
+    // 
+    // arma::mat D_chol=arma::diagmat(D_diags);
+    // 
+    // arma::mat Ytemp = arma::randn(m, num_its_temp);
+    // arma::mat Y = Lchol*sqrt(D_chol)*Ytemp;
+    // 
+    
+    
+    
+    
+    arma::mat Y = mvnrnd( arma::vec(m, arma::fill::zeros), covar_t,num_its_temp);
+    arma::mat temp_draws(m, num_its_temp);
+    for ( arma::uword i = 0; i < temp_draws.n_cols; ++i ) {
+      temp_draws.col(i) = preds_temp_arma + Y.col(i) * U[i];
+    }
+    //arma::rowvec Ut=U.t();
+    //Y.each_row() %= Ut;
+    //arma::mat temp_draws = arma::repmat(preds_temp_arma, 1, num_its_temp) +  Y;
+
+    
+    
+    //draws_for_preds = join_cols(draws_for_preds,temp_draws.t());
+    if(i==0){
+      draws_for_preds.rows(0,num_its_sum_arma[i]-1)=temp_draws.t();
+    }else{
+      draws_for_preds.rows(num_its_sum_arma[i-1],num_its_sum_arma[i]-1)=temp_draws.t();
+    }
+    
+    
+    
+    
+    
+    
+  }
+#pragma omp barrier  
+
+  //arma::colvec predicted_values;
+  
+  //arma::mat M1(preds_all_models.begin(), preds_all_models.nrow(), preds_all_models.ncol(), false);
+  arma::colvec predicted_values=sum(weighted_preds_all_models_arma,1);
+  
+  //NumericMatrix draws_wrapped= wrap(draws_for_preds);
+  NumericMatrix output(3, num_obs);
+  //NumericVector probs_for_quantiles =  NumericVector::create(lower_prob, 0.5, upper_prob);
+  std::vector<double> probs_for_quantiles {lower_prob, 0.5, upper_prob};
+  
+  
+  
+  typedef std::vector<double> stdvec;
+  
+  for(int i=0;i<num_obs;i++){
+    //output(_,i)=Quantile(draws_wrapped(_,i), probs_for_quantiles);
+    std::vector<double> tempcol= arma::conv_to<stdvec>::from(draws_for_preds.col(i));
+    std::vector<double> tempquant= Quantile2(tempcol, probs_for_quantiles);
+    NumericVector tempforoutput = wrap(tempquant);
+    output(_,i)= tempforoutput;
+    
+  }  
+  
+  List ret(2);
+  ret[0]= output;
+  ret[1]= wrap(predicted_values);
+  
+  
+  
+  return(ret);
+}
+//###########################################################################################################################//
+
+// [[Rcpp::plugins(openmp)]]
+// Protect against compilers without OpenMP
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+List pred_ints_lin_alg_fields_LDL_outsamp_bcf(List overall_sum_trees_mu,List overall_sum_trees_tau,
+                                          List overall_sum_mat_mu,List overall_sum_mat_tau,
+                                          NumericVector y,NumericVector BIC_weights,
+                                          int num_iter,int num_obs,double a_mu,double a_tau,double sigma,
+                                          double mu_mu_mu,double mu_mu_tau,double nu,
+                                          double lambda,//List resids_mu,List resids_tau, 
+                                          NumericVector z,
+                                          NumericMatrix test_data, NumericMatrix test_pihat, 
+                                          NumericVector z_test,int include_pi2, int num_propscores,
+                                          int num_test_obs, double lower_prob, double upper_prob, 
+                                          int num_cores){
+  
+  
+  if(test_pihat.ncol() != num_propscores){
+    throw std::range_error("Number of sets of propensity score estimates must be equal to that used in fitting the original BCFBMA models");
+  }
+  if(z_test.size() != test_data.nrow()){	// If the number of rows in the test data covariate matrix is not equal to that of the test data treatment indicator variable
+    throw std::range_error("Test data covariates and test data treatment indicator variable must have the same number of observations."); 
+  }
+  if(test_data.nrow() != test_pihat.nrow()){	// If the number of rows in the test data covariate matrix is not equal to that of the test data propensity score estimates matrix
+    throw std::range_error("Test data covariates and test data propensity score estimates must have the same number of observations."); 
+  }
+  // Add test propensity scores to test data matrix
+  arma::mat T1(test_data.begin(), test_data.nrow(), test_data.ncol(), false);				// copy the covariate test_data matrix into an arma mat
+  arma::mat pihat_a_test(test_pihat.begin(), test_pihat.nrow(), test_pihat.ncol(), false);				// copy the test_pihat matrix into an arma mat
+  arma::mat x_control_test_a=T1;				// create a copy of test_data arma mat called x_control_test_a
+  if((include_pi2==0)| (include_pi2==2) ){
+    if(test_pihat.nrow()>0 ){
+      x_control_test_a.insert_cols(0,pihat_a_test);		// add propensity scores as new leftmost columns of x_control_test_a
+    }
+  }
+  NumericMatrix x_control_test=wrap(x_control_test_a);	// convert x_control_test_a to a NumericMatrix called x_control_test
+  // Name the matrix without the estimated propensity scores x_moderate_test.[CAN REMOVE THE DUPLICATION AND ADD x_control_test, x_moderate_test, and include_pi as input parameters later]
+  //NumericMatrix x_moderate_test = test_data;	// x_moderate_test matrix is the covariate test_data without the propensity scores
+  arma::mat x_moderate_test_a=T1;			// create arma mat copy of x_moderate_test.
+  if((include_pi2==1)| (include_pi2==2) ){
+    if(test_pihat.nrow()>0 ){
+      x_moderate_test_a.insert_cols(0,pihat_a_test);		// add propensity scores as new leftmost columns of x_control_a
+    }
+  }
+  NumericMatrix x_moderate_test=wrap(x_moderate_test_a);	// convert x_control_test_a to a NumericMatrix called x_control_test
+  
+  
+  //Rcout <<"Line 12625.\n";
+  
+  arma::field<arma::field<arma::field<arma::uvec>>> termobs_testdata_overallF_tau=get_termobs_testdata_fields_overall_bcf(overall_sum_trees_tau,x_moderate_test);
+  
+  //List termobs_testdata_overall_mu= get_termobs_testdata_overall_all(overall_sum_trees_mu,test_data);
+  List termobs_testdata_overall_tau= get_termobs_testdata_overall_all(overall_sum_trees_tau,test_data);
+  
+  
+  
+  
+  
+  //NumericMatrix preds_all_models(num_test_obs,BIC_weights.size());
+  arma::mat preds_all_models_arma(num_test_obs,BIC_weights.size());
+  arma::mat weighted_preds_all_models_arma(num_test_obs,BIC_weights.size());
+  
+  // for all sums of trees
+  
+  NumericVector BICi=-0.5*BIC_weights;
+  double max_BIC=max(BICi);
+  
+  
+  NumericVector post_weights(BIC_weights.size());
+  
+  for(int k=0;k<BIC_weights.size();k++){
+    
+    //NumericVector BICi=-0.5*BIC_weights;
+    //double max_BIC=max(BICi);
+    double weight=exp(BICi[k]-(max_BIC+log(sum(exp(BICi-max_BIC)))));
+    post_weights[k]=weight;
+    //int num_its_to_sample = round(weight*(num_iter));
+    
+  }
+  
+  //int num_models= BIC_weights.size();
+  
+  
+  arma::vec post_weights_arma = as<arma::vec>(post_weights);
+  
+  IntegerVector num_its_to_sample = RcppArmadillo::rmultinom(num_iter,post_weights);
+  IntegerVector num_its_sum = cumsum(num_its_to_sample);
+  arma::vec num_its_to_sample_arma = as<arma::vec>(num_its_to_sample);
+  arma::vec num_its_sum_arma = as<arma::vec>(num_its_sum);
+  
+  //arma::mat draws_for_preds(0,num_test_obs);
+  //arma::mat draws_for_preds(num_iter,num_test_obs);
+  arma::mat draws_for_preds(num_iter,num_test_obs);
+  
+  arma::vec z_ar=Rcpp::as<arma::vec>(z);		// converts to arma vec	
+  
+  arma::vec yvec=Rcpp::as<arma::vec>(y);
+  arma::mat y_arma(num_obs,1);
+  y_arma.col(0)=yvec;
+  //get exponent
+  //double expon=(n+nu)/2;
+  //get y^Tpsi^{-1}y
+  // arma::mat psi_inv=psi.i();
+  
+  
+  arma::mat yty=y_arma.t()*y_arma;
+  
+  arma::mat I_test(num_test_obs,num_test_obs);
+  I_test=I_test.eye();
+  
+  
+  
+  //create field (armadillo list) of models
+  //each model is a field (armadillo list) of trees represented by matrices
+  arma::field<arma::field<arma::mat>> modelsF_mu(overall_sum_trees_mu.size());
+  for(int i=0;i<overall_sum_trees_mu.size();i++){
+    List temp_tree_list = overall_sum_trees_mu[i];
+    //Rcout << "Line 5661.\n";
+    
+    arma::field<arma::mat> treesF(temp_tree_list.size());
+    for(int q=0;q<temp_tree_list.size();q++){
+      //Rcout << "Line 5663.\n";
+      arma::mat temp_tree_mat = Rcpp::as<arma::mat>(temp_tree_list[q]);
+      treesF(q)=temp_tree_mat;
+    }
+    //Rcout << "Line 5669.\n";
+    
+    modelsF_mu(i)=treesF;
+  }
+  
+  
+  arma::field<arma::field<arma::mat>> matsF_mu(overall_sum_mat_mu.size());
+  for(int i=0;i<overall_sum_mat_mu.size();i++){
+    List temp_tree_list = overall_sum_mat_mu[i];
+    arma::field<arma::mat> treesF(temp_tree_list.size());
+    for(int q=0;q<temp_tree_list.size();q++){
+      arma::mat temp_tree_mat = Rcpp::as<arma::mat>(temp_tree_list[q]);
+      treesF(q)=temp_tree_mat;
+    }
+    matsF_mu(i)=treesF;
+  }
+  
+  
+  
+  
+  
+  
+  //create field (armadillo list) of models
+  //each model is a field (armadillo list) of trees represented by matrices
+  arma::field<arma::field<arma::mat>> modelsF_tau(overall_sum_trees_tau.size());
+  for(int i=0;i<overall_sum_trees_tau.size();i++){
+    List temp_tree_list = overall_sum_trees_tau[i];
+    //Rcout << "Line 5661.\n";
+    
+    arma::field<arma::mat> treesF(temp_tree_list.size());
+    for(int q=0;q<temp_tree_list.size();q++){
+      //Rcout << "Line 5663.\n";
+      arma::mat temp_tree_mat = Rcpp::as<arma::mat>(temp_tree_list[q]);
+      treesF(q)=temp_tree_mat;
+    }
+    //Rcout << "Line 5669.\n";
+    
+    modelsF_tau(i)=treesF;
+  }
+  
+  
+  arma::field<arma::field<arma::mat>> matsF_tau(overall_sum_mat_tau.size());
+  for(int i=0;i<overall_sum_mat_tau.size();i++){
+    List temp_tree_list = overall_sum_mat_tau[i];
+    arma::field<arma::mat> treesF(temp_tree_list.size());
+    for(int q=0;q<temp_tree_list.size();q++){
+      arma::mat temp_tree_mat = Rcpp::as<arma::mat>(temp_tree_list[q]);
+      treesF(q)=temp_tree_mat;
+    }
+    matsF_tau(i)=treesF;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+#pragma omp parallel num_threads(num_cores)
+#pragma omp for
+  for(int i=0;i<overall_sum_mat_mu.size();i++){
+    //make W_bcf and mu matrices for the sum of trees
+    
+    //arma::mat Wmat_mu=W_bcf(overall_sum_trees_mu[i],overall_sum_mat_mu[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    //Rcout << "Wmat_mu works.\n";
+    
+    int num_its_temp = num_its_to_sample_arma[i];
+    if(num_its_temp==0){
+      continue;
+    }
+    
+    arma::mat Wmat_mu(num_obs,0);
+    int upsilon=0;
+    for(int j=0;j<modelsF_mu(i).n_elem;j++){
+      
+      arma::mat curr_tree=(modelsF_mu(i))(j);
+      arma::mat curr_obs_nodes=(matsF_mu(i))(j);
+      //NumericVector tree_term_nodes=find_term_nodes(curr_tree);
+      arma::vec colmat=curr_tree.col(4);
+      arma::uvec term_nodes=arma::find(colmat==-1);
+      term_nodes=term_nodes+1;
+      
+      int b_j=term_nodes.n_elem;
+      //begin J function
+      
+      //will make J as we go in BART-BMA no need to create it again here....
+      // arma::mat Jmat=J(curr_obs_nodes,tree_term_nodes);
+      arma::mat tree_matrix_temp = (matsF_mu(i))(j);
+      arma::mat Jmat(tree_matrix_temp.n_rows, b_j);
+      Jmat.zeros();
+      
+      //for each terminal node get the observations associated with it and set column
+      for(int q=0;q<b_j;q++){
+        //double tn=term_nodes[q];
+        //arma::uvec term_obs=find_term_obs(obs_to_nodes_temp,tn);
+        
+        //begin find_term_obs
+        
+        //arma::mat arma_tree_mat(tree_matrix_temp.begin(),tree_matrix_temp.nrow(), tree_matrix_temp.ncol(), false); 
+        //for reference arma_tree_mat == matsF(i)(j) == tree_matrix_temp
+        
+        arma::uvec term_obs;
+        
+        for(int r=0;r<tree_matrix_temp.n_cols;r++){
+          //arma::vec colmat=arma_tree_mat.col(r);
+          arma::vec colmat=tree_matrix_temp.col(r);
+          term_obs=arma::find(colmat==term_nodes[q]);
+          if(term_obs.size()>0){
+            break;
+          }
+        }
+        
+        //end find_term_obs
+        
+        
+        //assign term_obs to the correct index of J
+        //NumericVector term_obs2=as<NumericVector>(wrap(term_obs));
+        //NumericVector obs_col(obs_to_nodes_temp.nrow());
+        arma::vec obs_col= arma::zeros<arma::vec>(tree_matrix_temp.n_rows);
+        //Rcout << "Line 5747.\n";
+        obs_col.elem(term_obs)= arma::ones<arma::vec>(term_obs.n_elem);
+        //Rcout << "Line 5749.\n";
+        //arma::vec colmat=Rcpp::as<arma::vec>(obs_col);
+        Jmat.col(q)= obs_col;
+        
+        // arma::vec  colmat=arma::zeros(Jmat.n_rows) ;// colmattest(Jmat.n_rows,0);
+        // colmat.elem(term_obs).fill(1);
+        // Jmat.col(i)= colmat;
+      }
+      
+      
+      
+      
+      Wmat_mu.insert_cols(upsilon,Jmat);
+      upsilon+=b_j;
+    }
+    
+    
+    
+    
+    
+    
+    
+    //arma::mat Wmat_tau=W_bcf(overall_sum_trees_tau[i],overall_sum_mat_tau[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    
+    
+    arma::mat Wmat_tau(num_obs,0);
+    int upsilon2=0;
+    for(int j=0;j<modelsF_tau(i).n_elem;j++){
+      
+      arma::mat curr_tree=(modelsF_tau(i))(j);
+      arma::mat curr_obs_nodes=(matsF_tau(i))(j);
+      //NumericVector tree_term_nodes=find_term_nodes(curr_tree);
+      arma::vec colmat=curr_tree.col(4);
+      arma::uvec term_nodes=arma::find(colmat==-1);
+      term_nodes=term_nodes+1;
+      
+      int b_j=term_nodes.n_elem;
+      //begin J function
+      
+      //will make J as we go in BART-BMA no need to create it again here....
+      // arma::mat Jmat=J(curr_obs_nodes,tree_term_nodes);
+      arma::mat tree_matrix_temp = (matsF_tau(i))(j);
+      arma::mat Jmat(tree_matrix_temp.n_rows, b_j);
+      Jmat.zeros();
+      
+      //for each terminal node get the observations associated with it and set column
+      for(int q=0;q<b_j;q++){
+        //double tn=term_nodes[q];
+        //arma::uvec term_obs=find_term_obs(obs_to_nodes_temp,tn);
+        
+        //begin find_term_obs
+        
+        //arma::mat arma_tree_mat(tree_matrix_temp.begin(),tree_matrix_temp.nrow(), tree_matrix_temp.ncol(), false); 
+        //for reference arma_tree_mat == matsF(i)(j) == tree_matrix_temp
+        
+        arma::uvec term_obs;
+        
+        for(int r=0;r<tree_matrix_temp.n_cols;r++){
+          //arma::vec colmat=arma_tree_mat.col(r);
+          arma::vec colmat=tree_matrix_temp.col(r);
+          term_obs=arma::find(colmat==term_nodes[q]);
+          if(term_obs.size()>0){
+            break;
+          }
+        }
+        
+        //end find_term_obs
+        
+        
+        //assign term_obs to the correct index of J
+        //NumericVector term_obs2=as<NumericVector>(wrap(term_obs));
+        //NumericVector obs_col(obs_to_nodes_temp.nrow());
+        arma::vec obs_col= arma::zeros<arma::vec>(tree_matrix_temp.n_rows);
+        //Rcout << "Line 5747.\n";
+        obs_col.elem(term_obs)= arma::ones<arma::vec>(term_obs.n_elem);
+        //Rcout << "Line 5749.\n";
+        //arma::vec colmat=Rcpp::as<arma::vec>(obs_col);
+        Jmat.col(q)= obs_col;
+        
+        // arma::vec  colmat=arma::zeros(Jmat.n_rows) ;// colmattest(Jmat.n_rows,0);
+        // colmat.elem(term_obs).fill(1);
+        // Jmat.col(i)= colmat;
+      }
+      
+      
+      
+      
+      Wmat_tau.insert_cols(upsilon2,Jmat);
+      upsilon2+=b_j;
+    }
+    
+    
+    
+    
+    arma::mat W_tilde_tau(num_test_obs,0);
+    int upsilon3=0;
+    for(int j=0;j<modelsF_tau(i).n_elem;j++){
+      
+      arma::mat  curr_tree=(modelsF_tau(i))(j);
+      arma::field<arma::uvec> curr_termobs=(termobs_testdata_overallF_tau(i))(j);
+      
+      //begin find termnodes
+      //NumericVector tree_term_nodes=find_term_nodes(curr_tree);
+      
+      //arma::mat arma_tree(tree_table.begin(),tree_table.nrow(), tree_table.ncol(), false); 
+      arma::vec colmat=curr_tree.col(4);
+      arma::uvec term_nodes=arma::find(colmat==-1);
+      term_nodes=term_nodes+1;
+      
+      //return(wrap(term_nodes));
+      //Rcout << "Line 5782.\n";
+      
+      //end find termnodes
+      
+      int b_j=term_nodes.size();
+      //will make J as we go in BART-BMA no need to create it again here....
+      //arma::mat Jmat=get_J_test(curr_termobs,tree_term_nodes,n);
+      //arma::mat Jmat=get_J_test(curr_termobs,term_nodes,num_test_obs);
+      
+      //begin J test function
+      arma::mat Jmat(num_test_obs, term_nodes.n_elem);
+      Jmat.zeros();
+      
+      //for each terminal node get the observations associated with it and set column
+      for(int q=0;q<term_nodes.n_elem;q++){
+        //double tn=tree_term_nodes[q];
+        //arma::uvec term_obs=find_term_obs(obs_to_nodes_temp,tn);
+        //assign term_obs to the correct index of J
+        arma::uvec term_obs2=curr_termobs(q);
+        arma::vec obs_col= arma::zeros<arma::vec>(num_test_obs);
+        //Rcout << "Line 5809.\n";
+        obs_col.elem(term_obs2)=arma::ones<arma::vec>(term_obs2.n_elem);
+        //Rcout << "Line 5811.\n";
+        //arma::vec colmat=Rcpp::as<arma::vec>(obs_col);
+        Jmat.col(q)= obs_col;
+        
+        // arma::vec  colmat=arma::zeros(Jmat.n_rows) ;// colmattest(Jmat.n_rows,0);
+        // colmat.elem(term_obs).fill(1);
+        // Jmat.col(q)= colmat;
+      }
+      //return(Jmat);
+      
+      //end J test function
+      
+      W_tilde_tau.insert_cols(upsilon3,Jmat);
+      upsilon3+=b_j;
+    }
+    
+    
+    
+    
+    
+    
+    
+    //Rcout << "Wmat_tau works.\n";
+    //Rcout <<"Line 12664.\n";
+    
+    double b_mu=Wmat_mu.n_cols;
+    double b_tau=Wmat_tau.n_cols;
+    //Rcout <<"Line 12668.\n";
+    
+    Wmat_tau.each_col()%=z_ar;
+    //Rcout <<"Line 12671.\n";
+    
+    arma::mat Wmat = join_rows(Wmat_mu,Wmat_tau);
+    //Rcout <<"Line 12674.\n";
+    
+    double b=Wmat.n_cols;									// b is number of columns of W_bcf matrix (omega in the paper)
+    
+    
+    
+    //arma::mat W_tilde_mu=get_W_test(overall_sum_trees_mu[i],termobs_testdata_overall_mu[i],num_test_obs);
+    //arma::mat W_tilde_tau=get_W_test(overall_sum_trees_tau[i],termobs_testdata_overall_tau[i],num_test_obs);
+    
+    //alternative would be to obtain Diag(Ztest)Wtest 
+    //arma::mat DiagZtestWtest=get_W_test(overall_sum_trees_tau[i],treated_termobs_testdata_overall_tau[i],num_test_obs);
+    //but don't use DiagZtestWtest in this function
+    
+    //Rcout <<"Line 12679.\n";
+    
+    
+    
+    
+    
+    
+    
+    //get t(y_arma)inv(psi)J_bcf
+    arma::mat ytW=y_arma.t()*Wmat;								// y_arma transpose W_bcf
+    //get t(J_bcf)inv(psi)J_bcf  
+    arma::mat WtW=Wmat.t()*Wmat;							// W_bcf transpose W_bcf
+    //get jpsij +aI
+    arma::mat aI(b,b);									// create b by b matrix called aI. NOT INIIALIZED. 
+    aI=aI.eye();										// a times b by b identity matrix. The .eye() turns aI into an identity matrix.
+    arma::vec a_vec_mu = a_mu*arma::ones<arma::vec>(b_mu);
+    arma::vec a_vec_tau = a_tau*arma::ones<arma::vec>(b_tau);
+    arma::vec a_vec(b);
+    a_vec.head(b_mu) = a_vec_mu;
+    a_vec.tail(b_tau) = a_vec_tau;
+    aI.diag() = a_vec;
+    
+    arma::mat sec_term=WtW+aI;							//
+    //arma::mat sec_term_inv=sec_term.i();					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    arma::mat sec_term_inv=inv_sympd(sec_term);					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    
+    //get t(J_bcf)inv(psi)y_arma
+    arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
+    //get m^TV^{-1}m
+    arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
+    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    
+    //Rcout <<"Line 12713.\n";
+    
+    //arma::mat zeromat(arma::size(Wmat_mu),arma::fill::zeros);
+    //arma::mat zeromat(num_obs ,b_mu ,arma::fill::zeros);
+    arma::mat zeromat=arma::zeros<arma::mat>(num_test_obs,b_mu);
+    arma::mat Vmat = join_rows(zeromat,W_tilde_tau);
+    
+    //arma::vec preds_temp_arma= Vmat*sec_term_inv*Wmat.t()*y_arma;
+    //arma::vec preds_temp_arma= Vmat*inv_sympd(sec_term)*Wmat.t()*y_arma;
+    arma::vec preds_temp_arma= Vmat*sec_term_inv*third_term;
+    arma::mat covar_t=as_scalar((1/(nu+num_obs))*(nu*lambda+yty-mvm))*(Vmat*sec_term_inv*(Vmat.t()));
+    
+    
+    //or (possibly faster)
+    //arma::mat V_M_inv = Vmat*sec_term_inv;
+    //arma::vec preds_temp_arma= V_M_inv*third_term;
+    //arma::mat covar_t=as_scalar((1/(nu+num_obs))*(nu*lambda+yty-mvm))*(V_M_inv*(Vmat.t()));
+    
+    
+    
+    //Rcout << "Line 12573.\n";
+    
+    weighted_preds_all_models_arma.col(i)=preds_temp_arma*post_weights_arma[i];
+    preds_all_models_arma.col(i)=preds_temp_arma;
+    
+    // Rcout << "Line 4468. i= "<< i << ".\n";
+    
+    
+    //int num_its_to_sample = round(weight*(num_iter));
+    
+    
+    // arma::uword m = num_test_obs;
+    // arma::vec U = arma::chi2rnd(nu+num_obs,num_its_temp);
+    // U = sqrt(nu+num_obs / U);
+    // arma::mat Y = arma::mvnrnd( arma::colvec(m, arma::fill::zeros), covar_t,num_its_temp);
+    // arma::mat temp_draws(m, num_its_temp);
+    // // Rcout << "Line 4478. i= "<< i << ".\n";
+    // 
+    // for ( arma::uword i = 0; i < temp_draws.n_cols; ++i ) {
+    //   temp_draws.col(i) = preds_temp_arma + Y.col(i) * U[i];
+    // }
+    // Rcout << "Line 4483. i= "<< i << ".\n";
+    
+    
+    
+    
+    //int num_its_to_sample = round(weight*(num_iter));
+    //int num_its_temp = num_its_to_sample[i];
+    
+    arma::uword m = num_test_obs;
+    arma::vec U = arma::chi2rnd(nu+num_obs,num_its_temp);
+    U = sqrt(nu+num_obs / U);
+    
+    
+    
+    
+    arma::vec D_diags(m);
+    arma::mat Lchol(m,m);
+    for(int j1 = 0; j1 < m; j1++){
+      if(j1==0){
+        D_diags(0)=covar_t(0,0);
+        Lchol(arma::span(j1+1,m-1),j1 )= (covar_t(arma::span(j1+1,m-1),j1 ))/D_diags(j1);
+        //Rcout << "Line 14793.\n";
+        
+        //for(int k1 = j1+1; k1 < m-1; k1++){
+        //  Lchol(k1,j1)=covar_t(k1,j1)/D_diags(j1) ;
+        //}
+      }else{
+        arma::vec tempv(j1);
+        for(int i1 = 0; i1 < j1; i1++){
+          tempv(i1)=Lchol(j1,i1)*D_diags(i1);
+        }
+        //arma:: mat templc = Lchol(j1,arma::span(0,j1-1));
+        //D_diags(j1)=covar_t(j1,j1)-templc*tempv;
+        //Rcout << "Line 14806.\n";
+        
+        D_diags(j1)=covar_t(j1,j1)-as_scalar(Lchol(j1,arma::span(0,j1-1))*tempv);
+        //Rcout << "Line 14809.\n";
+        if(j1<m-1){
+          Lchol(arma::span(j1+1,m-1),j1 )= (covar_t(arma::span(j1+1,m-1),j1 )-  (Lchol(arma::span(j1+1,m-1),arma::span(0,j1-1)))*tempv)/D_diags(j1);
+        }
+        //for(int k1 = j1+1; k1 < covar_t.n_cols; k1++){
+        //  Lchol(k1,j1)=(covar_t(k1,j1)- *tempv)/D_diags(j1) ;
+        //}
+        
+      }
+    }
+    
+    arma::mat D_chol=arma::diagmat(D_diags);
+    
+    arma::mat Ytemp = arma::randn(m, num_its_temp);
+    arma::mat Y = Lchol*sqrt(D_chol)*Ytemp;
+    
+    
+    //arma::mat Y = mvnrnd( arma::vec(m, arma::fill::zeros), covar_t,num_its_temp);
+    
+    
+    
+    //arma::mat temp_draws(m, num_its_temp);
+    //for ( arma::uword i = 0; i < temp_draws.n_cols; ++i ) {
+    //  temp_draws.col(i) = preds_temp_arma + Y.col(i) * U[i];
+    //}
+    arma::rowvec Ut=U.t();
+    Y.each_row() %= Ut;
+    arma::mat temp_draws = arma::repmat(preds_temp_arma, 1, num_its_temp) +  Y;
+    
+    
+    
+    //draws_for_preds = join_cols(draws_for_preds,temp_draws.t());
+    if(i==0){
+      draws_for_preds.rows(0,num_its_sum_arma[i]-1)=temp_draws.t();
+    }else{
+      draws_for_preds.rows(num_its_sum_arma[i-1],num_its_sum_arma[i]-1)=temp_draws.t();
+    }
+    
+    // arma::mat temp_draws(m, num_its_temp);
+    // // Rcout << "Line 4478. i= "<< i << ".\n";
+    // 
+    // for ( arma::uword i = 0; i < temp_draws.n_cols; ++i ) {
+    //   temp_draws.col(i) = preds_temp_arma + Y.col(i) * U[i];
+    // }
+    
+    // Rcout << "number of rows of preds_temp_arma = " << preds_temp_arma.n_rows << ".\n";
+    // Rcout << "number of rows of temp_LY = " << temp_LY.n_rows << ".\n";
+    // 
+    // Rcout << "number of rows of draws_for_preds = " << draws_for_preds.n_rows << ".\n";
+    // Rcout << "number of rows of temp_draws = " << temp_draws.n_rows << ".\n";
+    //
+    
+    
+    
+    
+  }
+  
+#pragma omp barrier  
+  
+  //arma::colvec predicted_values;
+  // Rcout << "Line 4491";
+  
+  //arma::mat M1(preds_all_models.begin(), preds_all_models.nrow(), preds_all_models.ncol(), false);
+  arma::colvec predicted_values=sum(weighted_preds_all_models_arma,1);
+  
+  //NumericMatrix draws_wrapped= wrap(draws_for_preds);
+  NumericMatrix output(3, num_test_obs);
+  //NumericVector probs_for_quantiles =  NumericVector::create(lower_prob, 0.5, upper_prob);
+  std::vector<double> probs_for_quantiles {lower_prob, 0.5, upper_prob};
+  
+  
+  
+  // Rcout << "Line 4492";
+  //Rcout << "probs_for_quantiles = " << probs_for_quantiles << ".\n";
+  typedef std::vector<double> stdvec;
+  
+  for(int i=0;i<num_test_obs;i++){
+    //output(_,i)=Quantile(draws_wrapped(_,i), probs_for_quantiles);
+    std::vector<double> tempcol= arma::conv_to<stdvec>::from(draws_for_preds.col(i));
+    std::vector<double> tempquant= Quantile2(tempcol, probs_for_quantiles);
+    NumericVector tempforoutput = wrap(tempquant);
+    output(_,i)= tempforoutput;
+    
+  }  
+  
+  List ret(2);
+  ret[0]= output;
+  ret[1]= wrap(predicted_values);
+  
+  
+  return(ret);
+  
+}
+
+//###########################################################################################################################//
+
+// [[Rcpp::plugins(openmp)]]
+// Protect against compilers without OpenMP
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+List pred_ints_lin_alg_fields_LDL_insamp_bcf(List overall_sum_trees_mu,List overall_sum_trees_tau,
+                                         List overall_sum_mat_mu,List overall_sum_mat_tau,
+                                         NumericVector y,NumericVector BIC_weights,
+                                         int num_iter,int num_obs,double a_mu,double a_tau,double sigma,
+                                         double mu_mu_mu,double mu_mu_tau,double nu,
+                                         double lambda,//List resids_mu,List resids_tau, 
+                                         NumericVector z,
+                                         double lower_prob, double upper_prob, 
+                                         int num_cores){
+  
+  
+  //Rcout << "Line 14403.\n";
+  arma::mat preds_all_models_arma(num_obs,BIC_weights.size()); 
+  arma::mat weighted_preds_all_models_arma(num_obs,BIC_weights.size());
+  
+  // for all sums of trees
+  
+  NumericVector BICi=-0.5*BIC_weights;
+  double max_BIC=max(BICi);
+  
+  
+  
+  
+  NumericVector post_weights(BIC_weights.size());
+  
+  for(int k=0;k<BIC_weights.size();k++){
+    
+    //NumericVector BICi=-0.5*BIC_weights;
+    //double max_BIC=max(BICi);
+    double weight=exp(BICi[k]-(max_BIC+log(sum(exp(BICi-max_BIC)))));
+    post_weights[k]=weight;
+    //int num_its_to_sample = round(weight*(num_iter));
+    
+  }
+  
+  
+  arma::vec post_weights_arma = as<arma::vec>(post_weights);
+  
+  //int num_models= BIC_weights.size();
+  
+  IntegerVector num_its_to_sample = RcppArmadillo::rmultinom(num_iter,post_weights);
+  IntegerVector num_its_sum = cumsum(num_its_to_sample);
+  arma::vec num_its_to_sample_arma = as<arma::vec>(num_its_to_sample);
+  arma::vec num_its_sum_arma = as<arma::vec>(num_its_sum);
+  
+  //arma::mat draws_for_preds(0,num_obs);
+  //arma::mat draws_for_preds(num_iter,num_obs);
+  arma::mat draws_for_preds(num_iter,num_obs);  
+  
+  
+  //arma::mat draws_for_preds(num_obs,0);
+  
+  
+  arma::vec z_ar=Rcpp::as<arma::vec>(z);		// converts to arma vec	
+  
+  
+  arma::vec yvec=Rcpp::as<arma::vec>(y);			// convert input y_temp to arma vec called yvec
+  arma::mat y_arma(num_obs,1);										// create a matrix with num_obs (number of observations) rows and 1 column
+  y_arma.col(0)=yvec;										// set first column of y_arma equal to yvec
+  //get exponent
+  //double expon=(num_obs+nu)/2;								// set the expoenent (equation 5 in the paper)
+  //get y_arma^Tpsi^{-1}y_arma
+  // arma::mat psi_inv=psi.i();
+  arma::mat yty=y_arma.t()*y_arma;								// yty = y_arma transpose y_arma (sum of squares)
+  
+  
+  
+  //create field (armadillo list) of models
+  //each model is a field (armadillo list) of trees represented by matrices
+  arma::field<arma::field<arma::mat>> modelsF_mu(overall_sum_trees_mu.size());
+  for(int i=0;i<overall_sum_trees_mu.size();i++){
+    List temp_tree_list = overall_sum_trees_mu[i];
+    
+    arma::field<arma::mat> treesF(temp_tree_list.size());
+    for(int q=0;q<temp_tree_list.size();q++){
+      //Rcout << "Line 5663.\n";
+      arma::mat temp_tree_mat = Rcpp::as<arma::mat>(temp_tree_list[q]);
+      treesF(q)=temp_tree_mat;
+    }
+    //Rcout << "Line 5669.\n";
+    
+    modelsF_mu(i)=treesF;
+  }
+  
+  //Rcout << "Line 14476.\n";
+  
+  arma::field<arma::field<arma::mat>> matsF_mu(overall_sum_mat_mu.size());
+  for(int i=0;i<overall_sum_mat_mu.size();i++){
+    List temp_tree_list = overall_sum_mat_mu[i];
+    arma::field<arma::mat> treesF(temp_tree_list.size());
+    for(int q=0;q<temp_tree_list.size();q++){
+      arma::mat temp_tree_mat = Rcpp::as<arma::mat>(temp_tree_list[q]);
+      treesF(q)=temp_tree_mat;
+    }
+    matsF_mu(i)=treesF;
+  }
+  
+  
+  
+  //Rcout << "Line 14491.\n";
+  
+  
+  
+  //create field (armadillo list) of models
+  //each model is a field (armadillo list) of trees represented by matrices
+  arma::field<arma::field<arma::mat>> modelsF_tau(overall_sum_trees_tau.size());
+  for(int i=0;i<overall_sum_trees_tau.size();i++){
+    List temp_tree_list = overall_sum_trees_tau[i];
+    //Rcout << "Line 5661.\n";
+    
+    arma::field<arma::mat> treesF(temp_tree_list.size());
+    for(int q=0;q<temp_tree_list.size();q++){
+      //Rcout << "Line 5663.\n";
+      arma::mat temp_tree_mat = Rcpp::as<arma::mat>(temp_tree_list[q]);
+      treesF(q)=temp_tree_mat;
+    }
+    //Rcout << "Line 5669.\n";
+    
+    modelsF_tau(i)=treesF;
+  }
+  
+  
+  arma::field<arma::field<arma::mat>> matsF_tau(overall_sum_mat_tau.size());
+  for(int i=0;i<overall_sum_mat_tau.size();i++){
+    List temp_tree_list = overall_sum_mat_tau[i];
+    arma::field<arma::mat> treesF(temp_tree_list.size());
+    for(int q=0;q<temp_tree_list.size();q++){
+      arma::mat temp_tree_mat = Rcpp::as<arma::mat>(temp_tree_list[q]);
+      treesF(q)=temp_tree_mat;
+    }
+    matsF_tau(i)=treesF;
+  }
+  
+  
+  
+  
+#pragma omp parallel num_threads(num_cores)
+#pragma omp for
+  for(int i=0;i<overall_sum_mat_mu.size();i++){
+    int num_its_temp = num_its_to_sample_arma[i];
+    if(num_its_temp==0){
+      continue;
+    }
+    
+    
+    //make W_bcf and mu matrices for the sum of trees
+    //Rcout << "Line 14532.\n";
+    
+    arma::mat Wmat_mu(num_obs,0);
+    int upsilon=0;
+    for(int j=0;j<modelsF_mu(i).n_elem;j++){
+      
+      arma::mat curr_tree=(modelsF_mu(i))(j);
+      arma::mat curr_obs_nodes=(matsF_mu(i))(j);
+      //NumericVector tree_term_nodes=find_term_nodes(curr_tree);
+      arma::vec colmat=curr_tree.col(4);
+      arma::uvec term_nodes=arma::find(colmat==-1);
+      term_nodes=term_nodes+1;
+      
+      int b_j=term_nodes.n_elem;
+      //begin J function
+      
+      //will make J as we go in BART-BMA no need to create it again here....
+      // arma::mat Jmat=J(curr_obs_nodes,tree_term_nodes);
+      arma::mat tree_matrix_temp = (matsF_mu(i))(j);
+      arma::mat Jmat(tree_matrix_temp.n_rows, b_j);
+      Jmat.zeros();
+      
+      //for each terminal node get the observations associated with it and set column
+      for(int q=0;q<b_j;q++){
+        //double tn=term_nodes[q];
+        //arma::uvec term_obs=find_term_obs(obs_to_nodes_temp,tn);
+        
+        //begin find_term_obs
+        
+        //arma::mat arma_tree_mat(tree_matrix_temp.begin(),tree_matrix_temp.nrow(), tree_matrix_temp.ncol(), false); 
+        //for reference arma_tree_mat == matsF(i)(j) == tree_matrix_temp
+        
+        arma::uvec term_obs;
+        
+        for(int r=0;r<tree_matrix_temp.n_cols;r++){
+          //arma::vec colmat=arma_tree_mat.col(r);
+          arma::vec colmat=tree_matrix_temp.col(r);
+          term_obs=arma::find(colmat==term_nodes[q]);
+          if(term_obs.size()>0){
+            break;
+          }
+        }
+        
+        //end find_term_obs
+        
+        
+        //assign term_obs to the correct index of J
+        //NumericVector term_obs2=as<NumericVector>(wrap(term_obs));
+        //NumericVector obs_col(obs_to_nodes_temp.nrow());
+        arma::vec obs_col= arma::zeros<arma::vec>(tree_matrix_temp.n_rows);
+        //Rcout << "Line 5747.\n";
+        obs_col.elem(term_obs)= arma::ones<arma::vec>(term_obs.n_elem);
+        //Rcout << "Line 5749.\n";
+        //arma::vec colmat=Rcpp::as<arma::vec>(obs_col);
+        Jmat.col(q)= obs_col;
+        
+        // arma::vec  colmat=arma::zeros(Jmat.n_rows) ;// colmattest(Jmat.n_rows,0);
+        // colmat.elem(term_obs).fill(1);
+        // Jmat.col(i)= colmat;
+      }
+      
+      
+      
+      
+      Wmat_mu.insert_cols(upsilon,Jmat);
+      upsilon+=b_j;
+    }
+    
+    
+    
+    
+    
+    
+    
+    //arma::mat Wmat_tau=W_bcf(overall_sum_trees_tau[i],overall_sum_mat_tau[i],num_obs);	// Create W_bcf matrix. Function defined on line 829
+    
+    
+    arma::mat Wmat_tau(num_obs,0);
+    int upsilon2=0;
+    for(int j=0;j<modelsF_tau(i).n_elem;j++){
+      
+      arma::mat curr_tree=(modelsF_tau(i))(j);
+      arma::mat curr_obs_nodes=(matsF_tau(i))(j);
+      //NumericVector tree_term_nodes=find_term_nodes(curr_tree);
+      arma::vec colmat=curr_tree.col(4);
+      arma::uvec term_nodes=arma::find(colmat==-1);
+      term_nodes=term_nodes+1;
+      
+      int b_j=term_nodes.n_elem;
+      //begin J function
+      
+      //will make J as we go in BART-BMA no need to create it again here....
+      // arma::mat Jmat=J(curr_obs_nodes,tree_term_nodes);
+      arma::mat tree_matrix_temp = (matsF_tau(i))(j);
+      arma::mat Jmat(tree_matrix_temp.n_rows, b_j);
+      Jmat.zeros();
+      
+      //for each terminal node get the observations associated with it and set column
+      for(int q=0;q<b_j;q++){
+        //double tn=term_nodes[q];
+        //arma::uvec term_obs=find_term_obs(obs_to_nodes_temp,tn);
+        
+        //begin find_term_obs
+        
+        //arma::mat arma_tree_mat(tree_matrix_temp.begin(),tree_matrix_temp.nrow(), tree_matrix_temp.ncol(), false); 
+        //for reference arma_tree_mat == matsF(i)(j) == tree_matrix_temp
+        
+        arma::uvec term_obs;
+        
+        for(int r=0;r<tree_matrix_temp.n_cols;r++){
+          //arma::vec colmat=arma_tree_mat.col(r);
+          arma::vec colmat=tree_matrix_temp.col(r);
+          term_obs=arma::find(colmat==term_nodes[q]);
+          if(term_obs.size()>0){
+            break;
+          }
+        }
+        
+        //end find_term_obs
+        
+        
+        //assign term_obs to the correct index of J
+        //NumericVector term_obs2=as<NumericVector>(wrap(term_obs));
+        //NumericVector obs_col(obs_to_nodes_temp.nrow());
+        arma::vec obs_col= arma::zeros<arma::vec>(tree_matrix_temp.n_rows);
+        //Rcout << "Line 5747.\n";
+        obs_col.elem(term_obs)= arma::ones<arma::vec>(term_obs.n_elem);
+        //Rcout << "Line 5749.\n";
+        //arma::vec colmat=Rcpp::as<arma::vec>(obs_col);
+        Jmat.col(q)= obs_col;
+        
+        // arma::vec  colmat=arma::zeros(Jmat.n_rows) ;// colmattest(Jmat.n_rows,0);
+        // colmat.elem(term_obs).fill(1);
+        // Jmat.col(i)= colmat;
+      }
+      
+      
+      
+      
+      Wmat_tau.insert_cols(upsilon2,Jmat);
+      upsilon2+=b_j;
+    }
+    
+    
+    
+    
+    
+    //Rcout << "Line 14679.\n";
+    
+    
+    
+    double b_mu=Wmat_mu.n_cols;
+    double b_tau=Wmat_tau.n_cols;
+    //Wmat_tau.each_col()%=z_ar;
+    
+    
+    //Rcout << "Line 14688.\n";
+    //Rcout << "b_tau = " << b_tau << ".\n";
+    //Rcout << "Wmat_tau.n_rows = " << Wmat_tau.n_rows << ".\n";
+    
+    //Rcout << "z_ar.n_elem = " << z_ar.n_elem << ".\n";
+    
+    arma::mat DiagZ_Wmat_tau= Wmat_tau.each_col()%z_ar;
+    //Rcout << "Line 14693.\n";
+    
+    
+    arma::mat Wmat = join_rows(Wmat_mu,DiagZ_Wmat_tau);
+    
+    double b=Wmat.n_cols;									// b is number of columns of W_bcf matrix (omega in the paper)
+    
+    //get t(y_arma)inv(psi)J_bcf
+    arma::mat ytW=y_arma.t()*Wmat;								// y_arma transpose W_bcf
+    //get t(J_bcf)inv(psi)J_bcf  
+    arma::mat WtW=Wmat.t()*Wmat;							// W_bcf transpose W_bcf
+    //get jpsij +aI
+    arma::mat aI(b,b);									// create b by b matrix called aI. NOT INIIALIZED. 
+    aI=aI.eye();										// a times b by b identity matrix. The .eye() turns aI into an identity matrix.
+    arma::vec a_vec_mu = a_mu*arma::ones<arma::vec>(b_mu);
+    arma::vec a_vec_tau = a_tau*arma::ones<arma::vec>(b_tau);
+    arma::vec a_vec(b);
+    a_vec.head(b_mu) = a_vec_mu;
+    a_vec.tail(b_tau) = a_vec_tau;
+    aI.diag() = a_vec;
+    
+    arma::mat sec_term=WtW+aI;							//
+    //arma::mat sec_term_inv=sec_term.i();					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    arma::mat sec_term_inv=inv_sympd(sec_term);					// matrix inverse expression in middle of eq 5 in the paper. The .i() obtains the matrix inverse.
+    
+    //get t(J_bcf)inv(psi)y_arma
+    arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
+    //get m^TV^{-1}m
+    arma::mat mvm= ytW*sec_term_inv*third_term;		// matrix expression in middle of equation 5
+    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    
+    //Rcout << "Line 14724.\n";
+    
+    //arma::mat zeromat(arma::size(Wmat_mu),arma::fill::zeros);
+    //arma::mat zeromat(num_obs ,b_mu ,arma::fill::zeros);
+    arma::mat zeromat=arma::zeros<arma::mat>(num_obs ,b_mu);
+    arma::mat Vmat = join_rows(zeromat,Wmat_tau);
+    
+    //arma::vec preds_temp_arma= Vmat*sec_term_inv*Wmat.t()*y_arma;
+    //arma::vec preds_temp_arma= Vmat*inv_sympd(sec_term)*Wmat.t()*y_arma;
+    //arma::vec preds_temp_arma= Vmat*inv_sympd(sec_term)*third_term;
+    arma::vec preds_temp_arma= Vmat*sec_term_inv*third_term;
+    arma::mat covar_t=as_scalar((1/(nu+num_obs))*(nu*lambda+yty-mvm))*(Vmat*sec_term_inv*(Vmat.t()));
+    
+    
+    //or (possibly faster)
+    //arma::mat V_M_inv = Vmat*sec_term_inv;
+    //arma::vec preds_temp_arma= V_M_inv*third_term;
+    //arma::mat covar_t=as_scalar((1/(nu+num_obs))*(nu*lambda+yty-mvm))*(V_M_inv*(Vmat.t()));
+    
+    weighted_preds_all_models_arma.col(i)=preds_temp_arma*post_weights_arma[i];
+    
+    preds_all_models_arma.col(i)=preds_temp_arma;
+    
+    
+    //Rcout << "Line 14748.\n";
+    
+    //int num_its_to_sample = round(weight*(num_iter));
+    //Rcout << "num_its_temp = " << num_its_temp << ".\n";
+    
+    arma::uword m = num_obs;
+    arma::vec U = arma::chi2rnd(nu+num_obs,num_its_temp);
+    //Rcout << "U.n_elem = " << U.n_elem << ".\n";
+    
+    U = sqrt(nu+num_obs / U);
+    
+    arma::vec D_diags(m);
+    arma::mat Lchol(m,m);
+    for(int j1 = 0; j1 < m; j1++){
+      if(j1==0){
+        D_diags(0)=covar_t(0,0);
+        Lchol(arma::span(j1+1,m-1),j1 )= (covar_t(arma::span(j1+1,m-1),j1 ))/D_diags(j1);
+        //Rcout << "Line 14793.\n";
+        
+        //for(int k1 = j1+1; k1 < m-1; k1++){
+        //  Lchol(k1,j1)=covar_t(k1,j1)/D_diags(j1) ;
+        //}
+      }else{
+        arma::vec tempv(j1);
+        for(int i1 = 0; i1 < j1; i1++){
+          tempv(i1)=Lchol(j1,i1)*D_diags(i1);
+        }
+        //arma:: mat templc = Lchol(j1,arma::span(0,j1-1));
+        //D_diags(j1)=covar_t(j1,j1)-templc*tempv;
+        //Rcout << "Line 14806.\n";
+        
+        D_diags(j1)=covar_t(j1,j1)-as_scalar(Lchol(j1,arma::span(0,j1-1))*tempv);
+        //Rcout << "Line 14809.\n";
+        if(j1<m-1){
+          Lchol(arma::span(j1+1,m-1),j1 )= (covar_t(arma::span(j1+1,m-1),j1 )-  (Lchol(arma::span(j1+1,m-1),arma::span(0,j1-1)))*tempv)/D_diags(j1);
+        }
+        //for(int k1 = j1+1; k1 < covar_t.n_cols; k1++){
+        //  Lchol(k1,j1)=(covar_t(k1,j1)- *tempv)/D_diags(j1) ;
+        //}
+        
+      }
+    }
+    
+    arma::mat D_chol=arma::diagmat(D_diags);
+    
+    arma::mat Ytemp = arma::randn(m, num_its_temp);
+    arma::mat Y = Lchol*sqrt(D_chol)*Ytemp;
+    
+    
+    
+    
+    
+    //arma::mat Y = mvnrnd( arma::vec(m, arma::fill::zeros), covar_t,num_its_temp);
+    arma::mat temp_draws(m, num_its_temp);
+    for ( arma::uword i = 0; i < temp_draws.n_cols; ++i ) {
+      temp_draws.col(i) = preds_temp_arma + Y.col(i) * U[i];
+    }
+    //arma::rowvec Ut=U.t();
+    //Y.each_row() %= Ut;
+    //arma::mat temp_draws = arma::repmat(preds_temp_arma, 1, num_its_temp) +  Y;
+    
+    
+    
+    //draws_for_preds = join_cols(draws_for_preds,temp_draws.t());
+    if(i==0){
+      draws_for_preds.rows(0,num_its_sum_arma[i]-1)=temp_draws.t();
+    }else{
+      draws_for_preds.rows(num_its_sum_arma[i-1],num_its_sum_arma[i]-1)=temp_draws.t();
+    }
+    
+    
+    
+    
+    
+    
+  }
+#pragma omp barrier  
+  
+  //arma::colvec predicted_values;
+  
+  //arma::mat M1(preds_all_models.begin(), preds_all_models.nrow(), preds_all_models.ncol(), false);
+  arma::colvec predicted_values=sum(weighted_preds_all_models_arma,1);
+  
+  //NumericMatrix draws_wrapped= wrap(draws_for_preds);
+  NumericMatrix output(3, num_obs);
+  //NumericVector probs_for_quantiles =  NumericVector::create(lower_prob, 0.5, upper_prob);
+  std::vector<double> probs_for_quantiles {lower_prob, 0.5, upper_prob};
+  
+  
+  
+  typedef std::vector<double> stdvec;
+  
+  for(int i=0;i<num_obs;i++){
+    //output(_,i)=Quantile(draws_wrapped(_,i), probs_for_quantiles);
+    std::vector<double> tempcol= arma::conv_to<stdvec>::from(draws_for_preds.col(i));
+    std::vector<double> tempquant= Quantile2(tempcol, probs_for_quantiles);
+    NumericVector tempforoutput = wrap(tempquant);
+    output(_,i)= tempforoutput;
+    
+  }  
+  
+  List ret(2);
+  ret[0]= output;
+  ret[1]= wrap(predicted_values);
+  
+  
+  
+  return(ret);
 }

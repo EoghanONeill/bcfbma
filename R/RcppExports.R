@@ -301,6 +301,74 @@ BCF_BMA_sumLikelihood_add_mu_or_tau <- function(data, y, z, pihat, a_mu, a_tau, 
     .Call(`_bcfbma_BCF_BMA_sumLikelihood_add_mu_or_tau`, data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2, zero_split, only_max_num_trees, separate_tree_numbers, min_num_obs_for_mu_split, min_num_obs_after_mu_split, min_num_obs_for_tau_split, min_num_obs_after_tau_split)
 }
 
+get_termobs_test_data_all <- function(test_data, tree_data) {
+    .Call(`_bcfbma_get_termobs_test_data_all`, test_data, tree_data)
+}
+
+get_termobs_test_data_treated <- function(test_data, tree_data, z_test) {
+    .Call(`_bcfbma_get_termobs_test_data_treated`, test_data, tree_data, z_test)
+}
+
+get_termobs_testdata_overall_all <- function(overall_sum_trees, test_data) {
+    .Call(`_bcfbma_get_termobs_testdata_overall_all`, overall_sum_trees, test_data)
+}
+
+get_termobs_testdata_overall_treated <- function(overall_sum_trees, test_data, z_test) {
+    .Call(`_bcfbma_get_termobs_testdata_overall_treated`, overall_sum_trees, test_data, z_test)
+}
+
+get_J_test <- function(curr_termobs, tree_term_nodes, n) {
+    .Call(`_bcfbma_get_J_test`, curr_termobs, tree_term_nodes, n)
+}
+
+get_W_test <- function(sum_treetable, termobs_testdata_onemodel, n) {
+    .Call(`_bcfbma_get_W_test`, sum_treetable, termobs_testdata_onemodel, n)
+}
+
+preds_bcfbma_lin_alg_insamp <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z) {
+    .Call(`_bcfbma_preds_bcfbma_lin_alg_insamp`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z)
+}
+
+preds_bcfbma_lin_alg_outsamp <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs) {
+    .Call(`_bcfbma_preds_bcfbma_lin_alg_outsamp`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs)
+}
+
+mean_vars_lin_alg_insamp_bcf <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z) {
+    .Call(`_bcfbma_mean_vars_lin_alg_insamp_bcf`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z)
+}
+
+mean_vars_lin_alg_outsamp_bcf <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs) {
+    .Call(`_bcfbma_mean_vars_lin_alg_outsamp_bcf`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs)
+}
+
+pred_ints_lin_alg_outsamp_bcf <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, lower_prob, upper_prob) {
+    .Call(`_bcfbma_pred_ints_lin_alg_outsamp_bcf`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, lower_prob, upper_prob)
+}
+
+pred_ints_lin_alg_insamp_bcf <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob) {
+    .Call(`_bcfbma_pred_ints_lin_alg_insamp_bcf`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob)
+}
+
+get_termobs_test_data_fields_bcf <- function(test_data, tree_data) {
+    .Call(`_bcfbma_get_termobs_test_data_fields_bcf`, test_data, tree_data)
+}
+
+pred_ints_lin_alg_fields_outsamp_bcf <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, lower_prob, upper_prob, num_cores) {
+    .Call(`_bcfbma_pred_ints_lin_alg_fields_outsamp_bcf`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, lower_prob, upper_prob, num_cores)
+}
+
+pred_ints_lin_alg_fields_insamp_bcf <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores) {
+    .Call(`_bcfbma_pred_ints_lin_alg_fields_insamp_bcf`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores)
+}
+
+pred_ints_lin_alg_fields_LDL_outsamp_bcf <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, lower_prob, upper_prob, num_cores) {
+    .Call(`_bcfbma_pred_ints_lin_alg_fields_LDL_outsamp_bcf`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, lower_prob, upper_prob, num_cores)
+}
+
+pred_ints_lin_alg_fields_LDL_insamp_bcf <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores) {
+    .Call(`_bcfbma_pred_ints_lin_alg_fields_LDL_insamp_bcf`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores)
+}
+
 find_term_nodes_gs <- function(tree_table) {
     .Call(`_bcfbma_find_term_nodes_gs`, tree_table)
 }
