@@ -29,7 +29,6 @@ pred_ints_from_rmixt_bcf_TE<-function(object,num_iter,l_quant,u_quant,newdata=NU
                                          object$test_data,
                                          object$test_pihat, object$test_z, object$include_pi2, 
                                          object$num_propscores, object$nrowtest)
-      print("Currently does not support positive semi-definite covariance matrices.")
       #Code should be rewritten so that mean_vars_lin_alg outputs the 
       draws_from_mixture <- mvnfast::rmixt(n= num_iter, mu= inputs_for_draws[[3]], sigma = inputs_for_draws[[4]],
                                            df = object$nu+object$nrowTrain, w = inputs_for_draws[[2]], ncores = num_cores,
@@ -37,15 +36,14 @@ pred_ints_from_rmixt_bcf_TE<-function(object,num_iter,l_quant,u_quant,newdata=NU
       
     }else{ if(is.null(newdata) && length(object)==25){
       #else return Pred Ints for training data
-      inputs_for_draws<-mean_vars_lin_alg_insamp_bcf(object$sumoftrees_mu,object$sumoftrees_tau,
+      inputs_for_draws<-mean_vars_lin_alg_insamp_par_bcf(object$sumoftrees_mu,object$sumoftrees_tau,
                                           object$obs_to_termNodesMatrix_mu,object$obs_to_termNodesMatrix_tau,
                                           object$response,
                                           object$bic,num_iter,object$nrowTrain,
                                           object$a_mu,object$a_tau,object$sigma,0,0,
                                           object$nu,object$lambda,
-                                          object$z)
-      print("Currently does not support positive semi-definite covariance matrices.")
-      
+                                          object$z,num_cores)
+
       draws_from_mixture <- mvnfast::rmixt(n= num_iter, mu= inputs_for_draws[[3]], sigma = inputs_for_draws[[4]],
                                            df = object$nu+object$nrowTrain, w = inputs_for_draws[[2]], ncores = num_cores,
                                            isChol =TRUE)
@@ -62,8 +60,7 @@ pred_ints_from_rmixt_bcf_TE<-function(object,num_iter,l_quant,u_quant,newdata=NU
                                          object$test_data,
                                          object$test_pihat, object$test_z, object$include_pi2, 
                                          object$num_propscores, object$nrowtest)
-      print("Currently does not support positive semi-definite covariance matrices.")
-      
+
       draws_from_mixture <- mvnfast::rmixt(n= num_iter, mu= inputs_for_draws[[3]], sigma = inputs_for_draws[[4]], 
                                            df = object$nu+object$nrowTrain, w = inputs_for_draws[[2]], ncores = num_cores,
                                            isChol =TRUE)
