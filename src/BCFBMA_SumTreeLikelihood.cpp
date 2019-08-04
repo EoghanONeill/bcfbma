@@ -214,8 +214,8 @@ double likelihood_function_mu_bcf(NumericVector y_temp,NumericMatrix treetable_t
     term2+=(sum_yksq+a*pow(mu,2)-b2);	// iteratively add function of parameters and sum of squares
     
   }
-  //tree_log_lik=(b/2)*log(a)-0.5*term1-((y_temp.size()+nu)/2)*log(term2);	// function of paramters, number of observations, and term1 and term2 obtained in for loop
-  tree_log_lik=(b/2)*log(a)-0.5*term1-((y_temp.size()+nu)/2)*log(term2+nu*lambda);	// function of paramters, number of observations, and term1 and term2 obtained in for loop
+  //tree_log_lik=(b*0.5)*log(a)-0.5*term1-((y_temp.size()+nu)*0.5)*log(term2);	// function of paramters, number of observations, and term1 and term2 obtained in for loop
+  tree_log_lik=(b*0.5)*log(a)-0.5*term1-((y_temp.size()+nu)*0.5)*log(term2+nu*lambda);	// function of paramters, number of observations, and term1 and term2 obtained in for loop
   
   // for(int i=0;i<b;i++){		// loop over the length of the terminal nodes vector
   //   if(n[i]<=5){	// If the number of obs in term node i is less than 5
@@ -259,8 +259,8 @@ double likelihood_function_bcf(NumericVector y_temp,NumericMatrix treetable_temp
     //term2+=(sum_yksq+a*pow(mu,2)-b2+nu*lambda);	// iteratively add function of parameters and sum of squares
     term2+=(sum_yksq+a*pow(mu,2)-b2);	// iteratively add function of parameters and sum of squares
   }
-  //tree_log_lik=(b/2)*log(a)-0.5*term1-((y_temp.size()+nu)/2)*log(term2);	// function of paramters, number of observations, and term1 and term2 obtained in for loop
-  tree_log_lik=(b/2)*log(a)-0.5*term1-((y_temp.size()+nu)/2)*log(term2+nu*lambda);	// function of paramters, number of observations, and term1 and term2 obtained in for loop
+  //tree_log_lik=(b*0.5)*log(a)-0.5*term1-((y_temp.size()+nu)*0.5)*log(term2);	// function of paramters, number of observations, and term1 and term2 obtained in for loop
+  tree_log_lik=(b*0.5)*log(a)-0.5*term1-((y_temp.size()+nu)*0.5)*log(term2+nu*lambda);	// function of paramters, number of observations, and term1 and term2 obtained in for loop
   
   // for(int i=0;i<b;i++){		// loop over the length of the terminal nodes vector
   //   if(n[i]<=5){	// If the number of obs in term node i is less than 5
@@ -1391,7 +1391,7 @@ double sumtree_likelihood_function_bcf_bcf(NumericVector y_temp,List sum_treetab
   arma::mat y(n,1);										// create a matrix with n (number of observations) rows and 1 column
   y.col(0)=yvec;										// set first column of y equal to yvec
   //get exponent
-  double expon=(n+nu)/2;								// set the expoenent (equation 5 in the paper)
+  double expon=(n+nu)*0.5;								// set the expoenent (equation 5 in the paper)
   //get y^Tpsi^{-1}y
   // arma::mat psi_inv=psi.i();
   arma::mat yty=y.t()*y;								// yty = y transpose y (sum of squares)
@@ -1418,7 +1418,7 @@ double sumtree_likelihood_function_bcf_bcf(NumericVector y_temp,List sum_treetab
   arma::mat third_term=Wmat.t()*y;						// W_bcf transpose Y
   //get m^TV^{-1}m
   arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
-  arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+  arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
   double rel2=as<double>(wrap(rel));					// convert to double (from 1 by 1 arma mat)
   return(rel2);											// return the log marginal likelihood
 }    
@@ -1445,7 +1445,7 @@ double sumtree_likelihood_tau_round1_bcf(NumericVector y_temp,NumericMatrix tree
   arma::mat y(n,1);										// create a matrix with n (number of observations) rows and 1 column
   y.col(0)=yvec;										// set first column of y equal to yvec
   //get exponent
-  double expon=(n+nu)/2;								// set the expoenent (equation 5 in the paper)
+  double expon=(n+nu)*0.5;								// set the expoenent (equation 5 in the paper)
   //get y^Tpsi^{-1}y
   // arma::mat psi_inv=psi.i();
   arma::mat yty=y.t()*y;								// yty = y transpose y (sum of squares)
@@ -1472,7 +1472,7 @@ double sumtree_likelihood_tau_round1_bcf(NumericVector y_temp,NumericMatrix tree
   arma::mat third_term=Wmat.t()*y;						// W_bcf transpose Y
   //get m^TV^{-1}m
   arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
-  arma::mat rel=(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+  arma::mat rel=(b_tau*0.5)*log(a_tau)-(0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
   double rel2=as<double>(wrap(rel));					// convert to double (from 1 by 1 arma mat)
   return(rel2);											// return the log marginal likelihood
 }    
@@ -3824,12 +3824,33 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
       for(int i=0;i<tree_table_mu.size();i++){				// create a length equal to the length of the input list tree_table_mu
         parent=-1;									// reset input vector parent to have one element, equal to -1.
         //NumericMatrix temp_list=cp_mat_list[0];		// indexes columns of splitting variables for potential splitting points. let temp_list equal the first element of the input list cp_mat_list
-        best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
-                                      a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
-                                      parent[0],cp_mat_list[0],
-                                      alpha_mu,beta_mu,maxOWsize,
-                                      min_num_obs_for_mu_split, min_num_obs_after_mu_split//,first_round
-                                            ); // defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
+        if(split_rule_node==1){
+          
+          if(j==0){
+            best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
+                                        a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
+                                        parent[0],cp_mat_list[0],
+                                        alpha_mu,beta_mu,maxOWsize,
+                                        min_num_obs_for_mu_split, min_num_obs_after_mu_split//,first_round
+                                              ); // defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
+          }else{
+            best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
+                                              a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
+                                              parent[0],cp_mat_list[i],
+                                                                   alpha_mu,beta_mu,maxOWsize,
+                                                                   min_num_obs_for_mu_split, min_num_obs_after_mu_split//,first_round
+            );
+          }
+          
+        }else{
+          best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
+                                            a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
+                                            parent[0],cp_mat_list[0],
+                                                                 alpha_mu,beta_mu,maxOWsize,
+                                                                 min_num_obs_for_mu_split, min_num_obs_after_mu_split//,first_round
+          ); 
+        }
+        
         if(best_subset.size()==1){						// if get_best_split_bcf resulted in a (?no tree?) error.
           continue;									// skip to the next iteration of the iner for-loop.
         }
@@ -3921,8 +3942,8 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
       }
       
       tree_table_mu=table_subset_curr_round;								// reset tree_table_mu equal to the list of tables produced in the current iteration of the outer loop.
-      IntegerVector temp1(table_subset_curr_round.size(),1);			// create a vector of ones of length equal to that of the list of tree tables for the current round.
-      err_list=temp1;													// set err_list equal to temp1
+      //IntegerVector temp1(table_subset_curr_round.size(),0);			// create a vector of ones of length equal to that of the list of tree tables for the current round.
+      //err_list=temp1;													// set err_list equal to temp1
       if(overall_trees.size()<overall_size-1){						// if length of overall_trees is less than overall_size-1
         overall_trees=resize_bigger_bcf(overall_trees,overall_size);	// increse size of overall_trees
         overall_mat=resize_bigger_bcf(overall_mat,overall_size);		// increse size of overall_mat
@@ -4100,12 +4121,34 @@ List get_best_trees_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,Nume
     for(int i=0;i<tree_table_mu.size();i++){				// create a length equal to the length of the input list tree_table_mu
       parent=-1;									// reset input vector parent to have one element, equal to -1.
       //NumericMatrix temp_list=cp_mat_list[0];		// indexes columns of splitting variables for potential splitting points. let temp_list equal the first element of the input list cp_mat_list
-      best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
+      
+      if(split_rule_node==1){
+        
+        if(j==0){
+          best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                         a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
                                         parent[0],cp_mat_list[0],
                                         alpha_mu,beta_mu,maxOWsize,
                                         min_num_obs_for_mu_split, min_num_obs_after_mu_split//,first_round
                                           ); // defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
+        }else{
+          best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
+                                            a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
+                                            parent[0],cp_mat_list[i],
+                                                                 alpha_mu,beta_mu,maxOWsize,
+                                                                 min_num_obs_for_mu_split, min_num_obs_after_mu_split//,first_round
+          ); 
+        }
+      }else{
+        best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
+                                          a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
+                                          parent[0],cp_mat_list[0],
+                                                               alpha_mu,beta_mu,maxOWsize,
+                                                               min_num_obs_for_mu_split, min_num_obs_after_mu_split//,first_round
+        ); 
+      }
+      
+      
       if(best_subset.size()==1){						// if get_best_split_bcf resulted in a (?no tree?) error.
         continue;									// skip to the next iteration of the iner for-loop.
       }
@@ -4197,8 +4240,8 @@ List get_best_trees_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,Nume
     }
     
     tree_table_mu=table_subset_curr_round;								// reset tree_table_mu equal to the list of tables produced in the current iteration of the outer loop.
-    IntegerVector temp1(table_subset_curr_round.size(),1);			// create a vector of ones of length equal to that of the list of tree tables for the current round.
-    err_list=temp1;													// set err_list equal to temp1
+    //IntegerVector temp1(table_subset_curr_round.size(),0);			// create a vector of ones of length equal to that of the list of tree tables for the current round.
+    //err_list=temp1;													// set err_list equal to temp1
     if(overall_trees.size()<overall_size-1){						// if length of overall_trees is less than overall_size-1
       overall_trees=resize_bigger_bcf(overall_trees,overall_size);	// increse size of overall_trees
       overall_mat=resize_bigger_bcf(overall_mat,overall_size);		// increse size of overall_mat
@@ -4325,8 +4368,8 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
                            NumericVector y_scaled,int num_splits_mu,int num_splits_tau,int gridsize_mu,bool zero_split,
                            unsigned int min_num_obs_for_mu_split, unsigned int min_num_obs_after_mu_split
 ){
-  List example_tree_tab2 = prev_sum_trees_mu[parent[0]];
-  List example_tree_mat2 = prev_sum_trees_mu[parent[0]];
+  //List example_tree_tab2 = prev_sum_trees_mu[parent[0]];
+  //List example_tree_mat2 = prev_sum_trees_mu[parent[0]];
   
   // Rcout << "Length of input tree table list get_best_trees_sum_mu_bcf = " << example_tree_tab2.size() << ".\n";
   // Rcout << "Length of input tree mat list get_best_trees_sum_mu_bcf= " << example_tree_mat2.size() << ".\n";
@@ -4662,10 +4705,12 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
         //best_subset=get_best_split_bcf(resids(_,0),D1,tree_table_mu[i],tree_mat_mu[i],a,mu,nu,lambda,log(c),lowest_BIC,parent[0],cp_mat_list[0],alpha,beta,maxOWsize,first_round);	// defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
       //}else{											// if input first_round is not equal to 1.
       
-        if(err_list[i]==0){												// if i+1^th element of input vector err_list equals zero (no error?)
-          NumericMatrix test_tree=tree_table_mu[i];						// create test_tree equal to i+1^th element of input list tree_table_mu
-          NumericMatrix test_treemat=tree_mat_mu[i];						// create test_treemat equal to i+1^th element of input list tree_mat_mu
-          NumericMatrix test_cpmat= cp_mat_list[parent[i]];			// create a matrix test_cpmat equal to the parent[i]+1^th element of cp_mat_list
+        //if(err_list[i]==0){												// if i+1^th element of input vector err_list equals zero (no error?)
+          
+          
+          //NumericMatrix test_tree=tree_table_mu[i];						// create test_tree equal to i+1^th element of input list tree_table_mu
+          //NumericMatrix test_treemat=tree_mat_mu[i];						// create test_treemat equal to i+1^th element of input list tree_mat_mu
+          //NumericMatrix test_cpmat= cp_mat_list[parent[i]];			// create a matrix test_cpmat equal to the parent[i]+1^th element of cp_mat_list
           //need to append current tree_table_mu[i] to its parent sum_of_trees   
           // Rcout << "Get to Line 3954 in get_best_trees_sum_mu_bcf. i = " << i << "\n";
           // Rcout << "parent = "<< parent << "  .\n";
@@ -4673,37 +4718,81 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
           // Rcout << "prev_sum_trees_tau.size() = " << prev_sum_trees_tau.size() << ".\n";
           // Rcout << "tree_table_mu.size() = " << tree_table_mu.size() << ".\n";
           
-          List example_tree_tab = prev_sum_trees_mu[parent[i]];
-          List example_tree_mat = prev_sum_trees_mu[parent[i]];
+          //List example_tree_tab = prev_sum_trees_mu[parent[i]];
+          //List example_tree_mat = prev_sum_trees_mu[parent[i]];
           // Rcout << " i value = " << i << ".\n";
           // Rcout << "Length of input tree table list used to get best split sum = " << example_tree_tab.size() << ".\n";
           // Rcout << "Length of input tree mat list used to get best split sum= " << example_tree_mat.size() << ".\n";
           
-          best_subset=get_best_split_sum_mu_bcf(resids(_,parent[i]),x_control_a,tree_table_mu[i],tree_mat_mu[i],
-                                            a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
-                                            lowest_BIC,parent[i],cp_mat_list[parent[i]],
-                                            alpha_mu,beta_mu,alpha_tau,beta_tau,
-                                            maxOWsize,//first_round,
-                                            prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
-                                            y_scaled,parent,i,z,
-                                            min_num_obs_for_mu_split, min_num_obs_after_mu_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+          // best_subset=get_best_split_sum_mu_bcf(resids(_,parent[i]),x_control_a,tree_table_mu[i],tree_mat_mu[i],
+          //                                   a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
+          //                                   lowest_BIC,parent[i],cp_mat_list[parent[i]],
+          //                                   alpha_mu,beta_mu,alpha_tau,beta_tau,
+          //                                   maxOWsize,//first_round,
+          //                                   prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
+          //                                   y_scaled,parent,i,z,
+          //                                   min_num_obs_for_mu_split, min_num_obs_after_mu_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+          // 
           
+          if(split_rule_node==1){
+            if(j==0){
+              //parent[i] = i? at the start of the round, this is how parent is defined
+              best_subset=get_best_split_sum_mu_bcf(y_scaled, //resids(_,parent[i]),
+                                                    x_control_a,tree_table_mu[i],tree_mat_mu[i],
+                                                    a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
+                                                    lowest_BIC,parent[i],cp_mat_list[i],
+                                                                                    alpha_mu,beta_mu,alpha_tau,beta_tau,
+                                                                                    maxOWsize,//first_round,
+                                                                                    prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
+                                                                                    y_scaled,parent,i,z,
+                                                                                    min_num_obs_for_mu_split, min_num_obs_after_mu_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+              
+            }else{
+              //new cp_mat list now ordered according to new tree_table_mu. (parent vector not relevant?)
+              best_subset=get_best_split_sum_mu_bcf(y_scaled, //resids(_,parent[i]),
+                                                    x_control_a,tree_table_mu[i],tree_mat_mu[i],
+                                                    a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
+                                                    lowest_BIC,parent[i],cp_mat_list[i],
+                                                                                    alpha_mu,beta_mu,alpha_tau,beta_tau,
+                                                                                    maxOWsize,//first_round,
+                                                                                    prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
+                                                                                    y_scaled,parent,i,z,
+                                                                                    min_num_obs_for_mu_split, min_num_obs_after_mu_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+              
+            }
+          }else{
+            //cp_mat list unchanged throughout, but parent vector is updated, therefore use parent[i]
+            best_subset=get_best_split_sum_mu_bcf(y_scaled, //resids(_,parent[i]),
+                                                  x_control_a,tree_table_mu[i],tree_mat_mu[i],
+                                                  a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
+                                                  lowest_BIC,parent[i],cp_mat_list[parent[i]],
+                                                                                  alpha_mu,beta_mu,alpha_tau,beta_tau,
+                                                                                  maxOWsize,//first_round,
+                                                                                  prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
+                                                                                  y_scaled,parent,i,z,
+                                                                                  min_num_obs_for_mu_split, min_num_obs_after_mu_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+            
+          }
           // Rcout << "Get to Line 3968 in get_best_trees_sum_mu_bcf.\n";
           
           // return(best_subset);
-        }else if(err_list[i]==1){		// if i+1^th element of input vector err_list equals one (no error?).
-          continue;						// skip to next iteration of for-loop.
-        }else{							// if i+1^th element of input vector err_list is not 0 or 1 ???.
-          List ret_list(6);				// list of length 6.
-          ret_list[0]=9999;				// first element of list equals 9999.
-          ret_list[1]=err_list[i];		// second element is i+1^th element of input vector err_list. (some number not equal to 0 or 1).
-          ret_list[2]=i;					// third element of list is number indexing the element of tree_table_mu (index starts from 0).
-          ret_list[3]=j;					// fourth element is between 0 and 4. Index of outer for-loop.
-          ret_list[4]=tree_table_mu;			// fifth element of list is the list of tree tables.
-          ret_list[5]=err_list;			// sixth element of list is vector err_list.
-          return(ret_list);				// return the list.
-          throw std::range_error("err_list[i] is neither 0 nor 1...something is wrong here!");	// throw an error.
-        }
+          
+          
+        // }else if(err_list[i]==1){		// if i+1^th element of input vector err_list equals one (no error?).
+        //   continue;						// skip to next iteration of for-loop.
+        // }else{							// if i+1^th element of input vector err_list is not 0 or 1 ???.
+        //   List ret_list(6);				// list of length 6.
+        //   ret_list[0]=9999;				// first element of list equals 9999.
+        //   ret_list[1]=err_list[i];		// second element is i+1^th element of input vector err_list. (some number not equal to 0 or 1).
+        //   ret_list[2]=i;					// third element of list is number indexing the element of tree_table_mu (index starts from 0).
+        //   ret_list[3]=j;					// fourth element is between 0 and 4. Index of outer for-loop.
+        //   ret_list[4]=tree_table_mu;			// fifth element of list is the list of tree tables.
+        //   ret_list[5]=err_list;			// sixth element of list is vector err_list.
+        //   //return(ret_list);				// return the list.
+        //   throw std::range_error("err_list[i] is neither 0 nor 1...something is wrong here!");	// throw an error.
+        // }
+        
+        
       //} tget_best_trees_sum_mu_bcf is never used in the first round
       
       
@@ -4802,8 +4891,8 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
     }
     // Rcout << "Get to Line 4076 in get_best_trees_sum_mu_bcf.\n";
     tree_table_mu=table_subset_curr_round;									// reset tree_table_mu equal to the list of tables produced in the current iteration of the outer loop.
-    IntegerVector temp1(table_subset_curr_round.size(),1);				// create a vector of ones of length equal to that of the list of tree tables for the current round.
-    err_list=temp1;														// set err_list equal to temp1
+    //IntegerVector temp1(table_subset_curr_round.size(),0);				// create a vector of ones of length equal to that of the list of tree tables for the current round.
+    //err_list=temp1;														// set err_list equal to temp1
     if(overall_trees.size()<overall_size-1){							// if length of overall_trees is less than overall_size-1
       overall_trees=resize_bigger_bcf(overall_trees,overall_size);		// increse size of overall_trees
       overall_mat=resize_bigger_bcf(overall_mat,overall_size);			// increse size of overall_mat
@@ -4936,8 +5025,8 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
                                IntegerVector no_more_mu_trees,
                                unsigned int min_num_obs_for_mu_split, unsigned int min_num_obs_after_mu_split
 ){
-  List example_tree_tab2 = prev_sum_trees_mu[parent[0]];
-  List example_tree_mat2 = prev_sum_trees_mu[parent[0]];
+  //List example_tree_tab2 = prev_sum_trees_mu[parent[0]];
+  //List example_tree_mat2 = prev_sum_trees_mu[parent[0]];
   
   // Rcout << "Length of input tree table list get_best_trees_sum_mu_bcf = " << example_tree_tab2.size() << ".\n";
   // Rcout << "Length of input tree mat list get_best_trees_sum_mu_bcf= " << example_tree_mat2.size() << ".\n";
@@ -5278,10 +5367,14 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
         //NumericMatrix temp_list=cp_mat_list[0];		// create matrix temp_list equal to first element of cp_mat_list
         //best_subset=get_best_split_bcf(resids(_,0),D1,tree_table_mu[i],tree_mat_mu[i],a,mu,nu,lambda,log(c),lowest_BIC,parent[0],cp_mat_list[0],alpha,beta,maxOWsize,first_round);	// defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
       //}else{											// if input first_round is not equal to 1.
-        if(err_list[i]==0){												// if i+1^th element of input vector err_list equals zero (no error?)
-          NumericMatrix test_tree=tree_table_mu[i];						// create test_tree equal to i+1^th element of input list tree_table_mu
-          NumericMatrix test_treemat=tree_mat_mu[i];						// create test_treemat equal to i+1^th element of input list tree_mat_mu
-          NumericMatrix test_cpmat= cp_mat_list[parent[i]];			// create a matrix test_cpmat equal to the parent[i]+1^th element of cp_mat_list
+        
+        
+        //if(err_list[i]==0){												// if i+1^th element of input vector err_list equals zero (no error?)
+          
+          
+          //NumericMatrix test_tree=tree_table_mu[i];						// create test_tree equal to i+1^th element of input list tree_table_mu
+          //NumericMatrix test_treemat=tree_mat_mu[i];						// create test_treemat equal to i+1^th element of input list tree_mat_mu
+          //NumericMatrix test_cpmat= cp_mat_list[parent[i]];			// create a matrix test_cpmat equal to the parent[i]+1^th element of cp_mat_list
           //need to append current tree_table_mu[i] to its parent sum_of_trees   
           // Rcout << "Get to Line 3954 in get_best_trees_sum_mu_bcf. i = " << i << "\n";
           // Rcout << "parent = "<< parent << "  .\n";
@@ -5289,37 +5382,71 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
           // Rcout << "prev_sum_trees_tau.size() = " << prev_sum_trees_tau.size() << ".\n";
           // Rcout << "tree_table_mu.size() = " << tree_table_mu.size() << ".\n";
           
-          List example_tree_tab = prev_sum_trees_mu[parent[i]];
-          List example_tree_mat = prev_sum_trees_mu[parent[i]];
+          //List example_tree_tab = prev_sum_trees_mu[parent[i]];
+          //List example_tree_mat = prev_sum_trees_mu[parent[i]];
           // Rcout << " i value = " << i << ".\n";
           // Rcout << "Length of input tree table list used to get best split sum = " << example_tree_tab.size() << ".\n";
           // Rcout << "Length of input tree mat list used to get best split sum= " << example_tree_mat.size() << ".\n";
           
-          best_subset=get_best_split_sum_mu_bcf(resids(_,parent[i]),x_control_a,tree_table_mu[i],tree_mat_mu[i],
+          
+          if(split_rule_node==1){
+            if(j==0){
+              best_subset=get_best_split_sum_mu_bcf(y_scaled, //resids(_,parent[i]),
+                                                x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                                 a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
-                                                lowest_BIC,parent[i],cp_mat_list[parent[i]],
+                                                lowest_BIC,parent[i],cp_mat_list[i],
                                                 alpha_mu,beta_mu,alpha_tau,beta_tau,
                                                 maxOWsize,//first_round,
                                                 prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
                                                 y_scaled,parent,i,z,
                                                 min_num_obs_for_mu_split, min_num_obs_after_mu_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
           
+            }else{
+              best_subset=get_best_split_sum_mu_bcf(y_scaled, //resids(_,parent[i]),
+                                                    x_control_a,tree_table_mu[i],tree_mat_mu[i],
+                                                    a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
+                                                    lowest_BIC,parent[i],cp_mat_list[i],
+                                                    alpha_mu,beta_mu,alpha_tau,beta_tau,
+                                                    maxOWsize,//first_round,
+                                                    prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
+                                                    y_scaled,parent,i,z,
+                                                    min_num_obs_for_mu_split, min_num_obs_after_mu_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+              
+            }
+          }else{
+            best_subset=get_best_split_sum_mu_bcf(y_scaled, //resids(_,parent[i]),
+                                                  x_control_a,tree_table_mu[i],tree_mat_mu[i],
+                                                  a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
+                                                  lowest_BIC,parent[i],cp_mat_list[parent[i]],
+                                                  alpha_mu,beta_mu,alpha_tau,beta_tau,
+                                                  maxOWsize,//first_round,
+                                                  prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
+                                                  y_scaled,parent,i,z,
+                                                  min_num_obs_for_mu_split, min_num_obs_after_mu_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+            
+          }
+          
+          
           // Rcout << "Get to Line 3968 in get_best_trees_sum_mu_bcf.\n";
           
           // return(best_subset);
-        }else if(err_list[i]==1){		// if i+1^th element of input vector err_list equals one (no error?).
-          continue;						// skip to next iteration of for-loop.
-        }else{							// if i+1^th element of input vector err_list is not 0 or 1 ???.
-          List ret_list(6);				// list of length 6.
-          ret_list[0]=9999;				// first element of list equals 9999.
-          ret_list[1]=err_list[i];		// second element is i+1^th element of input vector err_list. (some number not equal to 0 or 1).
-          ret_list[2]=i;					// third element of list is number indexing the element of tree_table_mu (index starts from 0).
-          ret_list[3]=j;					// fourth element is between 0 and 4. Index of outer for-loop.
-          ret_list[4]=tree_table_mu;			// fifth element of list is the list of tree tables.
-          ret_list[5]=err_list;			// sixth element of list is vector err_list.
-          return(ret_list);				// return the list.
-          throw std::range_error("err_list[i] is neither 0 nor 1...something is wrong here!");	// throw an error.
-        }
+        
+        
+        // }else if(err_list[i]==1){		// if i+1^th element of input vector err_list equals one (no error?).
+        //   continue;						// skip to next iteration of for-loop.
+        // }else{							// if i+1^th element of input vector err_list is not 0 or 1 ???.
+        //   List ret_list(6);				// list of length 6.
+        //   ret_list[0]=9999;				// first element of list equals 9999.
+        //   ret_list[1]=err_list[i];		// second element is i+1^th element of input vector err_list. (some number not equal to 0 or 1).
+        //   ret_list[2]=i;					// third element of list is number indexing the element of tree_table_mu (index starts from 0).
+        //   ret_list[3]=j;					// fourth element is between 0 and 4. Index of outer for-loop.
+        //   ret_list[4]=tree_table_mu;			// fifth element of list is the list of tree tables.
+        //   ret_list[5]=err_list;			// sixth element of list is vector err_list.
+        //   //return(ret_list);				// return the list.
+        //   throw std::range_error("err_list[i] is neither 0 nor 1...something is wrong here!");	// throw an error.
+        // }
+      
+      
       //}   get_best_split_sum_mu_bcf_2 is never used in the first round 
       
       
@@ -5418,8 +5545,8 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
     }
     // Rcout << "Get to Line 4076 in get_best_trees_sum_mu_bcf.\n";
     tree_table_mu=table_subset_curr_round;									// reset tree_table_mu equal to the list of tables produced in the current iteration of the outer loop.
-    IntegerVector temp1(table_subset_curr_round.size(),1);				// create a vector of ones of length equal to that of the list of tree tables for the current round.
-    err_list=temp1;														// set err_list equal to temp1
+    //IntegerVector temp1(table_subset_curr_round.size(),0);				// create a vector of ones of length equal to that of the list of tree tables for the current round.
+    //err_list=temp1;														// set err_list equal to temp1
     if(overall_trees.size()<overall_size-1){							// if length of overall_trees is less than overall_size-1
       overall_trees=resize_bigger_bcf(overall_trees,overall_size);		// increse size of overall_trees
       overall_mat=resize_bigger_bcf(overall_mat,overall_size);			// increse size of overall_mat
@@ -5600,7 +5727,11 @@ List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numer
     int count=0;										// create a varialble. Initialized equal to 0.
     for(int i=0;i<tree_table_tau.size();i++){				// for loop of length equal tothat of the list tree_table (input or updated in previous iteration)
       parent=-1;									// reset input vector parent to have one element, equal to -1.
-      best_subset=get_best_split_tau_bcf(resids(_,0),x_moderate_a,
+      
+      
+      if(split_rule_node==1){
+        if(j==0){
+          best_subset=get_best_split_tau_bcf(resids(_,0),x_moderate_a,
                                          tree_table_tau[i],tree_mat_tau[i],
                                          a_mu, a_tau,mu_tau,nu,lambda,
                                          log(c),
@@ -5611,6 +5742,40 @@ List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numer
                                          maxOWsize,//first_round,
                                          z,
                                          min_num_obs_for_tau_split, min_num_obs_after_tau_split); // defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
+          }else{
+            best_subset=get_best_split_tau_bcf(resids(_,0),x_moderate_a,
+                                               tree_table_tau[i],tree_mat_tau[i],
+                                               a_mu, a_tau,mu_tau,nu,lambda,
+                                               log(c),
+                                               lowest_BIC,
+                                               parent[0],
+                                               cp_mat_list[i],
+                                               alpha_mu,beta_mu,alpha_tau,beta_tau,
+                                               maxOWsize,//first_round,
+                                               z,
+                                               min_num_obs_for_tau_split, min_num_obs_after_tau_split); // defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
+            
+          
+          }
+          }else{
+            best_subset=get_best_split_tau_bcf(resids(_,0),x_moderate_a,
+                                               tree_table_tau[i],tree_mat_tau[i],
+                                               a_mu, a_tau,mu_tau,nu,lambda,
+                                               log(c),
+                                               lowest_BIC,
+                                               parent[0],
+                                               cp_mat_list[0],
+                                               alpha_mu,beta_mu,alpha_tau,beta_tau,
+                                               maxOWsize,//first_round,
+                                               z,
+                                               min_num_obs_for_tau_split, min_num_obs_after_tau_split); // defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
+            
+        }
+      
+      
+      
+      
+      
       if(best_subset.size()==1){						// if get_best_split_bcf resulted in a (?no tree?) error.
         continue;									// skip to the next iteration of the iner for-loop.
       }
@@ -5708,8 +5873,8 @@ List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numer
     //Rcout << "Line 4380.\n";
     
     tree_table_tau=table_subset_curr_round;									// reset tree_table_tau equal to the list of tables produced in the current iteration of the outer loop.
-    IntegerVector temp1(table_subset_curr_round.size(),1);				// create a vector of ones of length equal to that of the list of tree tables for the current round.
-    err_list=temp1;														// set err_list equal to temp1
+    //IntegerVector temp1(table_subset_curr_round.size(),0);				// create a vector of ones of length equal to that of the list of tree tables for the current round.
+    //err_list=temp1;														// set err_list equal to temp1
     if(overall_trees.size()<overall_size-1){							// if length of overall_trees is less than overall_size-1
       overall_trees=resize_bigger_bcf(overall_trees,overall_size);		// increse size of overall_trees
       overall_mat=resize_bigger_bcf(overall_mat,overall_size);			// increse size of overall_mat
@@ -6055,14 +6220,40 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
         
         // Rcout << "Get to line 5531";
         
-        best_subset=get_best_split_tau_round1_bcf(resids(_,parent[i]),x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
+        
+        if(split_rule_node==1){
+          if(j==0){
+            best_subset=get_best_split_tau_round1_bcf(y_scaled, //resids(_,parent[i]),
+                                                  x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                               a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
-                                              lowest_BIC,parent[i],cp_mat_list[parent[i]],
+                                              lowest_BIC,parent[i],cp_mat_list[i],
                                               alpha_mu,beta_mu,alpha_tau,beta_tau,
                                               maxOWsize,//first_round,
                                               prev_sum_trees_mu,prev_sum_trees_mat_mu,
                                               y_scaled,parent,i,z,
                                               min_num_obs_for_tau_split, min_num_obs_after_tau_split);
+            }else{
+              best_subset=get_best_split_tau_round1_bcf(y_scaled, //resids(_,parent[i]),
+                                                        x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
+                                                        a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
+                                                        lowest_BIC,parent[i],cp_mat_list[i],
+                                                        alpha_mu,beta_mu,alpha_tau,beta_tau,
+                                                        maxOWsize,//first_round,
+                                                        prev_sum_trees_mu,prev_sum_trees_mat_mu,
+                                                        y_scaled,parent,i,z,
+                                                        min_num_obs_for_tau_split, min_num_obs_after_tau_split);
+            }
+            }else{
+              best_subset=get_best_split_tau_round1_bcf(y_scaled, //resids(_,parent[i]),
+                                                        x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
+                                                        a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
+                                                        lowest_BIC,parent[i],cp_mat_list[parent[i]],
+                                                        alpha_mu,beta_mu,alpha_tau,beta_tau,
+                                                        maxOWsize,//first_round,
+                                                        prev_sum_trees_mu,prev_sum_trees_mat_mu,
+                                                        y_scaled,parent,i,z,
+                                                        min_num_obs_for_tau_split, min_num_obs_after_tau_split);
+            }
         
         // Rcout << "Get to line 5542";
         
@@ -6189,8 +6380,8 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
     }
     
     tree_table_tau=table_subset_curr_round;									// reset tree_table_tau equal to the list of tables produced in the current iteration of the outer loop.
-    IntegerVector temp1(table_subset_curr_round.size(),1);				// create a vector of ones of length equal to that of the list of tree tables for the current round.
-    err_list=temp1;														// set err_list equal to temp1
+    //IntegerVector temp1(table_subset_curr_round.size(),0);				// create a vector of ones of length equal to that of the list of tree tables for the current round.
+    //err_list=temp1;														// set err_list equal to temp1
     if(overall_trees.size()<overall_size-1){							// if length of overall_trees is less than overall_size-1
       overall_trees=resize_bigger_bcf(overall_trees,overall_size);		// increse size of overall_trees
       overall_mat=resize_bigger_bcf(overall_mat,overall_size);			// increse size of overall_mat
@@ -6679,7 +6870,11 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
       //   //NumericMatrix temp_list=cp_mat_list[0];		// create matrix temp_list equal to first element of cp_mat_list
       //   //best_subset=get_best_split_bcf(resids(_,0),D1,tree_table[i],tree_mat[i],a,mu,nu,lambda,log(c),lowest_BIC,parent[0],cp_mat_list[0],alpha,beta,maxOWsize,first_round);	// defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
       // }else{											// if input first_round is not equal to 1.
-        if(err_list[i]==0){												// if i+1^th element of input vector err_list equals zero (no error?)
+        
+        
+        //if(err_list[i]==0){												// if i+1^th element of input vector err_list equals zero (no error?)
+          
+          
           //NumericMatrix test_tree=tree_table[i];						// create test_tree equal to i+1^th element of input list tree_table
           //NumericMatrix test_treemat=tree_mat[i];						// create test_treemat equal to i+1^th element of input list tree_mat
           //NumericMatrix test_cpmat= cp_mat_list[parent[i]];			// create a matrix test_cpmat equal to the parent[i]+1^th element of cp_mat_list
@@ -6693,28 +6888,63 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           //NumericMatrix testexamplemat5 = prev_sum_trees_mat_mu2[0];
           //Rcout << "number of rows of mat into likelihood = " << testexamplemat5.nrow() <<".\n";
           
-          best_subset=get_best_split_sum_tau_bcf(resids(_,parent[i]),x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
+          
+          if(split_rule_node==1){
+            if(j==0){
+              best_subset=get_best_split_sum_tau_bcf(y_scaled, //resids(_,parent[i]),
+                                            x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                              a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
-                                             lowest_BIC,parent[i],cp_mat_list[parent[i]],
+                                             lowest_BIC,parent[i],cp_mat_list[i],
                                              alpha_mu,beta_mu,alpha_tau,beta_tau,
                                              maxOWsize,//first_round,
                                              prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
                                              y_scaled,parent,i,z,
                                              min_num_obs_for_tau_split, min_num_obs_after_tau_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+              }else{
+                best_subset=get_best_split_sum_tau_bcf(y_scaled, //resids(_,parent[i]),
+                                                      x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
+                                                      a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
+                                                      lowest_BIC,parent[i],cp_mat_list[i],
+                                                      alpha_mu,beta_mu,alpha_tau,beta_tau,
+                                                      maxOWsize,//first_round,
+                                                      prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
+                                                      y_scaled,parent,i,z,
+                                                      min_num_obs_for_tau_split, min_num_obs_after_tau_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+                
+              }
+              }else{
+                best_subset=get_best_split_sum_tau_bcf(y_scaled, //resids(_,parent[i]),
+                                                      x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
+                                                      a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
+                                                      lowest_BIC,parent[i],cp_mat_list[parent[i]],
+                                                      alpha_mu,beta_mu,alpha_tau,beta_tau,
+                                                      maxOWsize,//first_round,
+                                                      prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
+                                                      y_scaled,parent,i,z,
+                                                      min_num_obs_for_tau_split, min_num_obs_after_tau_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+              }
+          
+          
+          
+          
           // return(best_subset);
-        }else if(err_list[i]==1){		// if i+1^th element of input vector err_list equals one (no error?).
-          continue;						// skip to next iteration of for-loop.
-        }else{							// if i+1^th element of input vector err_list is not 0 or 1 ???.
-          List ret_list(6);				// list of length 6.
-          ret_list[0]=9999;				// first element of list equals 9999.
-          ret_list[1]=err_list[i];		// second element is i+1^th element of input vector err_list. (some number not equal to 0 or 1).
-          ret_list[2]=i;					// third element of list is number indexing the element of tree_table (index starts from 0).
-          ret_list[3]=j;					// fourth element is between 0 and 4. Index of outer for-loop.
-          ret_list[4]=tree_table_tau;			// fifth element of list is the list of tree tables.
-          ret_list[5]=err_list;			// sixth element of list is vector err_list.
-          return(ret_list);				// return the list.
-          throw std::range_error("err_list[i] is neither 0 nor 1...something is wrong here!");	// throw an error.
-        }
+        
+        
+        // }else if(err_list[i]==1){		// if i+1^th element of input vector err_list equals one (no error?).
+        //   continue;						// skip to next iteration of for-loop.
+        // }else{							// if i+1^th element of input vector err_list is not 0 or 1 ???.
+        //   List ret_list(6);				// list of length 6.
+        //   ret_list[0]=9999;				// first element of list equals 9999.
+        //   ret_list[1]=err_list[i];		// second element is i+1^th element of input vector err_list. (some number not equal to 0 or 1).
+        //   ret_list[2]=i;					// third element of list is number indexing the element of tree_table (index starts from 0).
+        //   ret_list[3]=j;					// fourth element is between 0 and 4. Index of outer for-loop.
+        //   ret_list[4]=tree_table_tau;			// fifth element of list is the list of tree tables.
+        //   ret_list[5]=err_list;			// sixth element of list is vector err_list.
+        //   return(ret_list);				// return the list.
+        //   throw std::range_error("err_list[i] is neither 0 nor 1...something is wrong here!");	// throw an error.
+        // }
+      
+      
       //}    
       if(best_subset.size()==1){	// if get_best_split_bcf resulted in a (?no ?sum-of? tree?) error.
         continue;				// skip to the next iteration of the inner for-loop.
@@ -6809,8 +7039,8 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
     }
     
     tree_table_tau=table_subset_curr_round;									// reset tree_table equal to the list of tables produced in the current iteration of the outer loop.
-    IntegerVector temp1(table_subset_curr_round.size(),1);				// create a vector of ones of length equal to that of the list of tree tables for the current round.
-    err_list=temp1;														// set err_list equal to temp1
+    //IntegerVector temp1(table_subset_curr_round.size(),0);				// create a vector of ones of length equal to that of the list of tree tables for the current round.
+    //err_list=temp1;														// set err_list equal to temp1
     if(overall_trees.size()<overall_size-1){							// if length of overall_trees is less than overall_size-1
       overall_trees=resize_bigger_bcf(overall_trees,overall_size);		// increse size of overall_trees
       overall_mat=resize_bigger_bcf(overall_mat,overall_size);			// increse size of overall_mat
@@ -6974,7 +7204,7 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
   arma::mat temp_treated_resids_a = temp_all_resids_a.rows(arma::find(z_ar==1));	
   NumericMatrix temp_treated_resids = wrap(temp_treated_resids_a);	
   
-  // Rcout << "Line 6501 no_more_tau_trees = " << no_more_tau_trees << ".\n";
+   //Rcout << "Line 7060 no_more_tau_trees = " << no_more_tau_trees << ".\n";
   // Rcout << "parent = " << parent << ".\n";
   
   //////   //COMMENTED OUT ATTEMPT TO FIX NO ZERO SPLIT TREES BUG
@@ -7300,7 +7530,7 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
   } // end of if zero_split=1 code
   
   
-  // Rcout << "Line 6818.\n";
+   //Rcout << "Line 7386.\n";
   
   
   for(int j=0;j<num_splits_tau;j++){									// create a for-loop of length 5.
@@ -7310,19 +7540,30 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
     List mat_subset_curr_round(lsize);					// create a list of length 1000.
     std::vector<int> parent_curr_round(lsize);			// create a vector of length 1000.
     int count=0;										// create a varialble. Initialized equal to 0.
+    //Rcout << "Line 7396. j == " << j << ". \n";
+    //Rcout << "Line tree_table_tau.size() == " << tree_table_tau.size() << ". \n";
     for(int i=0;i<tree_table_tau.size();i++){				// for loop of length equal to that of the list tree_table (input or updated in previous iteration)
+      
+      //Rcout << "Line 7400.  i == " << i << ", j == " << j << ". \n";
+      
+      
       // if(first_round==1){								// if input first_round equals 1.
       //   throw std::range_error("get_best_trees_sum_tau_bcf should not be used in the first round");	// throw an error.
       //   //parent=-1;									// reset input parent to -1
       //   //NumericMatrix temp_list=cp_mat_list[0];		// create matrix temp_list equal to first element of cp_mat_list
       //   //best_subset=get_best_split_bcf(resids(_,0),D1,tree_table[i],tree_mat[i],a,mu,nu,lambda,log(c),lowest_BIC,parent[0],cp_mat_list[0],alpha,beta,maxOWsize,first_round);	// defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
       // }else{											// if input first_round is not equal to 1.
-        if(err_list[i]==0){												// if i+1^th element of input vector err_list equals zero (no error?)
+        
+        
+        //if(err_list[i]==0){												// if i+1^th element of input vector err_list equals zero (no error?)
+          
+          
           //NumericMatrix test_tree=tree_table[i];						// create test_tree equal to i+1^th element of input list tree_table
           //NumericMatrix test_treemat=tree_mat[i];						// create test_treemat equal to i+1^th element of input list tree_mat
           //NumericMatrix test_cpmat= cp_mat_list[parent[i]];			// create a matrix test_cpmat equal to the parent[i]+1^th element of cp_mat_list
           //need to append current tree_table[i] to its parent sum_of_trees   
-          
+          //Rcout << "Line 7414.  i == " << i << ", j == " << j << ". \n";
+            
           List prev_sum_trees_mu2=prev_sum_trees_mu[parent[i]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
           List prev_sum_trees_mat_mu2=prev_sum_trees_mat_mu[parent[i]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
           List sum_trees_tau2=prev_sum_trees_tau[parent[i]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
@@ -7331,34 +7572,78 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
           //NumericMatrix testexamplemat5 = prev_sum_trees_mat_mu2[0];
           //Rcout << "number of rows of mat into likelihood = " << testexamplemat5.nrow() <<".\n";
           
-          best_subset=get_best_split_sum_tau_bcf(resids(_,parent[i]),x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
+          
+          if(split_rule_node==1){
+            if(j==0){
+              best_subset=get_best_split_sum_tau_bcf(y_scaled, //resids(_,parent[i]),
+                                                 x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                                  a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
-                                                 lowest_BIC,parent[i],cp_mat_list[parent[i]],
+                                                 lowest_BIC,parent[i],cp_mat_list[i],
                                                  alpha_mu,beta_mu,alpha_tau,beta_tau,
                                                  maxOWsize,//first_round,
                                                  prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
                                                  y_scaled,parent,i,z,
                                                  min_num_obs_for_tau_split, min_num_obs_after_tau_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+            }else{
+              best_subset=get_best_split_sum_tau_bcf(y_scaled, //resids(_,parent[i]),
+                                                  x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
+                                                  a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
+                                                  lowest_BIC,parent[i],cp_mat_list[i],
+                                                  alpha_mu,beta_mu,alpha_tau,beta_tau,
+                                                  maxOWsize,//first_round,
+                                                  prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
+                                                  y_scaled,parent,i,z,
+                                                  min_num_obs_for_tau_split, min_num_obs_after_tau_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+              
+            }
+            }else{
+              best_subset=get_best_split_sum_tau_bcf(y_scaled, //resids(_,parent[i]),
+                                                     x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
+                                                     a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
+                                                     lowest_BIC,parent[i],cp_mat_list[parent[i]],
+                                                     alpha_mu,beta_mu,alpha_tau,beta_tau,
+                                                     maxOWsize,//first_round,
+                                                     prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
+                                                     y_scaled,parent,i,z,
+                                                     min_num_obs_for_tau_split, min_num_obs_after_tau_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
+              
+            }
+          
+          
+          
+          //Rcout << "Line 7434.  i == " << i << ", j == " << j << ". \n";
+            
           // return(best_subset);
-        }else if(err_list[i]==1){		// if i+1^th element of input vector err_list equals one (no error?).
-          continue;						// skip to next iteration of for-loop.
-        }else{							// if i+1^th element of input vector err_list is not 0 or 1 ???.
-          List ret_list(6);				// list of length 6.
-          ret_list[0]=9999;				// first element of list equals 9999.
-          ret_list[1]=err_list[i];		// second element is i+1^th element of input vector err_list. (some number not equal to 0 or 1).
-          ret_list[2]=i;					// third element of list is number indexing the element of tree_table (index starts from 0).
-          ret_list[3]=j;					// fourth element is between 0 and 4. Index of outer for-loop.
-          ret_list[4]=tree_table_tau;			// fifth element of list is the list of tree tables.
-          ret_list[5]=err_list;			// sixth element of list is vector err_list.
-          return(ret_list);				// return the list.
-          throw std::range_error("err_list[i] is neither 0 nor 1...something is wrong here!");	// throw an error.
-        }
+        
+        
+        // }else if(err_list[i]==1){		// if i+1^th element of input vector err_list equals one (no error?).
+        //   //Rcout << "Line 7428. Continue in err_list, i == " << i << ", j == " << j << ". \n";
+        //   
+        //   continue;						// skip to next iteration of for-loop.
+        // }else{							// if i+1^th element of input vector err_list is not 0 or 1 ???.
+        //   //Rcout << "Line 7442.  i == " << i << ", j == " << j << ". \n";
+        //     
+        //   List ret_list(6);				// list of length 6.
+        //   ret_list[0]=9999;				// first element of list equals 9999.
+        //   ret_list[1]=err_list[i];		// second element is i+1^th element of input vector err_list. (some number not equal to 0 or 1).
+        //   ret_list[2]=i;					// third element of list is number indexing the element of tree_table (index starts from 0).
+        //   ret_list[3]=j;					// fourth element is between 0 and 4. Index of outer for-loop.
+        //   ret_list[4]=tree_table_tau;			// fifth element of list is the list of tree tables.
+        //   ret_list[5]=err_list;			// sixth element of list is vector err_list.
+        //   return(ret_list);				// return the list.
+        //   throw std::range_error("err_list[i] is neither 0 nor 1...something is wrong here!");	// throw an error.
+        // }
+      
+      
       //}
       
       
       if(best_subset.size()==1){	// if get_best_split_bcf resulted in a (?no ?sum-of? tree?) error.
+        //Rcout << "Line 7444. Continue in for-loop, i == " << i << ", j == " << j << ". \n";
+        
         continue;				// skip to the next iteration of the inner for-loop.
       }
+      //Rcout << "Line 7456, i == " << i << ", j == " << j << ". \n";
       
       List temp_trees=best_subset[0];					// list of tree tables returned by get_best_split_sum
       List temp_mat=best_subset[2];					// list of tree matrices
@@ -7390,12 +7675,17 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
         }
       }
     }
+    //Rcout << "Line 7488, j == " << j << ". \n";
+    
+    
     table_subset_curr_round=resize_bcf(table_subset_curr_round,count);		// remove remaining spaces that are not filled in
     mat_subset_curr_round=resize_bcf(mat_subset_curr_round,count);			// remove remaining spaces that are not filled in
     lik_subset_curr_round.resize(count);								// remove remaining spaces that are not filled in
     parent_curr_round.resize(count);									// remove remaining spaces that are not filled in
     
     if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0 
+      //Rcout << "Line 7483. Break out of for-loop, j == " << j << ". \n";
+      
       break;															// break out of the for-loop,
     }
     for(int k=0;k<table_subset_curr_round.size();k++){					// for-loop of length table_subset_curr_round (potential splits/addittions to trees?)
@@ -7424,6 +7714,9 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
     overall_count=overall_trees.size();									// re-set overall_count to number of models in Occam's window
     overall_parent2=eval_model[3];										// tree parent vector for all models in Occam's window.
     //add in check to see if OW accepted more than the top maxOW models...
+    
+    //Rcout << "Line 7528, j == " << j << ". \n";
+    
     if(overall_lik2.size()>maxOWsize){									// If more than maxOWsize models kept in Occam's window
       //find the maxOWsize best models and continue with those!
       IntegerVector owindices=orderforOW__bcf(overall_lik2);					// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on. 
@@ -7450,8 +7743,8 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
     }
     
     tree_table_tau=table_subset_curr_round;									// reset tree_table equal to the list of tables produced in the current iteration of the outer loop.
-    IntegerVector temp1(table_subset_curr_round.size(),1);				// create a vector of ones of length equal to that of the list of tree tables for the current round.
-    err_list=temp1;														// set err_list equal to temp1
+    //IntegerVector temp1(table_subset_curr_round.size(),0);				// create a vector of ones of length equal to that of the list of tree tables for the current round.
+    //err_list=temp1;														// set err_list equal to temp1
     if(overall_trees.size()<overall_size-1){							// if length of overall_trees is less than overall_size-1
       overall_trees=resize_bigger_bcf(overall_trees,overall_size);		// increse size of overall_trees
       overall_mat=resize_bigger_bcf(overall_mat,overall_size);			// increse size of overall_mat
@@ -7508,6 +7801,7 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
           curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
         }
       }
+      
       List temp(0);																	// list of length zero.
       
       cp_mat_list=temp;																// reset cp_mat_list to be a list of length zero
@@ -7524,8 +7818,10 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
       }
       
     }
+    //Rcout << "Line 7631, j == " << j << ". \n";
+    
   }
-  // Rcout << "Line 7039.\n";
+  //Rcout << "Line 7612.\n";
   
   overall_trees=resize_bcf(overall_trees,overall_count);		// remove remaining spaces that are not filled in
   overall_mat=resize_bcf(overall_mat,overall_count);			// remove remaining spaces that are not filled in
@@ -7565,6 +7861,9 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
   arma::mat M1(overallpreds.begin(), overallpreds.nrow(), overallpreds.ncol(), false);			// create arma mat copy of overallpreds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
   //arma::colvec predicted_values=sum(M1,1);														// vector of the sum of all elements in each row of overallpreds. (vetor of final predictions)?
   arma::mat M2(overall_test_preds.begin(), overall_test_preds.nrow(), overall_test_preds.ncol(), false);		// create arma mat copy of overall_test_preds [each column appears to be the vector of predictions for a particular tree (in the sum of trees)]
+  
+  
+  //Rcout << "M1 = " << M1 << " .\n";
   //arma::colvec predicted_test_values=sum(M2,1);		// vector of the sum of all elements in each row of overall_test_preds. (vetcor of final predictions?
   List ret(7);				// list of length 8.
   ret[0]=overall_lik2;		// first element of list is a vector of BICs?
@@ -9888,7 +10187,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
                            unsigned int min_num_obs_for_mu_split, unsigned int min_num_obs_after_mu_split,
                            unsigned int min_num_obs_for_tau_split, unsigned int min_num_obs_after_tau_split
                                            ){
-  // Rcout << "LINE 9172.\n";
+   //Rcout << "LINE 9172.\n";
   
   bool is_test_data=0;					// create bool is_test_data. Initialize equal to 0.
   if(test_data.nrow()>0){					// If test data has non-zero number of rows.
@@ -10387,7 +10686,9 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
                                               as<IntegerVector>(wrap(no_more_mu_trees)),
                                               min_num_obs_for_mu_split, min_num_obs_after_mu_split);	// function defined on line 1953.
       }
-       // Rcout << "Get to after get best trees in line 9650 in loop j = " << j << ".\n";
+        
+        
+      //Rcout << "Get to after get best trees in line 10476 in loop j = " << j << ".\n";
       
       curr_round_lik_addmu=CART_BMA_mu[0];							// vector of BICs (for whole sum-of tree-models after suggested trees added). Should be ordered ascending
       curr_round_trees_mu_addmu=CART_BMA_mu[1];						// list of tree tables
@@ -10486,7 +10787,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
       
       
       
-        // Rcout << "Get to 9749 in loop j = " << j << ".\n";
+         //Rcout << "Get to 10578 in loop j = " << j << ".\n";
       
       //get current set of trees.
       if(j==0){						// If in the first round of the for-loop.
@@ -10498,6 +10799,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
         //alpha_mu,alpha_tau,beta_mu,beta_tau,
         //is_test_data,pen_mu,num_cp_mu,pen_tau,num_cp_tau,	// some of these arguments are probably unnecessary
         //split_rule_node,gridpoint,maxOWsize);
+        //Rcout << "Get to 10590 get_best_trees_tau_bcf in loop j = " << j << ".\n";
         CART_BMA_tau=get_best_trees_tau_bcf(x_control_a, x_moderate_a,z,resids,
                                             a_mu,a_tau,mu_mu,mu_tau,nu,lambda,c,
                                             sigma_mu_mu,sigma_mu_tau,
@@ -10514,6 +10816,8 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
                                             min_num_obs_for_tau_split, min_num_obs_after_tau_split);	// function defined on line 1953.
       }else{							// If not in the first round of the for-loop.
         //if j >0 then sum of trees become a list so need to read in list and get likelihood for each split point and terminal node
+        //Rcout << "Get to 10606 get_best_trees_sum_tau_bcf_2 in loop j = " << j << ".\n";
+        
         CART_BMA_tau=get_best_trees_sum_tau_bcf_2(x_control_a, x_moderate_a,z,resids,
                                                 a_mu,a_tau,mu_mu,mu_tau,nu,lambda,c,sigma_mu_mu,sigma_mu_tau,
                                                 tree_table_mu,tree_mat_mu,tree_table_tau,tree_mat_tau,
@@ -10529,18 +10833,21 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
                                                 as<IntegerVector>(wrap(no_more_tau_trees)),
                                                 min_num_obs_for_tau_split, min_num_obs_after_tau_split);	// function defined on line 1953.
       }
-        // Rcout << "Get to 9789 in loop j = " << j << ".\n";
+        
       
+      
+
       curr_round_lik_addtau=CART_BMA_tau[0];							// vector of BICs (for whole sum-of tree-models after suggested trees added). Should be ordered ascending
       //curr_round_trees_mu_addtau=CART_BMA_tau[1];						// list of tree tables
       curr_round_trees_tau_addtau=CART_BMA_tau[1];					
       //curr_round_mat_mu_addtau=CART_BMA_tau[3];							// list of tree matrices
       curr_round_mat_tau_addtau=CART_BMA_tau[2];							// list of tree matrices
       curr_round_parent_addtau=CART_BMA_tau[3];						// vector of tree parent numbers
+      //Rcout << "CART_BMA_tau[4] = " << CART_BMA_tau[4] << ".\n";
       NumericMatrix curr_round_preds_tau=CART_BMA_tau[4];			// (in-sample single tree predictions for trees to add) matrix rows correspond to different units/individuals, columns corresponds to predictions from different (single or sums-of?) trees.
       curr_BIC_addtau=CART_BMA_tau[5];								// lowest BIC among trees?
+
       NumericMatrix curr_round_test_preds_tau=CART_BMA_tau[6];	// (out-of-sample tree predictions?) matrix rows correspond to different units/individuals, columns correspond to predictions from different (single or sums-of?) trees.
-      
       
       
       curr_round_added_mu_addtau = rep(2,curr_round_lik_addtau.size());
@@ -10596,7 +10903,9 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
       
       
       
-       //Rcout << "Get to Line 8272 in loop j = " << j << ".\n";
+       //Rcout << "Get to Line 10688 in loop j = " << j << ".\n";
+      
+      
       if(curr_BIC_addmu[0]<lowest_BIC){							// If the lowest BIC obtained by get_best_trees_sum is less than the currently saved lowest value
         lowest_BIC=curr_BIC_addmu[0];							// reset lowest_BIC to the new lowest value
       }
@@ -12512,7 +12821,7 @@ NumericVector preds_bcfbma_lin_alg_insamp(List overall_sum_trees_mu,List overall
   arma::mat y_arma(num_obs,1);										// create a matrix with num_obs (number of observations) rows and 1 column
   y_arma.col(0)=yvec;										// set first column of y_arma equal to yvec
   //get exponent
-  //double expon=(num_obs+nu)/2;								// set the expoenent (equation 5 in the paper)
+  //double expon=(num_obs+nu)*0.5;								// set the expoenent (equation 5 in the paper)
   //get y_arma^Tpsi^{-1}y_arma
   // arma::mat psi_inv=psi.i();
   arma::mat yty=y_arma.t()*y_arma;								// yty = y_arma transpose y_arma (sum of squares)
@@ -12561,7 +12870,7 @@ NumericVector preds_bcfbma_lin_alg_insamp(List overall_sum_trees_mu,List overall
     arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
     //get m^TV^{-1}m
     //arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
-    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    //arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(1*0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
     
     //Rcout << "Line 12563.\n";
     
@@ -12657,7 +12966,7 @@ NumericVector preds_bcfbma_lin_alg_outsamp(List overall_sum_trees_mu,List overal
   arma::mat y_arma(num_obs,1);										// create a matrix with num_obs (number of observations) rows and 1 column
   y_arma.col(0)=yvec;										// set first column of y_arma equal to yvec
   //get exponent
-  //double expon=(num_obs+nu)/2;								// set the expoenent (equation 5 in the paper)
+  //double expon=(num_obs+nu)*0.5;								// set the expoenent (equation 5 in the paper)
   //get y_arma^Tpsi^{-1}y_arma
   // arma::mat psi_inv=psi.i();
   arma::mat yty=y_arma.t()*y_arma;								// yty = y_arma transpose y_arma (sum of squares)
@@ -12725,7 +13034,7 @@ NumericVector preds_bcfbma_lin_alg_outsamp(List overall_sum_trees_mu,List overal
     arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
     //get m^TV^{-1}m
     //arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
-    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    //arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(1*0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
     
     //Rcout <<"Line 12713.\n";
     
@@ -12780,7 +13089,7 @@ List mean_vars_lin_alg_insamp_bcf(List overall_sum_trees_mu,List overall_sum_tre
   arma::mat y_arma(num_obs,1);										// create a matrix with num_obs (number of observations) rows and 1 column
   y_arma.col(0)=yvec;										// set first column of y_arma equal to yvec
   //get exponent
-  //double expon=(num_obs+nu)/2;								// set the expoenent (equation 5 in the paper)
+  //double expon=(num_obs+nu)*0.5;								// set the expoenent (equation 5 in the paper)
   //get y_arma^Tpsi^{-1}y_arma
   // arma::mat psi_inv=psi.i();
   arma::mat yty=y_arma.t()*y_arma;								// yty = y_arma transpose y_arma (sum of squares)
@@ -12830,7 +13139,7 @@ List mean_vars_lin_alg_insamp_bcf(List overall_sum_trees_mu,List overall_sum_tre
     arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
     //get m^TV^{-1}m
     arma::mat mvm= ytW*sec_term_inv*third_term;		// matrix expression in middle of equation 5
-    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    //arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(1*0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
     
     //Rcout << "Line 12563.\n";
     
@@ -13005,7 +13314,7 @@ List mean_vars_lin_alg_outsamp_bcf(List overall_sum_trees_mu,List overall_sum_tr
   arma::mat y_arma(num_obs,1);										// create a matrix with num_obs (number of observations) rows and 1 column
   y_arma.col(0)=yvec;										// set first column of y_arma equal to yvec
   //get exponent
-  //double expon=(num_obs+nu)/2;								// set the expoenent (equation 5 in the paper)
+  //double expon=(num_obs+nu)*0.5;								// set the expoenent (equation 5 in the paper)
   //get y_arma^Tpsi^{-1}y_arma
   // arma::mat psi_inv=psi.i();
   arma::mat yty=y_arma.t()*y_arma;								// yty = y_arma transpose y_arma (sum of squares)
@@ -13073,7 +13382,7 @@ List mean_vars_lin_alg_outsamp_bcf(List overall_sum_trees_mu,List overall_sum_tr
     arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
     //get m^TV^{-1}m
     arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
-    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    //arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(1*0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
     
     //Rcout <<"Line 12713.\n";
     
@@ -13312,7 +13621,7 @@ List pred_ints_lin_alg_outsamp_bcf(List overall_sum_trees_mu,List overall_sum_tr
   arma::mat y_arma(num_obs,1);
   y_arma.col(0)=yvec;
   //get exponent
-  //double expon=(n+nu)/2;
+  //double expon=(n+nu)*0.5;
   //get y^Tpsi^{-1}y
   // arma::mat psi_inv=psi.i();
   
@@ -13387,7 +13696,7 @@ List pred_ints_lin_alg_outsamp_bcf(List overall_sum_trees_mu,List overall_sum_tr
     arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
     //get m^TV^{-1}m
     arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
-    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    //arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(1*0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
     
     //Rcout <<"Line 12713.\n";
     
@@ -13547,7 +13856,7 @@ List pred_ints_lin_alg_insamp_bcf(List overall_sum_trees_mu,List overall_sum_tre
   arma::mat y_arma(num_obs,1);										// create a matrix with num_obs (number of observations) rows and 1 column
   y_arma.col(0)=yvec;										// set first column of y_arma equal to yvec
   //get exponent
-  //double expon=(num_obs+nu)/2;								// set the expoenent (equation 5 in the paper)
+  //double expon=(num_obs+nu)*0.5;								// set the expoenent (equation 5 in the paper)
   //get y_arma^Tpsi^{-1}y_arma
   // arma::mat psi_inv=psi.i();
   arma::mat yty=y_arma.t()*y_arma;								// yty = y_arma transpose y_arma (sum of squares)
@@ -13621,7 +13930,7 @@ List pred_ints_lin_alg_insamp_bcf(List overall_sum_trees_mu,List overall_sum_tre
     arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
     //get m^TV^{-1}m
     arma::mat mvm= ytW*sec_term_inv*third_term;		// matrix expression in middle of equation 5
-    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    //arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(1*0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
     
     //Rcout << "Line 12563.\n";
     
@@ -14002,7 +14311,7 @@ List pred_ints_lin_alg_fields_outsamp_bcf(List overall_sum_trees_mu,List overall
   arma::mat y_arma(num_obs,1);
   y_arma.col(0)=yvec;
   //get exponent
-  //double expon=(n+nu)/2;
+  //double expon=(n+nu)*0.5;
   //get y^Tpsi^{-1}y
   // arma::mat psi_inv=psi.i();
   
@@ -14360,7 +14669,7 @@ List pred_ints_lin_alg_fields_outsamp_bcf(List overall_sum_trees_mu,List overall
     arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
     //get m^TV^{-1}m
     arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
-    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    //arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(1*0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
     
     //Rcout <<"Line 12713.\n";
     
@@ -14557,7 +14866,7 @@ List pred_ints_lin_alg_fields_insamp_bcf(List overall_sum_trees_mu,List overall_
   arma::mat y_arma(num_obs,1);										// create a matrix with num_obs (number of observations) rows and 1 column
   y_arma.col(0)=yvec;										// set first column of y_arma equal to yvec
   //get exponent
-  //double expon=(num_obs+nu)/2;								// set the expoenent (equation 5 in the paper)
+  //double expon=(num_obs+nu)*0.5;								// set the expoenent (equation 5 in the paper)
   //get y_arma^Tpsi^{-1}y_arma
   // arma::mat psi_inv=psi.i();
   arma::mat yty=y_arma.t()*y_arma;								// yty = y_arma transpose y_arma (sum of squares)
@@ -14835,7 +15144,7 @@ List pred_ints_lin_alg_fields_insamp_bcf(List overall_sum_trees_mu,List overall_
     arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
     //get m^TV^{-1}m
     arma::mat mvm= ytW*sec_term_inv*third_term;		// matrix expression in middle of equation 5
-    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    //arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(1*0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
     
     //Rcout << "Line 14724.\n";
     
@@ -15075,7 +15384,7 @@ List pred_ints_lin_alg_fields_LDL_outsamp_bcf(List overall_sum_trees_mu,List ove
   arma::mat y_arma(num_obs,1);
   y_arma.col(0)=yvec;
   //get exponent
-  //double expon=(n+nu)/2;
+  //double expon=(n+nu)*0.5;
   //get y^Tpsi^{-1}y
   // arma::mat psi_inv=psi.i();
   
@@ -15433,7 +15742,7 @@ List pred_ints_lin_alg_fields_LDL_outsamp_bcf(List overall_sum_trees_mu,List ove
     arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
     //get m^TV^{-1}m
     arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
-    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    //arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(1*0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
     
     //Rcout <<"Line 12713.\n";
     
@@ -15732,7 +16041,7 @@ List pred_ints_lin_alg_fields_LDL_insamp_bcf(List overall_sum_trees_mu,List over
   arma::mat y_arma(num_obs,1);										// create a matrix with num_obs (number of observations) rows and 1 column
   y_arma.col(0)=yvec;										// set first column of y_arma equal to yvec
   //get exponent
-  //double expon=(num_obs+nu)/2;								// set the expoenent (equation 5 in the paper)
+  //double expon=(num_obs+nu)*0.5;								// set the expoenent (equation 5 in the paper)
   //get y_arma^Tpsi^{-1}y_arma
   // arma::mat psi_inv=psi.i();
   arma::mat yty=y_arma.t()*y_arma;								// yty = y_arma transpose y_arma (sum of squares)
@@ -16010,7 +16319,7 @@ List pred_ints_lin_alg_fields_LDL_insamp_bcf(List overall_sum_trees_mu,List over
     arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
     //get m^TV^{-1}m
     arma::mat mvm= ytW*sec_term_inv*third_term;		// matrix expression in middle of equation 5
-    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    //arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(1*0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
     
     //Rcout << "Line 14724.\n";
     
@@ -16269,7 +16578,7 @@ List mean_vars_lin_alg_insamp_par_bcf(List overall_sum_trees_mu,List overall_sum
   arma::mat y_arma(num_obs,1);										// create a matrix with num_obs (number of observations) rows and 1 column
   y_arma.col(0)=yvec;										// set first column of y_arma equal to yvec
   //get exponent
-  //double expon=(num_obs+nu)/2;								// set the expoenent (equation 5 in the paper)
+  //double expon=(num_obs+nu)*0.5;								// set the expoenent (equation 5 in the paper)
   //get y_arma^Tpsi^{-1}y_arma
   // arma::mat psi_inv=psi.i();
   arma::mat yty=y_arma.t()*y_arma;								// yty = y_arma transpose y_arma (sum of squares)
@@ -16557,7 +16866,7 @@ List mean_vars_lin_alg_insamp_par_bcf(List overall_sum_trees_mu,List overall_sum
     arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
     //get m^TV^{-1}m
     arma::mat mvm= ytW*sec_term_inv*third_term;		// matrix expression in middle of equation 5
-    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    //arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(1*0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
     
     //Rcout << "Line 14724.\n";
     
@@ -16783,7 +17092,7 @@ List mean_vars_lin_alg_outsamp_par_bcf(List overall_sum_trees_mu,List overall_su
   arma::mat y_arma(num_obs,1);										// create a matrix with num_obs (number of observations) rows and 1 column
   y_arma.col(0)=yvec;										// set first column of y_arma equal to yvec
   //get exponent
-  //double expon=(num_obs+nu)/2;								// set the expoenent (equation 5 in the paper)
+  //double expon=(num_obs+nu)*0.5;								// set the expoenent (equation 5 in the paper)
   //get y_arma^Tpsi^{-1}y_arma
   // arma::mat psi_inv=psi.i();
   arma::mat yty=y_arma.t()*y_arma;								// yty = y_arma transpose y_arma (sum of squares)
@@ -16931,7 +17240,7 @@ List mean_vars_lin_alg_outsamp_par_bcf(List overall_sum_trees_mu,List overall_su
     arma::mat third_term=Wmat.t()*y_arma;						// W_bcf transpose y_arma
     //get m^TV^{-1}m
     arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
-    //arma::mat rel=(b_mu/2)*log(a_mu)+(b_tau/2)*log(a_tau)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+    //arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(1*0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
     
     //Rcout <<"Line 12713.\n";
     
