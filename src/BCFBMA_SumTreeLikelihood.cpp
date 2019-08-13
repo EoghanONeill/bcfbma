@@ -1703,6 +1703,233 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
   }
 }
 //######################################################################################################################//
+
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+
+List get_best_split_mu_update_bcf(NumericVector resids,arma::mat& data,NumericMatrix treetable,NumericMatrix tree_mat,
+                           double a,double mu,double nu,double lambda,double c,double lowest_BIC,
+                           int parent,List cp_matlist,double alpha,double beta,int maxOWsize,
+                           unsigned int min_num_obs_for_mu_split, unsigned int min_num_obs_after_mu_split//,int first_round
+){
+  //this function will search through all predictive split points and return those within Occam's Window.
+  int split_var;													// create integer variable (not initialized)
+  NumericMatrix treetable_c=treetable;							// copy the input matrix, call it treetable_c
+  NumericMatrix treemat_c=tree_mat;								// copy the input matrix, call it treemat_c
+  
+  NumericVector terminal_nodes=find_term_nodes_bcf(treetable_c);		// terminal_nodes gives indices of treetable_c elements that correspond to term_nodes.
+  //IntegerVector change_node1;										// cerates an integer vector. THIS VECTOR IS NOT USED IN THIS FUNCTION
+  int list_size=1000;												// create an integer initialied equal to 1000. Why 1000?
+  std::vector<double> tree_lik(list_size);						// create a vector tree_lik of length 1000.
+  List proposal_tree;												// create a list called proposal_tree
+  List ret(4);													// create a list ret of length 9
+  
+  
+  bool no_tree_err=0;												// create a bool variable no_tree_err initialized equal to 0 (FALSE)
+  //List likeliest_tree;											// create a list likeliest_tree
+  List tree_list(list_size);										// create a list, tree_list, of length 1000
+  List tree_mat_list(list_size);									// create a list, tree_mat_list, of length 1000
+  int count=0;													// create a variabke count, initialize equal to 0.
+  //std::vector<int> tree_parent(list_size);						// create a vector, tree_parent, of length 1000
+  //int best_sv;													// create a variable best_sv. Not initialized
+  //double best_sp;													// create a variable best_sp. Not initialized
+  double tree_prior=0;											// create a variable tree_prior. Initialized equal to 0.
+  //List changetree;												// create a list changetree
+  double BIC;														// create a variable BIC
+  //int p;															// create a variable p
+  List eval_model;												// create a list eval_model
+  //NumericVector int_nodes;										// create a vector int_nodes
+  //arma::colvec curr_col=data.col(0);										// Let the arma colvec, curr_col, equal the 1st column of the input matrix data
+  //arma::uvec grow_obs=find_term_obs_bcf(treemat_c,terminal_nodes[0]);			// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of treemat_c that has elements equal to terminal_nodes[0]).
+  //NumericVector d1=unique(find_term_cols_bcf(treemat_c,terminal_nodes[0]));	// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
+  //arma::mat data_curr_node=data.rows(grow_obs);				// matrix consisting of first grow_obs rows of data. 
+  //double d=d1[0];															// index of rightmost column of treemat_c with at least one element equal to terminal_nodes[0]
+  //NumericVector get_min=get_grow_obs_bcf(data,wrap(grow_obs),cp_mat(0,0)+1);	// obtain the elements of the cp_mat(0,0)+1^th column of data that are indexed by grow_obs
+  double lik;																// create a variable called lik. Not initialized.
+  
+  for(int l=0;l<terminal_nodes.size();l++){										//	vector of length equal to that of terminal_nodes
+    NumericMatrix cp_mat=cp_matlist[l];
+    //loop over each terminal node												//
+    arma::uvec grow_obs=find_term_obs_bcf(treemat_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of treemat_c that has elements equal to terminal_nodes[l] (letter l)).
+    //depth of tree at current terminal node									//
+    //NumericVector d1=unique(find_term_cols_bcf(treemat_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
+    arma::mat data_curr_node=data.rows(grow_obs);								// matrix consisting of first grow_obs rows of data. Note grow_obs changed on line 926, therefore not duplicating line 919.
+    //int d=d1[0];																	// index of rightmost column of treemat_c with at least one element equal to terminal_nodes[l] (letter l)
+    int d = find_term_cols_bcf(treemat_c,terminal_nodes[l]);
+    
+    int w=cp_mat.nrow();														// w is number of rows of cp_mat
+    if(data_curr_node.n_rows<=min_num_obs_for_mu_split ){												// if data_curr_node has 2 rows or less.
+      throw std::range_error("not enough obs in node to grow any further");	// throw an error message. Not enough observations.
+      //continue;
+    }
+    for(int k=0;k<w;k++){														// loop of length w, the number of rows of cp_mat
+      split_var=cp_mat(k,0)+1;												// split_var is k+1^th row, 1st column, of cp_mat, +1
+      //arma::colvec curr_cols=data.col(split_var-1);							// curr_cols is the split_var^tgh column of data
+      //NumericVector get_min=get_grow_obs_bcf(data,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of data that are indexed by grow_obs 
+      
+      //Removing unnecessary lines
+      //if(get_min.size()<=2){													// If get_min has 2 or less observations. (too few variables to split on?)
+      //  throw std::range_error("obs in this terminal node are too small");	//
+      //}
+      
+      double split_point=cp_mat(k,1);											// variable split_point equals element in k+1^th row 2nd column of cp_mat
+      arma::vec curr_cols2=data_curr_node.col(split_var-1);					// curr_cols2 is split_var^th column of data_curr_node
+      //arma::vec get_min_a=Rcpp::as<arma::vec>(get_min);		// converts to arma vec
+      
+      arma::vec ld_prop=curr_cols2.elem(arma::find(curr_cols2 <= split_point));	// ld_prop is elements of curr_cols2 <= split_point
+      arma::vec rd_prop=curr_cols2.elem(arma::find(curr_cols2 > split_point));		// rd_prop is elements of curr_cols2 > split_point
+      
+      if(ld_prop.size()<=min_num_obs_after_mu_split || rd_prop.size()<= min_num_obs_after_mu_split){									// if 2 or less observations in either ld_prop or rd_prop
+        continue;																// skip to next iteration of the loop
+      }
+      proposal_tree=grow_tree_bcf(data,//resids,
+                                  treemat_c,terminal_nodes[l],treetable_c,split_var,
+                                  split_point,//terminal_nodes,
+                                  wrap(grow_obs),
+                                  d//,get_min,data_curr_node
+      ); // elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
+      
+      
+      //NumericMatrix test =proposal_tree[0];											// first element is tree table
+      //NumericMatrix test1 =proposal_tree[1];											// second element is tree matrix
+      
+      //if(test1.ncol()==3){															// If tree matrix has 3 columns
+      //  NumericVector u1=unique(test1(_,0));										// set u1 equal to the unique (ordered descending) elements of 1st column of tree matrix
+      //  NumericVector u2=unique(test1(_,1));										// set u2 equal to the unique (ordered descending) elements of 2nd column of tree matrix
+      //  NumericVector u3=unique(test1(_,2));										// set u3 equal to the unique (ordered descending) elements of 3rd column of tree matrix
+      //}
+      
+      
+      
+      
+      //if(first_round==1){																	// If input value first_round equals 1 (number one)
+      lik=likelihood_function_bcf(resids,proposal_tree[0],proposal_tree[1],a,mu,nu,lambda);	// set lik equal to tree likelihood defined on line 201.
+      
+      //}else{
+      //have a sum of trees
+      //  lik=likelihood_function_bcf(resids,proposal_tree[0],proposal_tree[1],a,mu,nu,lambda);	// Same as line in if-statement above. What is the purpose of the if-statement. set lik equal to tree likelihood defined on line 201.
+      //}
+      
+      
+      //NumericMatrix temptestingtabcols = proposal_tree[0];
+      //if(temptestingtabcols.ncol()<5) throw std::range_error("Line 1021");
+      
+      
+      tree_prior=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha,beta);	// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+      //int_nodes=find_term_nodes_bcf(proposal_tree[0]);							// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector?
+      //p=int_nodes.size();														// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
+      //BIC=-2*(lik+log(tree_prior))+p*log(data.n_rows);						// data.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      BIC=-2*(lik+log(tree_prior));						// data.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      //BIC=-2*(lik)+p*log(data.n_rows);						// data.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      if(BIC<lowest_BIC){														// if statement for updating lowest BIC...etc.
+        lowest_BIC=BIC;														// update (input variable) lowest_BIC
+        //best_sv=split_var;													// set a value for, or update best_sv
+        //best_sp=split_point;												// set a value for, or update split_point
+        //likeliest_tree=proposal_tree;										// set a value for, or update likeliest_tree
+        tree_list[count]=proposal_tree[0];									// add an element to the list of tree tables
+        tree_mat_list[count]=proposal_tree[1];								// add an element to the list of tree matrices
+        tree_lik[count]=BIC;												// add an element to the vector of tree liklihoods (BICs)
+        //tree_parent[count]=parent;											// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+        count++;															// increase the count
+        if(count==(tree_list.size()-1)){									// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
+          list_size=list_size*2;											// multiply list size by 2
+          tree_list=resize_bigger_bcf(tree_list,list_size);					// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
+          tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);			// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
+          tree_lik.resize(list_size);										// increase tree_lik to twice its previous size
+          //tree_parent.resize(list_size);									// increase tree_parent to twice its previous size
+        }
+      }else{
+        if((BIC)-(lowest_BIC)<=c){											// If in Occam's window (but not the new minimum BIC)
+          if(is<NumericMatrix>(proposal_tree[0])){						// If proposal_tree[0] is a Numeric Matrix, the do nothing
+          }else{															// If proposal_tree[0] is NOT a NumericMatrix
+            throw std::range_error("proposal tree not a matrix");			// Then throw an error
+          }
+          tree_list[count]=proposal_tree[0];								// add an element to the list of tree tables
+          tree_mat_list[count]=proposal_tree[1];							// add an element to the list of tree matrices
+          tree_lik[count]=BIC;											// add an element to the vector of tree liklihoods (BICs)
+          //tree_parent[count]=parent;										// add an element to the vector tree_parent. NOTE: All elements will be equal to the inout value of parent which is not changed in this function.
+          count++;														// increase the count
+          if(count==(tree_list.size()-1)){								// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
+            list_size=list_size*2;										// multiply list size by 2
+            tree_list=resize_bigger_bcf(tree_list,list_size);				// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
+            tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);		// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
+            tree_lik.resize(list_size);									// increase tree_lik to twice its previous size
+            //tree_parent.resize(list_size);								// increase tree_parent to twice its previous size
+          }
+        }
+      }
+    }  
+  }
+  tree_list=resize_bcf(tree_list,count);				// remove the values in tree_list that aren't filled in
+  tree_mat_list=resize_bcf(tree_mat_list,count);		// remove the values in tree_mat_list that aren't filled in
+  tree_lik.resize(count);							// remove the values in tree_lik that aren't filled in
+  //tree_parent.resize(count);						// remove the values in tree_parent that aren't filled in
+  IntegerVector tree_parent(count, parent);
+  if(count>0){									// If these lists are nonempty
+    //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    NumericVector testlik =eval_model[0];		// testlik is tree_lik after removing models outside Occam's window
+    List testtree =eval_model[1];				// testtree is tree_list after removing models outside Occam's window
+    List testmat =eval_model[2];				// testmat is tree_mat_list after removing models outside Occam's window
+    IntegerVector testpar =eval_model[3];		// testpar is tree_parent after removing models outside Occam's window
+    
+    if(testlik.size()>0){									// If a nonzero number of models remain in Occam's window
+      //check if number of trees to be returned is greater than maxOWsize if so only return the best maxOWsize models
+      if(testlik.size()>maxOWsize){						// maxOWsize is an input variable
+        IntegerVector owindices=orderforOW__bcf(testlik);		// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on.
+        owindices=owindices-1;							// Presumably the match function in orderforOW__bcf gives indices beginning at 1, and therefore 1 must be taken away from all index values.
+        //get the top maxOWsize indices to keep in OW
+        NumericVector temp_olik(maxOWsize);				// create vector temp_olik of size maxOWsize
+        List temp_otrees(maxOWsize);					// create List temp_otrees of size maxOWsize
+        List temp_omat(maxOWsize);						// create List temp_omat of size maxOWsize
+        IntegerVector temp_oparent(maxOWsize);			// create IntegerVector temp_oparent of size maxOWsize
+        for(int t=0;t<maxOWsize;t++){					// loop of length maxOWsize
+          temp_olik[t]=testlik[owindices[t]];			// temp_olik is maxOWsize largest BIC elements of testlik ordered by BIC (descending?)
+          temp_otrees[t]=testtree[owindices[t]];		// temp_otrees is maxOWsize largest BIC elements of testtree ordered by BIC (descending?)
+          temp_omat[t]=testmat[owindices[t]];			// temp_omat is maxOWsize largest BIC elements of testmat ordered by BIC (descending?)
+          temp_oparent[t]=testpar[owindices[t]];		// temp_oparent is maxOWsize largest BIC elements of testpar ordered by BIC (descending?)
+        }
+        testlik=temp_olik;			// reset testlik equal to temp_olik
+        testtree=temp_otrees;		// reset testtree equal to temp_otrees
+        testmat=temp_omat;			// reset testmat equal to temp_omat
+        testpar=temp_oparent;		// reset testpar equal to temp_oparent
+      }
+      // ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      // ret[1]=best_sv;					// second element of output list. Best splitting variable
+      // ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      // ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      // ret[4]=testtree;				// fifth element of output list. List of tree tables
+      // ret[5]=testlik;					// sixth element of output list. Vector of BICs
+      // ret[6]=testmat;					// seventh element of output list. List of tree matrices
+      // ret[7]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      // ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      // 
+      //ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      //ret[1]=best_sv;					// second element of output list. Best splitting variable
+      //ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      //ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      ret[0]=testtree;				// fifth element of output list. List of tree tables
+      ret[1]=testlik;					// sixth element of output list. Vector of BICs
+      ret[2]=testmat;					// seventh element of output list. List of tree matrices
+      ret[3]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      //ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      
+      return (ret);					// return the list ret
+    }else{
+      //if no trees are found within Occam's window function will return an error to main
+      no_tree_err=1;					// Boolean equal to true.
+      List gr(1);						// Create a list, gr, of length one.
+      gr[0]=no_tree_err;				// First element of gr is the Boolean no_tree_err.
+      return(gr);						// Return the list gr.
+    }
+  }else{
+    no_tree_err=1;						// Boolean equal to true.
+    List gr(1);							// Create a list, gr, of length one.
+    gr[0]=no_tree_err;					// First element of gr is the Boolean no_tree_err.
+    return(gr);							// Return the list gr.
+  }
+}
+//######################################################################################################################//
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
@@ -1834,6 +2061,268 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
         
       //}else{
        // throw std::range_error("get_best_split_tau_bcf should only be used in the first round");	// throw an error.
+      //}
+      //at the moment tree prior is only for current tree need to get it for entire sum of tree list.
+      
+      //NumericMatrix temptestingtabcols = proposal_tree[0];
+      //if(temptestingtabcols.ncol()<5) throw std::range_error("Line 1021");
+      
+      
+      tree_prior=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);	// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+      //int_nodes=find_term_nodes_bcf(proposal_tree[0]);							// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector?
+      //p=int_nodes.size();														// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
+      //BIC=-2*(lik+log(tree_prior))+p*log(x_moderate_a.n_rows);	
+      BIC=-2*(lik+log(tree_prior));	
+      
+      //BIC=-2*(lik)+(p_other_mu+p)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
+        lowest_BIC=BIC;											// update (input variable) lowest_BIC
+        //best_sv=split_var;										// set a value for, or update best_sv
+        //best_sp=split_point;									// set a value for, or update split_point
+        //likeliest_tree=proposal_tree;							// set a value for, or update likeliest_tree
+        tree_list[count]=proposal_tree[0];						// add an element to the list of tree tables
+        tree_mat_list[count]=proposal_tree[1];					// add an element to the list of tree matrices
+        tree_lik[count]=BIC;									// add an element to the vector of tree liklihoods (BICs)
+        //tree_parent[count]=parent;								// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+        count++;												// increase the count
+        if(count==(tree_list.size()-1)){						// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
+          list_size=list_size*2;									// multiply list size by 2
+          tree_list=resize_bigger_bcf(tree_list,list_size);			// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
+          tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);	// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
+          tree_lik.resize(list_size);								// increase tree_lik to twice its previous size
+          //tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
+        }
+      }else{
+        if((BIC)-(lowest_BIC)<=c){										// If in Occam's window (but not the new minimum BIC)
+          if(is<NumericMatrix>(proposal_tree[0])){					// If proposal_tree[0] is a Numeric Matrix, do nothing
+            //std::cout<<"its a matrix "<<"\n";						// if this is used, it should say "it's a matrix".
+          }else{														// If proposal_tree[0] is NOT a NumericMatrix
+            throw std::range_error("proposal tree not a matrix");	// Then throw an error
+          }
+          tree_list[count]=proposal_tree[0];							// add an element to the list of tree tables
+          tree_mat_list[count]=proposal_tree[1];						// add an element to the list of tree matrices
+          tree_lik[count]=BIC;										// add an element to the vector of tree liklihoods (BICs)
+          //tree_parent[count]=parent;									// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+          count++;													// increase the count
+          if(count==(tree_list.size()-1)){							// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
+            list_size=list_size*2;									// multiply list size by 2
+            tree_list=resize_bigger_bcf(tree_list,list_size);			// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
+            tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);	// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
+            tree_lik.resize(list_size);								// increase tree_lik to twice its previous size
+            //tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
+          }
+        }
+      }
+    }  
+  }
+  
+  tree_list=resize_bcf(tree_list,count);								// remove the values in tree_list that aren't filled in
+  tree_mat_list=resize_bcf(tree_mat_list,count);						// remove the values in tree_mat_list that aren't filled in
+  tree_lik.resize(count);											// remove the values in tree_lik that aren't filled in
+  //tree_parent.resize(count);										// remove the values in tree_parent that aren't filled in
+  IntegerVector tree_parent(count, parent);
+  if(count>0){													// If these lists are nonempty
+    //Rcout << "count >0. error after 1532 .\n" ;
+    //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    NumericVector testlik =eval_model[0];						// testlik is tree_lik after removing models outside Occam's window
+    List testtree =eval_model[1];    							// testtree is tree_list after removing models outside Occam's window
+    List testmat =eval_model[2]; 								// testmat is tree_mat_list after removing models outside Occam's window
+    IntegerVector testpar =eval_model[3];						// testpar is tree_parent after removing models outside Occam's window
+    
+    if(testlik.size()>0){										// If a nonzero number of models remain in Occam's window
+      //check if number of trees to be returned is greater than maxOWsize if so only return the best maxOWsize models
+      if(testlik.size()>maxOWsize){							// maxOWsize is an input variable
+        IntegerVector owindices=orderforOW__bcf(testlik);			// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on.
+        owindices=owindices-1;								// Presumably the match function in orderforOW__bcf gives indices beginning at 1, and therefore 1 must be taken away from all index values.
+        //get the top maxOWsize indices to keep in OW
+        NumericVector temp_olik(maxOWsize);					// create vector temp_olik of size maxOWsize
+        List temp_otrees(maxOWsize);						// create List temp_otrees of size maxOWsize
+        List temp_omat(maxOWsize);							// create List temp_omat of size maxOWsize
+        IntegerVector temp_oparent(maxOWsize);				// create IntegerVector temp_oparent of size maxOWsize
+        for(int t=0;t<maxOWsize;t++){						// loop of length maxOWsize
+          temp_olik[t]=testlik[owindices[t]];				// temp_olik is maxOWsize largest BIC elements of testlik ordered by BIC (descending?)
+          temp_otrees[t]=testtree[owindices[t]];			// temp_otrees is maxOWsize largest BIC elements of testtree ordered by BIC (descending?)
+          temp_omat[t]=testmat[owindices[t]];				// temp_omat is maxOWsize largest BIC elements of testmat ordered by BIC (descending?)
+          temp_oparent[t]=testpar[owindices[t]];			// temp_oparent is maxOWsize largest BIC elements of testpar ordered by BIC (descending?)
+        }
+        testlik=temp_olik;			// reset testlik equal to temp_olik
+        testtree=temp_otrees;		// reset testtree equal to temp_otrees
+        testmat=temp_omat;			// reset testmat equal to temp_omat
+        testpar=temp_oparent;		// reset testpar equal to temp_oparent
+      }
+      // ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      // ret[1]=best_sv;					// second element of output list. Best splitting variable
+      // ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      // ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      // ret[4]=testtree;				// fifth element of output list. List of tree tables
+      // ret[5]=testlik;					// sixth element of output list. List of BICs
+      // ret[6]=testmat;					// seventh element of output list. List of tree matrices
+      // ret[7]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      // ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      
+      //ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      //ret[1]=best_sv;					// second element of output list. Best splitting variable
+      //ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      //ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      ret[0]=testtree;				// fifth element of output list. List of tree tables
+      ret[1]=testlik;					// sixth element of output list. List of BICs
+      ret[2]=testmat;					// seventh element of output list. List of tree matrices
+      ret[3]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      //ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      
+      
+      
+      return (ret);					// return the list ret
+    }else{
+      //if no trees are found within Occam's window function will return an error to main
+      no_tree_err=1;					// Boolean equal to true.
+      List gr(1);						// Create a list, gr, of length one.
+      gr[0]=no_tree_err;				// First element of gr is the Boolean no_tree_err.
+      return(gr);						// Return the list gr.
+    }
+  }else{
+    no_tree_err=1;						// Boolean equal to true.
+    List gr(1);							// Create a list, gr, of length one.
+    gr[0]=no_tree_err;					// First element of gr is the Boolean no_tree_err.
+    //Rcout << "count =0. error after 1582 .\n" ;
+    
+    return(gr);							// Return the list gr.
+  }
+}
+//######################################################################################################################//
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+
+List get_best_split_tau_update_bcf(NumericVector resids,arma::mat& x_moderate_a,
+                            NumericMatrix tree_table_tau,NumericMatrix tree_mat_tau,
+                            double a_mu,double a_tau,double mu_tau,double nu,double lambda,
+                            double c,
+                            double lowest_BIC,
+                            int parent,
+                            List cp_matlist,
+                            double alpha_mu,double beta_mu,double alpha_tau,double beta_tau,
+                            int maxOWsize,//int first_round,
+                            NumericVector z,unsigned int min_num_obs_for_tau_split, unsigned int min_num_obs_after_tau_split){
+  
+  //this function will search through all predictive split points and return those within Occam's Window.
+  int split_var;																// create an integer split_var. Not initialized
+  NumericMatrix tree_table_tau_c=tree_table_tau;										// create a matrix treetable_c equal to the input matrix.
+  NumericMatrix tree_mat_tau_c=tree_mat_tau;											// create a matric tree_mat_tau_c equal to the input matrix.
+  arma::vec z_ar=Rcpp::as<arma::vec>(z);		// converts to arma vec
+  
+  NumericVector terminal_nodes=find_term_nodes_bcf(tree_table_tau_c);					// find term nodes function defined line 168. Gives index of values of treetable_c that are term nodes (indices from 1 to length of vector). Why not integer vector?
+  //Rcout << "terminal_nodes[0] equals " << terminal_nodes[0] << ".\n" ;
+  //Rcout << "length terminal_nodes equals " << terminal_nodes.size() << ".\n" ;
+  
+  //IntegerVector change_node1;													// create an IntegerVector. Initially all values are 0, but size not given.
+  int list_size=1000;															// create a list of size 1000. Why 1000.
+  std::vector<double> tree_lik(list_size);									// create a vector of size 1000
+  List proposal_tree;															// create an empty list
+  List ret(4);																// create a list with 9 elements
+  bool no_tree_err=0;															// create a boolean initialized equal to 0 (false).
+  List likeliest_tree;														// create an empty list
+  List tree_list(list_size);													// create a list of size 1000
+  List tree_mat_list(list_size);												// create a list of size 1000
+  int count=0;																// create an integer variable, initialized equal to 0.
+  //std::vector<int> tree_parent(list_size);									// create an integer vector of size 1000
+  //int best_sv;																// create an integer vector. Not initialized.
+  //double best_sp;																// create a double variable
+  double tree_prior=1;														// create a double variable, initialized equal to 0.
+  //List changetree;															// create an empty list.
+  double BIC;																	// create a double variable. Not initialized.
+  //int p;																		// create an integer variable. Not initialized.
+  //int p_other_mu=0;
+  //int p_other_tau=0;
+  List eval_model;															// create an empty list.
+  //NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
+  //NumericVector other_int_nodes_mu;
+  //NumericVector other_int_nodes_tau;
+  //arma::colvec curr_col=x_moderate_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_moderate_a.
+  //arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[0]).
+  //Rcout << "length of grow_obs equals " << grow_obs.n_elem<< ".\n";
+  //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
+  //arma::mat data_curr_node=x_moderate_a.rows(grow_obs);					// matrix consisting of first grow_obs rows of x_moderate_a.
+  //double d=d1[0];																// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[0]
+  //NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),cp_mat(0,0)+1);		// obtain the elements of the cp_mat(0,0)+1^th column of x_moderate_a that are indexed by grow_obs
+  double lik;																	// create a variable called lik. Not initialized.
+  
+  for(int l=0;l<terminal_nodes.size();l++){										//	vector of length equal to that of terminal_nodes
+    NumericMatrix cp_mat=cp_matlist[l];
+    //loop over each terminal node
+    arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
+    //depth of tree at current terminal node
+    //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
+    arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
+    //arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
+    
+    arma::mat data_curr_node=x_moderate_a.rows(z_growvec);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
+    int d = find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]);
+    
+    //double d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
+    int w=cp_mat.nrow();														// w is number of rows of cp_mat
+    if(data_curr_node.n_rows<= min_num_obs_for_tau_split){												// if data_curr_node has 2 rows or less.
+      //Rcout << "terminal_nodes[l] equals " << terminal_nodes[l]<< ".\n" ;
+      //Rcout << "num obs in grow_obs" << grow_obs.n_elem<< ".\n" ;
+      //Rcout << " num obs in data_curr_node" << data_curr_node.n_rows<< ".\n" ;
+      //Rcout << " iteration number " << l<< ".\n" ;
+      throw std::range_error("not enough obs in node to grow any further Line 1360");	// throw an error message. Not enough observations.
+      //continue;
+    }
+    //Rcout << " iteration number " << l<< ".\n" ;
+    
+    for(int k=0;k<w;k++){														// loop of length w, the number of rows of cp_mat
+      //p_other_mu=0;
+      //Rcout << "inner iteration number " << k<< ".\n" ;
+      split_var=cp_mat(k,0)+1;												// split_var is k+1^th row, 1st column of cp_mat +1
+      //arma::colvec curr_cols=x_moderate_a.col(split_var-1);							// curr_cols is the split_var^th column of x_moderate_a
+      //NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of x_moderate_a that are indexed by grow_obs 
+      
+      //Removing unnecessary lines
+      //if(get_min.size()<=2){													// If get_min has 2 or less observations. (too few variables to split on?)
+      //  throw std::range_error("obs in this terminal node are too small");
+      //}
+      
+      double split_point=cp_mat(k,1);											// variable split_point equals element in k+1^th row 2nd column of cp_mat
+      arma::vec curr_cols2=data_curr_node.col(split_var-1);					// curr_cols2 is split_var^th column of data_curr_node
+      //arma::vec get_min_a=Rcpp::as<arma::vec>(get_min);		// converts to arma vec
+      //arma::vec get_min_a_treated = get_min_a.elem(arma::find(z_growvec_a==1));	
+      
+      arma::vec ld_prop=curr_cols2.elem(arma::find(curr_cols2 <= split_point));	// ld_prop is elements of curr_cols2 <= split_point
+      arma::vec rd_prop=curr_cols2.elem(arma::find(curr_cols2 > split_point));		// rd_prop is elements of curr_cols2 > split_point
+      
+      if(ld_prop.size()<=min_num_obs_after_tau_split || rd_prop.size()<=min_num_obs_after_tau_split){									// if 2 or less observations in either ld_prop or rd_prop
+        continue;																// skip to next iteration of the loop
+      }
+      
+      //Rcout << "error after new code .\n" ;
+      
+      
+      proposal_tree=grow_tree_bcf(x_moderate_a,//resids,
+                                  tree_mat_tau_c,terminal_nodes[l],
+                                                               tree_table_tau_c,split_var,split_point,//terminal_nodes,
+                                                               wrap(grow_obs),
+                                                               d//,get_min,data_curr_node
+      );	// elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
+      
+      
+      
+      //NumericMatrix test =proposal_tree[0];										// first element is tree table
+      //NumericMatrix test1 =proposal_tree[1];										// second element is tree matrix
+      
+      //if(test1.ncol()==3){														// If tree matrix has 3 columns
+      //  NumericVector u1=unique(test1(_,0));									// set u1 equal to the unique (ordered descending) elements of 1st column of tree matrix
+      //  NumericVector u2=unique(test1(_,1));									// set u2 equal to the unique (ordered descending) elements of 2nd column of tree matrix
+      //  NumericVector u3=unique(test1(_,2));									// set u3 equal to the unique (ordered descending) elements of 3rd column of tree matrix
+      //}
+      
+      
+      
+      //if(first_round==1){																// If input value first_round equals 1 (number one)
+      lik=sumtree_likelihood_tau_round1_bcf(resids,proposal_tree[0],proposal_tree[1],resids.size(),a_mu,a_tau,nu,lambda,z);
+      
+      //}else{
+      // throw std::range_error("get_best_split_tau_bcf should only be used in the first round");	// throw an error.
       //}
       //at the moment tree prior is only for current tree need to get it for entire sum of tree list.
       
@@ -2316,6 +2805,356 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
+List get_best_split_tau_round1_update_bcf(NumericVector resids,arma::mat& x_moderate_a,NumericMatrix tree_table_tau,NumericMatrix tree_mat_tau,
+                                   double a_mu,double a_tau,double mu_mu,double mu_tau,double nu,double lambda,double c,
+                                   double lowest_BIC,int parent,List cp_matlist,
+                                   double alpha_mu,double beta_mu,double alpha_tau,double beta_tau,
+                                   int maxOWsize,//int first_round,
+                                   List prev_sum_trees_mu,List prev_sum_trees_mat_mu,
+                                   NumericVector y_scaled,IntegerVector parent2,int i, NumericVector z,
+                                   unsigned int min_num_obs_for_tau_split, unsigned int min_num_obs_after_tau_split){
+  //this function will search through all predictive split points and return those within Occam's Window.
+  int split_var;																// create an integer split_var. Not initialized
+  NumericMatrix tree_table_tau_c=tree_table_tau;										// create a matrix treetable_c equal to the input matrix.
+  NumericMatrix tree_mat_tau_c=tree_mat_tau;											// create a matric tree_mat_tau_c equal to the input matrix.
+  arma::vec z_ar=Rcpp::as<arma::vec>(z);		// converts to arma vec
+  
+  NumericVector terminal_nodes=find_term_nodes_bcf(tree_table_tau_c);					// find term nodes function defined line 168. Gives index of values of treetable_c that are term nodes (indices from 1 to length of vector). Why not integer vector?
+  //Rcout << "terminal_nodes[0] equals " << terminal_nodes[0] << ".\n" ;
+  //Rcout << "length terminal_nodes equals " << terminal_nodes.size() << ".\n" ;
+  
+  //IntegerVector change_node1;													// create an IntegerVector. Initially all values are 0, but size not given.
+  int list_size=1000;															// create a list of size 1000. Why 1000.
+  std::vector<double> tree_lik(list_size);									// create a vector of size 1000
+  List proposal_tree;															// create an empty list
+  List ret(4);																// create a list with 9 elements
+  bool no_tree_err=0;															// create a boolean initialized equal to 0 (false).
+  //List likeliest_tree;														// create an empty list
+  List tree_list(list_size);													// create a list of size 1000
+  List tree_mat_list(list_size);												// create a list of size 1000
+  int count=0;																// create an integer variable, initialized equal to 0.
+  //std::vector<int> tree_parent(list_size);									// create an integer vector of size 1000
+  //int best_sv;																// create an integer vector. Not initialized.
+  //double best_sp;																// create a double variable
+  double tree_prior=1;														// create a double variable, initialized equal to 0.
+  //List changetree;															// create an empty list.
+  double BIC;																	// create a double variable. Not initialized.
+  //int p;																		// create an integer variable. Not initialized.
+  //int p_other_mu=0;
+  //int p_other_tau=0;
+  List eval_model;															// create an empty list.
+  //NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
+  //NumericVector other_int_nodes_mu;
+  //NumericVector other_int_nodes_tau;
+  //arma::colvec curr_col=x_moderate_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_moderate_a.
+  //arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[0]).
+  //Rcout << "length of grow_obs equals " << grow_obs.n_elem<< ".\n";
+  //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
+  //arma::mat data_curr_node=x_moderate_a.rows(grow_obs);					// matrix consisting of first grow_obs rows of x_moderate_a.
+  //double d=d1[0];																// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[0]
+  //NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),cp_mat(0,0)+1);		// obtain the elements of the cp_mat(0,0)+1^th column of x_moderate_a that are indexed by grow_obs
+  double lik;																	// create a variable called lik. Not initialized.
+  
+  // Rcout << "Line 1598.\n"; 
+  
+  
+  for(int l=0;l<terminal_nodes.size();l++){										//	vector of length equal to that of terminal_nodes
+    NumericMatrix cp_mat=cp_matlist[l];
+    //loop over each terminal node
+    arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
+    //depth of tree at current terminal node
+    //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
+    // Rcout << "tree_mat_tau_c = " << tree_mat_tau_c << ".\n";
+    // Rcout << "terminal_nodes[l] = " << terminal_nodes[l] << ".\n";
+    
+    // Rcout << "d1 = " << d1 << ".\n";
+    arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
+    //arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
+    
+    arma::mat data_curr_node=x_moderate_a.rows(z_growvec);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
+    
+    // Rcout << "Line 1611. l = " << l << ".\n"; 
+    
+    //arma::mat data_curr_node=x_moderate_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
+    //double d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
+    // Rcout << "d = " << d << ".\n";
+    
+    int d = find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]);
+    
+    int w=cp_mat.nrow();														// w is number of rows of cp_mat
+    if(data_curr_node.n_rows<=min_num_obs_for_tau_split){												// if data_curr_node has 2 rows or less.
+      //Rcout << "terminal_nodes[l] equals " << terminal_nodes[l]<< ".\n" ;
+      //Rcout << "num obs in grow_obs" << grow_obs.n_elem<< ".\n" ;
+      //Rcout << " num obs in data_curr_node" << data_curr_node.n_rows<< ".\n" ;
+      //Rcout << " iteration number " << l<< ".\n" ;
+      throw std::range_error("not enough obs in node to grow any further");	// throw an error message. Not enough observations.
+      //continue;
+    }
+    //Rcout << " iteration number " << l<< ".\n" ;
+    // Rcout << "Line 1625. l = " << l << ".\n"; 
+    
+    for(int k=0;k<w;k++){														// loop of length w, the number of rows of cp_mat
+      //p_other_mu=0;
+      //Rcout << "inner iteration number " << k<< ".\n" ;
+      split_var=cp_mat(k,0)+1;												// split_var is k+1^th row, 1st column of cp_mat +1
+      //arma::colvec curr_cols=x_moderate_a.col(split_var-1);							// curr_cols is the split_var^th column of x_moderate_a
+      //NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of x_moderate_a that are indexed by grow_obs 
+      
+      //Removing unnecessary lines
+      //if(get_min.size()<=2){													// If get_min has 2 or less observations. (too few variables to split on?)
+      //  throw std::range_error("obs in this terminal node are too small");
+      //}
+      // Rcout << "Line 1638. l = " << l << ".k = " << k << ".\n"; 
+      
+      
+      double split_point=cp_mat(k,1);											// variable split_point equals element in k+1^th row 2nd column of cp_mat
+      arma::vec curr_cols2=data_curr_node.col(split_var-1);					// curr_cols2 is split_var^th column of data_curr_node
+      //arma::vec get_min_a=Rcpp::as<arma::vec>(get_min);		// converts to arma vec
+      //arma::vec get_min_a_treated = get_min_a.elem(arma::find(z_growvec_a==1));	
+      
+      
+      arma::vec ld_prop=curr_cols2.elem(arma::find(curr_cols2 <= split_point));	// ld_prop is elements of curr_cols2 <= split_point
+      arma::vec rd_prop=curr_cols2.elem(arma::find(curr_cols2 > split_point));		// rd_prop is elements of curr_cols2 > split_point
+      
+      // Rcout << "ld_prop.size() = " << ld_prop.size() << ".\n";
+      // Rcout << "rd_prop.size() = " << rd_prop.size() << ".\n";
+      
+      
+      if(ld_prop.size()<=min_num_obs_after_tau_split || rd_prop.size()<=min_num_obs_after_tau_split){									// if 2 or less observations in either ld_prop or rd_prop
+        continue;																// skip to next iteration of the loop
+      }
+      
+      //Rcout << "error after new code .\n" ;
+      
+      // Rcout << "Line 1655. l = " << l << ".k = " << k << ".\n"; 
+      // Rcout << "d = " << d << ".\n";
+      
+      proposal_tree=grow_tree_bcf(x_moderate_a,//resids,
+                                  tree_mat_tau_c,terminal_nodes[l],
+                                                               tree_table_tau_c,split_var,split_point,//terminal_nodes,
+                                                               wrap(grow_obs),
+                                                               d//,get_min,data_curr_node
+      );	// elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
+      
+      
+      //NumericMatrix test =proposal_tree[0];										// first element is tree table
+      //NumericMatrix test1 =proposal_tree[1];										// second element is tree matrix
+      
+      //if(test1.ncol()==3){														// If tree matrix has 3 columns
+      //  NumericVector u1=unique(test1(_,0));									// set u1 equal to the unique (ordered descending) elements of 1st column of tree matrix
+      //  NumericVector u2=unique(test1(_,1));									// set u2 equal to the unique (ordered descending) elements of 2nd column of tree matrix
+      //  NumericVector u3=unique(test1(_,2));									// set u3 equal to the unique (ordered descending) elements of 3rd column of tree matrix
+      //}
+      
+      
+      // Rcout << "Line 1666. k = " << k << ".\n"; 
+      
+      //if(first_round==1){																// If input value first_round equals 1 (number one)
+      
+      //lik=likelihood_function_bcf(resids,proposal_tree[0],proposal_tree[1],a,mu,nu,lambda);	// set lik equal to tree likelihood defined on line 201.
+      
+      SEXP s = prev_sum_trees_mu[parent2[i]];									// s is a pointer to S expression type equal to the element of the sumtrees input list indexed by the i^th element of the input Integer vetor parent2. i is also an input integer.
+      if(is<List>(s)){												// is s is a list
+        List prev_sum_trees_mu2=prev_sum_trees_mu[parent2[i]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+        List prev_sum_trees_mat_mu2=prev_sum_trees_mat_mu[parent2[i]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        
+        List st_tau(1);													// create list, st, of length 2.
+        List st_mat_tau(1);												// create lisr, st_mat of length 2.
+        st_tau[0]=proposal_tree[0];												// let the first elemetn of st be sum_trees2.
+        st_mat_tau[0]=proposal_tree[1];										// let the first element of st_mat be sum_trees_mat2.
+        
+        //NumericMatrix prop_table_tau_temp = proposal_tree[0];						// append the treetable proposal_tree[0] to the end of the list sum_trees2
+        //NumericMatrix prop_mat_tau_temp =proposal_tree[1];					// append the tree matreix proposal_tree[1] to the end of the list sum_trees_mat2
+        
+        // Rcout << "Line 1685. k = " << k << ".\n"; 
+        
+        lik=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2,st_tau,prev_sum_trees_mat_mu2,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+        
+        // Rcout << "Line 1689. k = " << k << ".\n"; 
+        
+        
+        //????????????????? check over this
+        // This can all probably be made more efficient by taking account of the fact that there should be just one mu tree
+        for(int t=0;t<prev_sum_trees_mu2.size();t++){							// for-loop of length equal to that of sum_trees2
+          NumericMatrix tree=prev_sum_trees_mu2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+          //other_int_nodes_mu = find_term_nodes_bcf(tree);
+          //p_other_mu+=other_int_nodes_mu.size();
+          NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+          //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+          //if(tree.ncol()<5) throw std::range_error("Line 1412");
+          tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        }
+        //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not well defined
+        //NumericMatrix temptestingtabcols = proposal_tree[0];
+        //if(temptestingtabcols.ncol()<5) throw std::range_error("Line 1417");
+        
+        tree_prior*=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+      }else{															// if s is not a list
+        NumericMatrix prev_sum_trees_mu2=prev_sum_trees_mu[parent2[i]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
+        NumericMatrix prev_sum_trees_mat_mu2=prev_sum_trees_mat_mu[parent2[i]];		// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+        //other_int_nodes_mu = find_term_nodes_bcf(prev_sum_trees_mu2);
+        //p_other_mu=other_int_nodes_mu.size();
+        List st_mu(1);													// create list, st, of length 2.
+        List st_mat_mu(1);												// create lisr, st_mat of length 2.
+        st_mu[0]=prev_sum_trees_mu2;												// let the first elemetn of st be sum_trees2.
+        st_mat_mu[0]=prev_sum_trees_mat_mu2;										// let the first element of st_mat be sum_trees_mat2.
+        // return(st);
+        List st_tau(1);													// create list, st, of length 2.
+        List st_mat_tau(1);												// create lisr, st_mat of length 2.
+        st_tau[0]=proposal_tree[0];												// let the first elemetn of st be sum_trees2.
+        st_mat_tau[0]=proposal_tree[1];										// let the first element of st_mat be sum_trees_mat2.
+        //NumericMatrix prop_table_tau_temp = proposal_tree[0];						// append the treetable proposal_tree[0] to the end of the list sum_trees2
+        //NumericMatrix prop_mat_tau_temp =proposal_tree[1];					// append the tree matreix proposal_tree[1] to the end of the list sum_trees_mat2
+        
+        // Rcout << "Line 1721. k = " << k << ".\n"; 
+        
+        lik=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+        
+        // Rcout << "Line 1725. k = " << k << ".\n"; 
+        
+        //ONLY ONE TREE IN mu(x) function
+        //NumericMatrix tree=prev_sum_trees_mu2;									// let tree equal (t+1)^th element of st
+        //NumericMatrix mat=prev_sum_trees_mat_mu2;								// let mat equal (t+1)^th element of st_mat
+        //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+        if(prev_sum_trees_mu2.ncol()<5) throw std::range_error("Line 1438");
+        tree_prior*=get_tree_prior_bcf(prev_sum_trees_mu2,prev_sum_trees_mat_mu2,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        
+        //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not well defined
+        //NumericMatrix temptestingtabcols = proposal_tree[0];
+        //if(temptestingtabcols.ncol()<5) throw std::range_error("Line 1443");
+        
+        tree_prior*=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+      }  
+      //}else{
+      //  throw std::range_error("get_best_split_tau_round1_bcf should only be used in the first round");	// throw an error.
+      //}
+      //at the moment tree prior is only for current tree need to get it for entire sum of tree list.
+      
+      //int_nodes=find_term_nodes_bcf(proposal_tree[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
+      //p=int_nodes.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
+      //BIC=-2*(lik+log(tree_prior))+(p_other_mu+p)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      BIC=-2*(lik+log(tree_prior));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      //BIC=-2*(lik)+(p_other_mu+p)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
+        lowest_BIC=BIC;											// update (input variable) lowest_BIC
+        //best_sv=split_var;										// set a value for, or update best_sv
+        //best_sp=split_point;									// set a value for, or update split_point
+        //likeliest_tree=proposal_tree;							// set a value for, or update likeliest_tree
+        tree_list[count]=proposal_tree[0];						// add an element to the list of tree tables
+        tree_mat_list[count]=proposal_tree[1];					// add an element to the list of tree matrices
+        tree_lik[count]=BIC;									// add an element to the vector of tree liklihoods (BICs)
+        //tree_parent[count]=parent;								// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+        count++;												// increase the count
+        if(count==(tree_list.size()-1)){						// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
+          list_size=list_size*2;									// multiply list size by 2
+          tree_list=resize_bigger_bcf(tree_list,list_size);			// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
+          tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);	// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
+          tree_lik.resize(list_size);								// increase tree_lik to twice its previous size
+          //tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
+        }
+      }else{
+        if((BIC)-(lowest_BIC)<=c){										// If in Occam's window (but not the new minimum BIC)
+          if(is<NumericMatrix>(proposal_tree[0])){					// If proposal_tree[0] is a Numeric Matrix, do nothing
+            //std::cout<<"its a matrix "<<"\n";						// if this is used, it should say "it's a matrix".
+          }else{														// If proposal_tree[0] is NOT a NumericMatrix
+            throw std::range_error("proposal tree not a matrix");	// Then throw an error
+          }
+          tree_list[count]=proposal_tree[0];							// add an element to the list of tree tables
+          tree_mat_list[count]=proposal_tree[1];						// add an element to the list of tree matrices
+          tree_lik[count]=BIC;										// add an element to the vector of tree liklihoods (BICs)
+          //tree_parent[count]=parent;									// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+          count++;													// increase the count
+          if(count==(tree_list.size()-1)){							// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
+            list_size=list_size*2;									// multiply list size by 2
+            tree_list=resize_bigger_bcf(tree_list,list_size);			// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
+            tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);	// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
+            tree_lik.resize(list_size);								// increase tree_lik to twice its previous size
+            //tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
+          }
+        }
+      }
+    }  
+  }
+  // Rcout << "Line 1778. .\n"; 
+  
+  tree_list=resize_bcf(tree_list,count);								// remove the values in tree_list that aren't filled in
+  tree_mat_list=resize_bcf(tree_mat_list,count);						// remove the values in tree_mat_list that aren't filled in
+  tree_lik.resize(count);											// remove the values in tree_lik that aren't filled in
+  //tree_parent.resize(count);										// remove the values in tree_parent that aren't filled in
+  IntegerVector tree_parent(count, parent);
+  
+  if(count>0){													// If these lists are nonempty
+    //Rcout << "count >0. error after 1532 .\n" ;
+    //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    NumericVector testlik =eval_model[0];						// testlik is tree_lik after removing models outside Occam's window
+    List testtree =eval_model[1];    							// testtree is tree_list after removing models outside Occam's window
+    List testmat =eval_model[2]; 								// testmat is tree_mat_list after removing models outside Occam's window
+    IntegerVector testpar =eval_model[3];						// testpar is tree_parent after removing models outside Occam's window
+    
+    if(testlik.size()>0){										// If a nonzero number of models remain in Occam's window
+      //check if number of trees to be returned is greater than maxOWsize if so only return the best maxOWsize models
+      if(testlik.size()>maxOWsize){							// maxOWsize is an input variable
+        IntegerVector owindices=orderforOW__bcf(testlik);			// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on.
+        owindices=owindices-1;								// Presumably the match function in orderforOW__bcf gives indices beginning at 1, and therefore 1 must be taken away from all index values.
+        //get the top maxOWsize indices to keep in OW
+        NumericVector temp_olik(maxOWsize);					// create vector temp_olik of size maxOWsize
+        List temp_otrees(maxOWsize);						// create List temp_otrees of size maxOWsize
+        List temp_omat(maxOWsize);							// create List temp_omat of size maxOWsize
+        IntegerVector temp_oparent(maxOWsize);				// create IntegerVector temp_oparent of size maxOWsize
+        for(int t=0;t<maxOWsize;t++){						// loop of length maxOWsize
+          temp_olik[t]=testlik[owindices[t]];				// temp_olik is maxOWsize largest BIC elements of testlik ordered by BIC (descending?)
+          temp_otrees[t]=testtree[owindices[t]];			// temp_otrees is maxOWsize largest BIC elements of testtree ordered by BIC (descending?)
+          temp_omat[t]=testmat[owindices[t]];				// temp_omat is maxOWsize largest BIC elements of testmat ordered by BIC (descending?)
+          temp_oparent[t]=testpar[owindices[t]];			// temp_oparent is maxOWsize largest BIC elements of testpar ordered by BIC (descending?)
+        }
+        testlik=temp_olik;			// reset testlik equal to temp_olik
+        testtree=temp_otrees;		// reset testtree equal to temp_otrees
+        testmat=temp_omat;			// reset testmat equal to temp_omat
+        testpar=temp_oparent;		// reset testpar equal to temp_oparent
+      }
+      // ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      // ret[1]=best_sv;					// second element of output list. Best splitting variable
+      // ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      // ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      // ret[4]=testtree;				// fifth element of output list. List of tree tables
+      // ret[5]=testlik;					// sixth element of output list. List of BICs
+      // ret[6]=testmat;					// seventh element of output list. List of tree matrices
+      // ret[7]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      // ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      // 
+      //ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      //ret[1]=best_sv;					// second element of output list. Best splitting variable
+      //ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      //ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      ret[0]=testtree;				// fifth element of output list. List of tree tables
+      ret[1]=testlik;					// sixth element of output list. List of BICs
+      ret[2]=testmat;					// seventh element of output list. List of tree matrices
+      ret[3]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      //ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      
+      
+      return (ret);					// return the list ret
+    }else{
+      //if no trees are found within Occam's window function will return an error to main
+      no_tree_err=1;					// Boolean equal to true.
+      List gr(1);						// Create a list, gr, of length one.
+      gr[0]=no_tree_err;				// First element of gr is the Boolean no_tree_err.
+      return(gr);						// Return the list gr.
+    }
+  }else{
+    no_tree_err=1;						// Boolean equal to true.
+    List gr(1);							// Create a list, gr, of length one.
+    gr[0]=no_tree_err;					// First element of gr is the Boolean no_tree_err.
+    //Rcout << "count =0. error after 1582 .\n" ;
+    
+    return(gr);							// Return the list gr.
+  }
+}
+//######################################################################################################################//
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+
 List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,NumericMatrix tree_table_tau,NumericMatrix tree_mat_tau,
                             double a_mu,double a_tau,double mu_mu,double mu_tau,double nu,double lambda,double c,
                             double lowest_BIC,int parent,NumericMatrix cp_mat,
@@ -2376,6 +3215,9 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
     //double d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
     int d= find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]);
     int w=cp_mat.nrow();														// w is number of rows of cp_mat
+    
+    //Rcout << "Line 3218, l == " << l << ". w == " << w << ". \n";
+    
     if(data_curr_node.n_rows<=min_num_obs_for_tau_split){												// if data_curr_node has 2 rows or less.
       throw std::range_error("not enough obs in node to grow any further");	// throw an error message. Not enough observations.
       //continue;
@@ -2589,6 +3431,405 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
       //BIC=-2*(lik+log(tree_prior))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       BIC=-2*(lik+log(tree_prior));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
         
+      //BIC=-2*(lik)+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      // Rcout << "p_other_mu+p_other_tau=" << p_other_mu+p_other_tau << ".\n";
+      // Rcout << "lik=" << lik << ".\n";
+      // Rcout << "BIC=" << BIC << ".\n";
+      // Rcout << "lowest_BIC=" << lowest_BIC << ".\n";
+      // Rcout << "LINE 1885 tree_prior=" << tree_prior << ".\n";
+      
+      if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
+        lowest_BIC=BIC;											// update (input variable) lowest_BIC
+        //best_sv=split_var;										// set a value for, or update best_sv
+        //best_sp=split_point;									// set a value for, or update split_point
+        //likeliest_tree=proposal_tree;							// set a value for, or update likeliest_tree
+        tree_list[count]=proposal_tree[0];						// add an element to the list of tree tables
+        tree_mat_list[count]=proposal_tree[1];					// add an element to the list of tree matrices
+        tree_lik[count]=BIC;									// add an element to the vector of tree liklihoods (BICs)
+        //tree_parent[count]=parent;								// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+        count++;												// increase the count
+        if(count==(tree_list.size()-1)){						// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
+          list_size=list_size*2;									// multiply list size by 2
+          tree_list=resize_bigger_bcf(tree_list,list_size);			// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
+          tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);	// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
+          tree_lik.resize(list_size);								// increase tree_lik to twice its previous size
+          //tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
+        }
+      }else{
+        if((BIC)-(lowest_BIC)<=c){										// If in Occam's window (but not the new minimum BIC)
+          if(is<NumericMatrix>(proposal_tree[0])){					// If proposal_tree[0] is a Numeric Matrix, do nothing
+            //std::cout<<"its a matrix "<<"\n";						// if this is used, it should say "it's a matrix".
+          }else{														// If proposal_tree[0] is NOT a NumericMatrix
+            throw std::range_error("proposal tree not a matrix");	// Then throw an error
+          }
+          tree_list[count]=proposal_tree[0];							// add an element to the list of tree tables
+          tree_mat_list[count]=proposal_tree[1];						// add an element to the list of tree matrices
+          tree_lik[count]=BIC;										// add an element to the vector of tree liklihoods (BICs)
+          //tree_parent[count]=parent;									// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+          count++;													// increase the count
+          if(count==(tree_list.size()-1)){							// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
+            list_size=list_size*2;									// multiply list size by 2
+            tree_list=resize_bigger_bcf(tree_list,list_size);			// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
+            tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);	// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
+            tree_lik.resize(list_size);								// increase tree_lik to twice its previous size
+            //tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
+          }
+        }
+      }
+    }  
+  }
+  tree_list=resize_bcf(tree_list,count);								// remove the values in tree_list that aren't filled in
+  tree_mat_list=resize_bcf(tree_mat_list,count);						// remove the values in tree_mat_list that aren't filled in
+  tree_lik.resize(count);											// remove the values in tree_lik that aren't filled in
+  //tree_parent.resize(count);										// remove the values in tree_parent that aren't filled in
+  IntegerVector tree_parent(count, parent);
+  
+  if(count>0){													// If these lists are nonempty
+    //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    NumericVector testlik =eval_model[0];						// testlik is tree_lik after removing models outside Occam's window
+    List testtree =eval_model[1];    							// testtree is tree_list after removing models outside Occam's window
+    List testmat =eval_model[2]; 								// testmat is tree_mat_list after removing models outside Occam's window
+    IntegerVector testpar =eval_model[3];						// testpar is tree_parent after removing models outside Occam's window
+    
+    if(testlik.size()>0){										// If a nonzero number of models remain in Occam's window
+      //check if number of trees to be returned is greater than maxOWsize if so only return the best maxOWsize models
+      if(testlik.size()>maxOWsize){							// maxOWsize is an input variable
+        IntegerVector owindices=orderforOW__bcf(testlik);			// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on.
+        owindices=owindices-1;								// Presumably the match function in orderforOW__bcf gives indices beginning at 1, and therefore 1 must be taken away from all index values.
+        //get the top maxOWsize indices to keep in OW
+        NumericVector temp_olik(maxOWsize);					// create vector temp_olik of size maxOWsize
+        List temp_otrees(maxOWsize);						// create List temp_otrees of size maxOWsize
+        List temp_omat(maxOWsize);							// create List temp_omat of size maxOWsize
+        IntegerVector temp_oparent(maxOWsize);				// create IntegerVector temp_oparent of size maxOWsize
+        for(int t=0;t<maxOWsize;t++){						// loop of length maxOWsize
+          temp_olik[t]=testlik[owindices[t]];				// temp_olik is maxOWsize largest BIC elements of testlik ordered by BIC (descending?)
+          temp_otrees[t]=testtree[owindices[t]];			// temp_otrees is maxOWsize largest BIC elements of testtree ordered by BIC (descending?)
+          temp_omat[t]=testmat[owindices[t]];				// temp_omat is maxOWsize largest BIC elements of testmat ordered by BIC (descending?)
+          temp_oparent[t]=testpar[owindices[t]];			// temp_oparent is maxOWsize largest BIC elements of testpar ordered by BIC (descending?)
+        }
+        testlik=temp_olik;			// reset testlik equal to temp_olik
+        testtree=temp_otrees;		// reset testtree equal to temp_otrees
+        testmat=temp_omat;			// reset testmat equal to temp_omat
+        testpar=temp_oparent;		// reset testpar equal to temp_oparent
+      }
+      // ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      // ret[1]=best_sv;					// second element of output list. Best splitting variable
+      // ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      // ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      // ret[4]=testtree;				// fifth element of output list. List of tree tables
+      // ret[5]=testlik;					// sixth element of output list. List of BICs
+      // ret[6]=testmat;					// seventh element of output list. List of tree matrices
+      // ret[7]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      // ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      // 
+      //ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      //ret[1]=best_sv;					// second element of output list. Best splitting variable
+      //ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      //ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      ret[0]=testtree;				// fifth element of output list. List of tree tables
+      ret[1]=testlik;					// sixth element of output list. List of BICs
+      ret[2]=testmat;					// seventh element of output list. List of tree matrices
+      ret[3]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      //ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      
+      
+      
+      return (ret);					// return the list ret
+    }else{
+      //if no trees are found within Occam's window function will return an error to main
+      no_tree_err=1;					// Boolean equal to true.
+      List gr(1);						// Create a list, gr, of length one.
+      gr[0]=no_tree_err;				// First element of gr is the Boolean no_tree_err.
+      return(gr);						// Return the list gr.
+    }
+  }else{
+    no_tree_err=1;						// Boolean equal to true.
+    List gr(1);							// Create a list, gr, of length one.
+    gr[0]=no_tree_err;					// First element of gr is the Boolean no_tree_err.
+    return(gr);							// Return the list gr.
+  }
+}
+//######################################################################################################################//
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+
+List get_best_split_sum_tau_update_bcf(NumericVector resids,arma::mat& x_moderate_a,NumericMatrix tree_table_tau,NumericMatrix tree_mat_tau,
+                                double a_mu,double a_tau,double mu_mu,double mu_tau,double nu,double lambda,double c,
+                                double lowest_BIC,int parent,List cp_matlist,
+                                double alpha_mu,double beta_mu,double alpha_tau,double beta_tau,
+                                int maxOWsize,//int first_round,
+                                List prev_sum_trees_mu,List prev_sum_trees_tau,List prev_sum_trees_mat_mu,List prev_sum_trees_mat_tau,
+                                NumericVector y_scaled,IntegerVector parent2,int i,NumericVector z,
+                                unsigned int min_num_obs_for_tau_split, unsigned int min_num_obs_after_tau_split){
+  //this function will search through all predictive split points and return those within Occam's Window.
+  int split_var;																// create an integer split_var. Not initialized
+  NumericMatrix tree_table_tau_c=tree_table_tau;										// create a matrix treetable_c equal to the input matrix.
+  NumericMatrix tree_mat_tau_c=tree_mat_tau;											// create a matric tree_mat_tau_c equal to the input matrix.
+  arma::vec z_ar=Rcpp::as<arma::vec>(z);		// converts to arma vec
+  
+  NumericVector terminal_nodes=find_term_nodes_bcf(tree_table_tau_c);					// find term nodes function defined line 168. Gives index of values of treetable_c that are term nodes (indices from 1 to length of vector). Why not integer vector?
+  //IntegerVector change_node1;													// create an IntegerVector. Initially all values are 0, but size not given.
+  int list_size=1000;															// create a list of size 1000. Why 1000.
+  std::vector<double> tree_lik(list_size);									// create a vector of size 1000
+  List proposal_tree;															// create an empty list
+  List ret(4);																// create a list with 9 elements
+  bool no_tree_err=0;															// create a boolean initialized equal to 0 (false).
+  //List likeliest_tree;														// create an empty list
+  List tree_list(list_size);													// create a list of size 1000
+  List tree_mat_list(list_size);												// create a list of size 1000
+  int count=0;																// create an integer variable, initialized equal to 0.
+  //std::vector<int> tree_parent(list_size);									// create an integer vector of size 1000
+  //int best_sv;																// create an integer vector. Not initialized.
+  //double best_sp;																// create a double variable
+  double tree_prior=1;														// create a double variable, initialized equal to 0.
+  //List changetree;															// create an empty list.
+  double BIC;																	// create a double variable. Not initialized.
+  //int p;																		// create an integer variable. Not initialized.
+  //int p_other_mu=0;
+  //int p_other_tau=0;
+  List eval_model;															// create an empty list.
+  //NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
+  //NumericVector other_int_nodes_mu;
+  //NumericVector other_int_nodes_tau;
+  //arma::colvec curr_col=x_moderate_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_moderate_a.
+  //arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[0]).
+  //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
+  //arma::mat data_curr_node=x_moderate_a.rows(grow_obs);					// matrix consisting of first grow_obs rows of x_moderate_a.
+  //double d=d1[0];																// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[0]
+  //NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),cp_mat(0,0)+1);		// obtain the elements of the cp_mat(0,0)+1^th column of x_moderate_a that are indexed by grow_obs
+  double lik;																	// create a variable called lik. Not initialized.
+  
+  for(int l=0;l<terminal_nodes.size();l++){										//	vector of length equal to that of terminal_nodes
+    NumericMatrix cp_mat=cp_matlist[l];
+    //loop over each terminal node
+    arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
+    //depth of tree at current terminal node
+    //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
+    arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
+    //arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
+    
+    arma::mat data_curr_node=x_moderate_a.rows(z_growvec);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
+    
+    //arma::mat data_curr_node=x_moderate_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
+    //double d=d1[0];																	// index of rightmost column of tree_mat_tau_c with at least one element equal to terminal_nodes[l] (letter l)
+    int d= find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]);
+    int w=cp_mat.nrow();														// w is number of rows of cp_mat
+    //Rcout << "Line 3616, l == " << l << ". w == " << w << ". \n";
+    
+    if(data_curr_node.n_rows<=min_num_obs_for_tau_split){												// if data_curr_node has 2 rows or less.
+      throw std::range_error("not enough obs in node to grow any further");	// throw an error message. Not enough observations.
+      //continue;
+    }
+    for(int k=0;k<w;k++){														// loop of length w, the number of rows of cp_mat
+      //p_other_mu=0;
+      //p_other_tau=0;
+      split_var=cp_mat(k,0)+1;												// split_var is k+1^th row, 1st column of cp_mat +1
+      arma::colvec curr_cols=x_moderate_a.col(split_var-1);							// curr_cols is the split_var^th column of x_moderate_a
+      //NumericVector get_min=get_grow_obs_bcf(x_moderate_a,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of x_moderate_a that are indexed by grow_obs 
+      
+      //Removing unnecessary lines
+      //if(get_min.size()<=2){													// If get_min has 2 or less observations. (too few variables to split on?)
+      //  throw std::range_error("obs in this terminal node are too small");
+      //}
+      
+      double split_point=cp_mat(k,1);											// variable split_point equals element in k+1^th row 2nd column of cp_mat
+      arma::vec curr_cols2=data_curr_node.col(split_var-1);					// curr_cols2 is split_var^th column of data_curr_node
+      //arma::vec get_min_a=Rcpp::as<arma::vec>(get_min);		// converts to arma vec
+      //arma::vec get_min_a_treated = get_min_a.elem(arma::find(z_growvec_a==1));	
+      
+      arma::vec ld_prop=curr_cols2.elem(arma::find(curr_cols2 <= split_point));	// ld_prop is elements of curr_cols2 <= split_point
+      arma::vec rd_prop=curr_cols2.elem(arma::find(curr_cols2 > split_point));		// rd_prop is elements of curr_cols2 > split_point
+      
+      //arma::vec ld_prop=curr_cols2.elem(arma::find(curr_cols2 <= split_point));	// ld_prop is elements of curr_cols2 <= split_point
+      //arma::vec rd_prop=curr_cols2.elem(arma::find(curr_cols2> split_point));		// rd_prop is elements of curr_cols2 > split_point
+      
+      if(ld_prop.size()<=min_num_obs_after_tau_split || rd_prop.size()<=min_num_obs_after_tau_split){									// if 2 or less observations in either ld_prop or rd_prop
+        continue;																// skip to next iteration of the loop
+      }
+      proposal_tree=grow_tree_bcf(x_moderate_a,//resids,
+                                  tree_mat_tau_c,terminal_nodes[l],
+                                                               tree_table_tau_c,split_var,split_point,//terminal_nodes,
+                                                               wrap(grow_obs),
+                                                               d//,get_min,data_curr_node
+      );	// elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
+      
+      
+      //NumericMatrix test =proposal_tree[0];										// first element is tree table
+      //NumericMatrix test1 =proposal_tree[1];										// second element is tree matrix
+      
+      //if(test1.ncol()==3){														// If tree matrix has 3 columns
+      //  NumericVector u1=unique(test1(_,0));									// set u1 equal to the unique (ordered descending) elements of 1st column of tree matrix
+      //  NumericVector u2=unique(test1(_,1));									// set u2 equal to the unique (ordered descending) elements of 2nd column of tree matrix
+      //  NumericVector u3=unique(test1(_,2));									// set u3 equal to the unique (ordered descending) elements of 3rd column of tree matrix
+      //}
+      
+      
+      
+      // if(first_round==1){	
+      //   throw std::range_error("get_best_split_sum_tau_bcf should not be used in the first round");	// throw an error.
+      //   // If input value first_round equals 1 (number one)
+      //   //lik=likelihood_function_bcf(resids,proposal_tree[0],proposal_tree[1],a,mu,nu,lambda);	// set lik equal to tree likelihood defined on line 201.
+      //   
+      // }else{
+      SEXP s_mu = prev_sum_trees_mu[parent2[i]];									// s is a pointer to S expression type equal to the element of the sumtrees input list indexed by the i^th element of the input Integer vetor parent2. i is also an input integer.
+      SEXP s_tau = prev_sum_trees_tau[parent2[i]];									// s is a pointer to S expression type equal to the element of the sumtrees input list indexed by the i^th element of the input Integer vetor parent2. i is also an input integer.
+      if(is<List>(s_mu)){												// is s is a list
+        if(is<List>(s_tau)){												// is s is a list
+          //Rcout << "\n RELEVANT LINE 1703.\n";
+          
+          List prev_sum_trees_mu2=prev_sum_trees_mu[parent2[i]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+          List prev_sum_trees_mat_mu2=prev_sum_trees_mat_mu[parent2[i]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          List sum_trees_tau2=prev_sum_trees_tau[parent2[i]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+          List sum_trees_mat_tau2=prev_sum_trees_mat_tau[parent2[i]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          //Rcout << "Length of prev_sum_trees_tau = " << prev_sum_trees_tau.size() <<".\n";
+          
+          //Rcout << "Length of mu mat list = " << prev_sum_trees_mat_mu2.size() <<".\n";
+          //Rcout << "Length of tau mat list = " << sum_trees_mat_tau2.size() <<".\n";
+          
+          //NumericMatrix testexamplemat5 = prev_sum_trees_mat_mu2[0];
+          //Rcout << "number of rows of mat into likelihood = " << testexamplemat5.nrow() <<".\n";
+          
+          sum_trees_tau2.push_back(proposal_tree[0]);						// append the treetable proposal_tree[0] to the end of the list sum_trees2
+          sum_trees_mat_tau2.push_back(proposal_tree[1]);	
+          //NumericMatrix prop_table_tau_temp = proposal_tree[0];						// append the treetable proposal_tree[0] to the end of the list sum_trees2
+          //NumericMatrix prop_mat_tau_temp =proposal_tree[1];					// append the tree matreix proposal_tree[1] to the end of the list sum_trees_mat2
+          lik=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2,sum_trees_tau2,prev_sum_trees_mat_mu2,sum_trees_mat_tau2,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+          //????????????????? check over this
+          // This can all probably be made more efficient by taking account of the fact that there should be just one mu tree
+          for(int t=0;t<prev_sum_trees_mu2.size();t++){							// for-loop of length equal to that of sum_trees2
+            NumericMatrix tree=prev_sum_trees_mu2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
+            NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+            //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+            //if(tree.ncol()<5) throw std::range_error("Line 1660");
+            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          }
+          for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
+            NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+            //other_int_nodes_tau = find_term_nodes_bcf(tree);
+            //p_other_tau+=other_int_nodes_tau.size();
+            NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+            //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+            //if(tree.ncol()<5) throw std::range_error("Line 1667");
+            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          }
+          
+        }else{
+          List prev_sum_trees_mu2=prev_sum_trees_mu[parent2[i]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+          List prev_sum_trees_mat_mu2=prev_sum_trees_mat_mu[parent2[i]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          NumericMatrix sum_trees_tau2=prev_sum_trees_tau[parent2[i]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+          NumericMatrix sum_trees_mat_tau2=prev_sum_trees_mat_tau[parent2[i]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          List st_tau(2);													// create list, st, of length 2.
+          List st_mat_tau(2);												// create lisr, st_mat of length 2.
+          st_tau[0]=sum_trees_tau2;												// let the first elemetn of st be sum_trees2.
+          st_tau[1]=proposal_tree[0];										// let the second element of st be proposal_tree[0] (tree table).
+          st_mat_tau[0]=sum_trees_mat_tau2;										// let the first element of st_mat be sum_trees_mat2.
+          st_mat_tau[1]=proposal_tree[1];		
+          lik=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2,st_tau,prev_sum_trees_mat_mu2,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+          //????????????????? check over this
+          // This can all probably be made more efficient by taking account of the fact that there should be just one mu tree
+          for(int t=0;t<prev_sum_trees_mu2.size();t++){							// for-loop of length equal to that of sum_trees2
+            NumericMatrix tree=prev_sum_trees_mu2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
+            NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+            //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+            //if(tree.ncol()<5) throw std::range_error("Line 1689");
+            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          }
+          for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
+            NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+            //other_int_nodes_tau = find_term_nodes_bcf(tree);
+            //p_other_tau+=other_int_nodes_tau.size();
+            NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+            //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+            //if(tree.ncol()<5) throw std::range_error("Line 1695");
+            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          }
+        }
+        
+      }else{															// if s is not a list
+        if(is<List>(s_tau)){												// is s is a list
+          
+          NumericMatrix prev_sum_trees_mu2=prev_sum_trees_mu[parent2[i]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
+          NumericMatrix prev_sum_trees_mat_mu2=prev_sum_trees_mat_mu[parent2[i]];		// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          List st_mu(1);													// create list, st, of length 2.
+          List st_mat_mu(1);												// create lisr, st_mat of length 2.
+          st_mu[0]=prev_sum_trees_mu2;												// let the first elemetn of st be sum_trees2.
+          st_mat_mu[0]=prev_sum_trees_mat_mu2;										// let the first element of st_mat be sum_trees_mat2.
+          // return(st);
+          List sum_trees_tau2=prev_sum_trees_tau[parent2[i]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+          List sum_trees_mat_tau2=prev_sum_trees_mat_tau[parent2[i]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          
+          sum_trees_tau2.push_back(proposal_tree[0]);						// append the treetable proposal_tree[0] to the end of the list sum_trees2
+          sum_trees_mat_tau2.push_back(proposal_tree[1]);	
+          //NumericMatrix prop_table_tau_temp = proposal_tree[0];						// append the treetable proposal_tree[0] to the end of the list sum_trees2
+          //NumericMatrix prop_mat_tau_temp =proposal_tree[1];					// append the tree matreix proposal_tree[1] to the end of the list sum_trees_mat2
+          lik=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,sum_trees_tau2,st_mat_mu,sum_trees_mat_tau2,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+          for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
+            NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
+            NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
+            //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+            //if(tree.ncol()<5) throw std::range_error("Line 1723");
+            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          }
+          for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
+            NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+            //other_int_nodes_tau = find_term_nodes_bcf(tree);
+            //p_other_tau+=other_int_nodes_tau.size();
+            NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+            //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+            //if(tree.ncol()<5) throw std::range_error("Line 1730");
+            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          }
+        }else{
+          NumericMatrix prev_sum_trees_mu2=prev_sum_trees_mu[parent2[i]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
+          NumericMatrix prev_sum_trees_mat_mu2=prev_sum_trees_mat_mu[parent2[i]];		// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          List st_mu(1);													// create list, st, of length 2.
+          List st_mat_mu(1);												// create lisr, st_mat of length 2.
+          st_mu[0]=prev_sum_trees_mu2;												// let the first elemetn of st be sum_trees2.
+          st_mat_mu[0]=prev_sum_trees_mat_mu2;										// let the first element of st_mat be sum_trees_mat2.
+          NumericMatrix sum_trees_tau2=prev_sum_trees_tau[parent2[i]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+          NumericMatrix sum_trees_mat_tau2=prev_sum_trees_mat_tau[parent2[i]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          List st_tau(2);													// create list, st, of length 2.
+          List st_mat_tau(2);												// create lisr, st_mat of length 2.
+          st_tau[0]=sum_trees_tau2;												// let the first elemetn of st be sum_trees2.
+          st_tau[1]=proposal_tree[0];										// let the second element of st be proposal_tree[0] (tree table).
+          st_mat_tau[0]=sum_trees_mat_tau2;										// let the first element of st_mat be sum_trees_mat2.
+          st_mat_tau[1]=proposal_tree[1];		
+          lik=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+          for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
+            NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
+            NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
+            //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+            //if(tree.ncol()<5) throw std::range_error("Line 1753");
+            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          }
+          for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
+            NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+            //other_int_nodes_tau = find_term_nodes_bcf(tree);
+            //p_other_tau+=other_int_nodes_tau.size();
+            NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+            //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+            //if(tree.ncol()<5) throw std::range_error("Line 1760");
+            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          }
+        }
+      }  
+      //}
+      //at the moment tree prior is only for current tree need to get it for entire sum of tree list.
+      
+      //int_nodes=find_term_nodes_bcf(proposal_tree[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
+      //p=int_nodes.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
+      //BIC=-2*(lik+log(tree_prior))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      BIC=-2*(lik+log(tree_prior));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      
       //BIC=-2*(lik)+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
       // Rcout << "p_other_mu+p_other_tau=" << p_other_mu+p_other_tau << ".\n";
       // Rcout << "lik=" << lik << ".\n";
@@ -2988,6 +4229,416 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
             }
           }
         }  
+      //} function not used in first round
+      
+      //at the moment tree prior is only for current tree need to get it for entire sum of tree list.
+      
+      //int_nodes=find_term_nodes_bcf(proposal_tree[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
+      //p=int_nodes.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
+      //BIC=-2*(lik+log(tree_prior))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      BIC=-2*(lik+log(tree_prior));			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      //BIC=-2*(lik)+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
+      // Rcout << "p_other_mu+p_other_tau=" << p_other_mu+p_other_tau << ".\n";
+      // Rcout << "lik=" << lik << ".\n";
+      // Rcout << "BIC=" << BIC << ".\n";
+      // Rcout << "lowest_BIC=" << lowest_BIC << ".\n";
+      // Rcout << "LINE 2247 tree_prior=" << tree_prior << ".\n";
+      
+      if(BIC<lowest_BIC){											// if statement for updating lowest BIC...etc.
+        lowest_BIC=BIC;											// update (input variable) lowest_BIC
+        //best_sv=split_var;										// set a value for, or update best_sv
+        //best_sp=split_point;									// set a value for, or update split_point
+        //likeliest_tree=proposal_tree;							// set a value for, or update likeliest_tree
+        tree_list[count]=proposal_tree[0];						// add an element to the list of tree tables
+        tree_mat_list[count]=proposal_tree[1];					// add an element to the list of tree matrices
+        tree_lik[count]=BIC;									// add an element to the vector of tree liklihoods (BICs)
+        //tree_parent[count]=parent;								// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+        count++;												// increase the count
+        if(count==(tree_list.size()-1)){						// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
+          list_size=list_size*2;									// multiply list size by 2
+          tree_list=resize_bigger_bcf(tree_list,list_size);			// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
+          tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);	// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
+          tree_lik.resize(list_size);								// increase tree_lik to twice its previous size
+          //tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
+        }
+      }else{
+        if((BIC)-(lowest_BIC)<=c){										// If in Occam's window (but not the new minimum BIC)
+          if(is<NumericMatrix>(proposal_tree[0])){					// If proposal_tree[0] is a Numeric Matrix, do nothing
+            //std::cout<<"its a matrix "<<"\n";						// if this is used, it should say "it's a matrix".
+          }else{														// If proposal_tree[0] is NOT a NumericMatrix
+            throw std::range_error("proposal tree not a matrix");	// Then throw an error
+          }
+          tree_list[count]=proposal_tree[0];							// add an element to the list of tree tables
+          tree_mat_list[count]=proposal_tree[1];						// add an element to the list of tree matrices
+          tree_lik[count]=BIC;										// add an element to the vector of tree liklihoods (BICs)
+          //tree_parent[count]=parent;									// add an element to the vector tree_parent. NOTE: All elements will be equal to the input value of parent which is not changed in this function.
+          count++;													// increase the count
+          if(count==(tree_list.size()-1)){							// Increase list size if the length of the various lists and vectors were not set to be long enough (i.e. 1000 was too small)
+            list_size=list_size*2;									// multiply list size by 2
+            tree_list=resize_bigger_bcf(tree_list,list_size);			// increase tree_list to twice its previous size. resize_bigger_bcf defined on line 776
+            tree_mat_list=resize_bigger_bcf(tree_mat_list,list_size);	// increase tree_mat_list to twice its previous size. resize_bigger_bcf defined on line 776
+            tree_lik.resize(list_size);								// increase tree_lik to twice its previous size
+            //tree_parent.resize(list_size);							// increase tree_parent to twice its previous size
+          }
+        }
+      }
+    }  
+  }
+  // Rcout << "get to line 2638.\n";
+  
+  tree_list=resize_bcf(tree_list,count);								// remove the values in tree_list that aren't filled in
+  tree_mat_list=resize_bcf(tree_mat_list,count);						// remove the values in tree_mat_list that aren't filled in
+  tree_lik.resize(count);											// remove the values in tree_lik that aren't filled in
+  //tree_parent.resize(count);										// remove the values in tree_parent that aren't filled in
+  IntegerVector tree_parent(count, parent);
+  
+  if(count>0){													// If these lists are nonempty
+    //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+    NumericVector testlik =eval_model[0];						// testlik is tree_lik after removing models outside Occam's window
+    List testtree =eval_model[1];    							// testtree is tree_list after removing models outside Occam's window
+    List testmat =eval_model[2]; 								// testmat is tree_mat_list after removing models outside Occam's window
+    IntegerVector testpar =eval_model[3];						// testpar is tree_parent after removing models outside Occam's window
+    
+    if(testlik.size()>0){										// If a nonzero number of models remain in Occam's window
+      //check if number of trees to be returned is greater than maxOWsize if so only return the best maxOWsize models
+      if(testlik.size()>maxOWsize){							// maxOWsize is an input variable
+        IntegerVector owindices=orderforOW__bcf(testlik);			// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on.
+        owindices=owindices-1;								// Presumably the match function in orderforOW__bcf gives indices beginning at 1, and therefore 1 must be taken away from all index values.
+        //get the top maxOWsize indices to keep in OW
+        NumericVector temp_olik(maxOWsize);					// create vector temp_olik of size maxOWsize
+        List temp_otrees(maxOWsize);						// create List temp_otrees of size maxOWsize
+        List temp_omat(maxOWsize);							// create List temp_omat of size maxOWsize
+        IntegerVector temp_oparent(maxOWsize);				// create IntegerVector temp_oparent of size maxOWsize
+        for(int t=0;t<maxOWsize;t++){						// loop of length maxOWsize
+          temp_olik[t]=testlik[owindices[t]];				// temp_olik is maxOWsize largest BIC elements of testlik ordered by BIC (descending?)
+          temp_otrees[t]=testtree[owindices[t]];			// temp_otrees is maxOWsize largest BIC elements of testtree ordered by BIC (descending?)
+          temp_omat[t]=testmat[owindices[t]];				// temp_omat is maxOWsize largest BIC elements of testmat ordered by BIC (descending?)
+          temp_oparent[t]=testpar[owindices[t]];			// temp_oparent is maxOWsize largest BIC elements of testpar ordered by BIC (descending?)
+        }
+        testlik=temp_olik;			// reset testlik equal to temp_olik
+        testtree=temp_otrees;		// reset testtree equal to temp_otrees
+        testmat=temp_omat;			// reset testmat equal to temp_omat
+        testpar=temp_oparent;		// reset testpar equal to temp_oparent
+      }
+      // ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      // ret[1]=best_sv;					// second element of output list. Best splitting variable
+      // ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      // ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      // ret[4]=testtree;				// fifth element of output list. List of tree tables
+      // ret[5]=testlik;					// sixth element of output list. List of BICs
+      // ret[6]=testmat;					// seventh element of output list. List of tree matrices
+      // ret[7]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      // ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      
+      //ret[0]=lowest_BIC;				// first element of output list. Lowest BIC
+      //ret[1]=best_sv;					// second element of output list. Best splitting variable
+      //ret[2]=best_sp;					// third element of ouput list. Best splitting point
+      //ret[3]=likeliest_tree;			// fourth element of output list. List containing treee table and tree matrix of lowest BIC tree
+      ret[0]=testtree;				// fifth element of output list. List of tree tables
+      ret[1]=testlik;					// sixth element of output list. List of BICs
+      ret[2]=testmat;					// seventh element of output list. List of tree matrices
+      ret[3]=testpar;					// eighth element of output list. Vector with all elements equal to the input value of parent?
+      //ret[8]=no_tree_err;				// ninth element of output list. Boolean equal to false
+      
+      
+      
+      return (ret);					// return the list ret
+    }else{
+      //if no trees are found within Occam's window function will return an error to main
+      no_tree_err=1;					// Boolean equal to true.
+      List gr(1);						// Create a list, gr, of length one.
+      gr[0]=no_tree_err;				// First element of gr is the Boolean no_tree_err.
+      return(gr);						// Return the list gr.
+    }
+  }else{
+    no_tree_err=1;						// Boolean equal to true.
+    List gr(1);							// Create a list, gr, of length one.
+    gr[0]=no_tree_err;					// First element of gr is the Boolean no_tree_err.
+    return(gr);							// Return the list gr.
+  }
+}
+//######################################################################################################################//
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+
+List get_best_split_sum_mu_update_bcf(NumericVector resids,arma::mat& x_control_a,NumericMatrix tree_table_mu,NumericMatrix tree_mat_mu,
+                               double a_mu,double a_tau,double mu_mu,double mu_tau,double nu,double lambda,double c,
+                               double lowest_BIC,int parent,List cp_matlist,
+                               double alpha_mu,double beta_mu,double alpha_tau,double beta_tau,
+                               int maxOWsize,//int first_round,
+                               List prev_sum_trees_mu,List prev_sum_trees_tau,List prev_sum_trees_mat_mu,List prev_sum_trees_mat_tau,
+                               NumericVector y_scaled,IntegerVector parent2,int i,NumericVector z,
+                               unsigned int min_num_obs_for_mu_split, unsigned int min_num_obs_after_mu_split){
+  //this function will search through all predictive split points and return those within Occam's Window.
+  List example_tree_tab = prev_sum_trees_mu[parent2[i]];
+  List example_tree_mat = prev_sum_trees_mu[parent2[i]];
+  
+  // Rcout << "Length of input tree table list used within best split sum = " << example_tree_tab.size() << ".\n";
+  // Rcout << "Length of input tree mat list used within best split sum= " << example_tree_mat.size() << ".\n";
+  int split_var;																// create an integer split_var. Not initialized
+  NumericMatrix tree_table_mu_c=tree_table_mu;										// create a matrix treetable_c equal to the input matrix.
+  NumericMatrix tree_mat_mu_c=tree_mat_mu;											// create a matric tree_mat_mu_c equal to the input matrix.
+  
+  NumericVector terminal_nodes=find_term_nodes_bcf(tree_table_mu_c);					// find term nodes function defined line 168. Gives index of values of treetable_c that are term nodes (indices from 1 to length of vector). Why not integer vector?
+  //IntegerVector change_node1;													// create an IntegerVector. Initially all values are 0, but size not given.
+  int list_size=1000;															// create a list of size 1000. Why 1000.
+  std::vector<double> tree_lik(list_size);									// create a vector of size 1000
+  List proposal_tree;															// create an empty list
+  List ret(4);																// create a list with 9 elements
+  bool no_tree_err=0;															// create a boolean initialized equal to 0 (false).
+  //List likeliest_tree;														// create an empty list
+  List tree_list(list_size);													// create a list of size 1000
+  List tree_mat_list(list_size);												// create a list of size 1000
+  int count=0;																// create an integer variable, initialized equal to 0.
+  //std::vector<int> tree_parent(list_size);									// create an integer vector of size 1000
+  //int best_sv;																// create an integer vector. Not initialized.
+  //double best_sp;																// create a double variable
+  double tree_prior=1;														// create a double avriable, initialized equal to 0.
+  //List changetree;															// create an empty list.
+  double BIC;																	// create a double variable. Not initialized.
+  //int p;																		// create an integer variable. Not initialized.
+  //int p_other_mu=0;
+  //int p_other_tau=0;
+  List eval_model;															// create an empty list.
+  //NumericVector int_nodes;													// create a NumericVector. Initially all values are 0, but size not given.
+  //NumericVector other_int_nodes_mu;
+  //NumericVector other_int_nodes_tau;
+  //arma::colvec curr_col=x_control_a.col(0);											// let curr_col be an arma colvec equal to the first column of the inut arma mat x_control_a.
+  //arma::uvec grow_obs=find_term_obs_bcf(tree_mat_mu_c,terminal_nodes[0]);				// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[0] (for leftmost column of tree_mat_mu_c that has elements equal to terminal_nodes[0]).
+  //NumericVector d1=unique(find_term_cols_bcf(tree_mat_mu_c,terminal_nodes[0]));		// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[0]. Unique funtion removes duplicated of columns. Unique also sorts descending. Why not IntegerVector
+  //arma::mat data_curr_node=x_control_a.rows(grow_obs);					// matrix consisting of first grow_obs rows of x_control_a.
+  //double d=d1[0];																// index of rightmost column of tree_mat_mu_c with at least one element equal to terminal_nodes[0]
+  //NumericVector get_min=get_grow_obs_bcf(x_control_a,wrap(grow_obs),cp_mat(0,0)+1);		// obtain the elements of the cp_mat(0,0)+1^th column of x_control_a that are indexed by grow_obs
+  double lik;																	// create a variable called lik. Not initialized.
+  // Rcout << "get to line 2383.\n";
+  for(int l=0;l<terminal_nodes.size();l++){										//	vector of length equal to that of terminal_nodes
+    NumericMatrix cp_mat=cp_matlist[l];
+    // Rcout << "get to line 2383. l= " << l << ". \n";
+    
+    //loop over each terminal node
+    arma::uvec grow_obs=find_term_obs_bcf(tree_mat_mu_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_mu_c that has elements equal to terminal_nodes[l] (letter l)).
+    //depth of tree at current terminal node
+    //NumericVector d1=unique(find_term_cols_bcf(tree_mat_mu_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
+    arma::mat data_curr_node=x_control_a.rows(grow_obs);								// matrix consisting of first grow_obs rows of x_control_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
+    //double d=d1[0];																	// index of rightmost column of tree_mat_mu_c with at least one element equal to terminal_nodes[l] (letter l)
+    
+    int d = find_term_cols_bcf(tree_mat_mu_c,terminal_nodes[l]);
+    
+    int w=cp_mat.nrow();														// w is number of rows of cp_mat
+    if(data_curr_node.n_rows<=min_num_obs_for_mu_split){												// if data_curr_node has 2 rows or less.
+      throw std::range_error("not enough obs in node to grow any further");	// throw an error message. Not enough observations.
+      //continue;
+    }
+    // Rcout << "get to line 2398. l= " << l << ". \n";
+    
+    for(int k=0;k<w;k++){														// loop of length w, the number of rows of cp_mat
+      // Rcout << "get to line 2401. l= " << l << ". k= " << k << ". \n";
+      
+      //p_other_mu=0;
+      //p_other_tau=0;
+      split_var=cp_mat(k,0)+1;												// split_var is k+1^th row, 1st column of cp_mat +1
+      //arma::colvec curr_cols=x_control_a.col(split_var-1);							// curr_cols is the split_var^th column of x_control_a
+      //NumericVector get_min=get_grow_obs_bcf(x_control_a,wrap(grow_obs),split_var);					// obtain the elements of the split_var^th column of x_control_a that are indexed by grow_obs 
+      
+      //Removing unnecessary lines
+      //if(get_min.size()<=2){													// If get_min has 2 or less observations. (too few variables to split on?)
+      //  throw std::range_error("obs in this terminal node are too small");
+      //}
+      
+      double split_point=cp_mat(k,1);											// variable split_point equals element in k+1^th row 2nd column of cp_mat
+      arma::vec curr_cols2=data_curr_node.col(split_var-1);					// curr_cols2 is split_var^th column of data_curr_node
+      
+      arma::vec ld_prop=curr_cols2.elem(arma::find(curr_cols2 <= split_point));	// ld_prop is elements of curr_cols2 <= split_point
+      arma::vec rd_prop=curr_cols2.elem(arma::find(curr_cols2> split_point));		// rd_prop is elements of curr_cols2 > split_point
+      
+      if(ld_prop.size()<=min_num_obs_after_mu_split || rd_prop.size()<=min_num_obs_after_mu_split){									// if 2 or less observations in either ld_prop or rd_prop
+        continue;																// skip to next iteration of the loop
+      }
+      proposal_tree=grow_tree_bcf(x_control_a,//resids,
+                                  tree_mat_mu_c,terminal_nodes[l],
+                                                              tree_table_mu_c,split_var,split_point,//terminal_nodes,
+                                                              wrap(grow_obs),
+                                                              d//,get_min,data_curr_node
+      );	// elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
+      
+      
+      
+      //NumericMatrix test =proposal_tree[0];										// first element is tree table
+      //NumericMatrix test1 =proposal_tree[1];										// second element is tree matrix
+      
+      //if(test1.ncol()==3){														// If tree matrix has 3 columns
+      //  NumericVector u1=unique(test1(_,0));									// set u1 equal to the unique (ordered descending) elements of 1st column of tree matrix
+      //  NumericVector u2=unique(test1(_,1));									// set u2 equal to the unique (ordered descending) elements of 2nd column of tree matrix
+      //  NumericVector u3=unique(test1(_,2));									// set u3 equal to the unique (ordered descending) elements of 3rd column of tree matrix
+      //}
+      
+      // Rcout << "get to line 2431. l= " << l << ". k= " << k << ". \n";
+      
+      //if(first_round==1){	
+      //  throw std::range_error("get_best_split_sum_tau_bcf should not be used in the first round");	// throw an error.
+      // If input value first_round equals 1 (number one)
+      //lik=likelihood_function_bcf(resids,proposal_tree[0],proposal_tree[1],a,mu,nu,lambda);	// set lik equal to tree likelihood defined on line 201.
+      
+      //}else{
+      
+      SEXP s_mu = prev_sum_trees_mu[parent2[i]];									// s is a pointer to S expression type equal to the element of the sumtrees input list indexed by the i^th element of the input Integer vetor parent2. i is also an input integer.
+      SEXP s_tau = prev_sum_trees_tau[parent2[i]];									// s is a pointer to S expression type equal to the element of the sumtrees input list indexed by the i^th element of the input Integer vetor parent2. i is also an input integer.
+      
+      if(is<List>(s_mu)){												// is s is a list
+        if(is<List>(s_tau)){												// is s is a list
+          //Rcout << "RELEVANT LINE 2027.\n";
+          // Rcout << "get to line 2446. l= " << l << ". k= " << k << ". \n";
+          
+          List prev_sum_trees_mu2=prev_sum_trees_mu[parent2[i]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+          List prev_sum_trees_mat_mu2=prev_sum_trees_mat_mu[parent2[i]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          List sum_trees_tau2=prev_sum_trees_tau[parent2[i]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+          List sum_trees_mat_tau2=prev_sum_trees_mat_tau[parent2[i]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          
+          prev_sum_trees_mu2.push_back(proposal_tree[0]);						// append the treetable proposal_tree[0] to the end of the list sum_trees2
+          prev_sum_trees_mat_mu2.push_back(proposal_tree[1]);	
+          //NumericMatrix prop_table_tau_temp = proposal_tree[0];						// append the treetable proposal_tree[0] to the end of the list sum_trees2
+          //NumericMatrix prop_mat_tau_temp =proposal_tree[1];					// append the tree matreix proposal_tree[1] to the end of the list sum_trees_mat2
+          lik=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2,sum_trees_tau2,prev_sum_trees_mat_mu2,sum_trees_mat_tau2,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+          //????????????????? check over this
+          // This can all probably be made more efficient by taking account of the fact that there should be just one mu tree
+          // Rcout << "get to line 2460. l= " << l << ". k= " << k << ". \n";
+          
+          for(int t=0;t<prev_sum_trees_mu2.size();t++){							// for-loop of length equal to that of sum_trees2
+            NumericMatrix tree=prev_sum_trees_mu2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
+            NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+            //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+            //if(tree.ncol()<5) throw std::range_error("Line 1977");
+            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          }
+          for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
+            NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+            //other_int_nodes_tau = find_term_nodes_bcf(tree);
+            //p_other_tau+=other_int_nodes_tau.size();
+            NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+            //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+            //if(tree.ncol()<5) throw std::range_error("Line 1984");
+            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          }
+          // Rcout << "get to line 2480. l= " << l << ". k= " << k << ". \n";
+          
+        }else{
+          //Rcout << "\n RELEVANT LINE 2057.\n";
+          
+          List prev_sum_trees_mu2=prev_sum_trees_mu[parent2[i]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+          List prev_sum_trees_mat_mu2=prev_sum_trees_mat_mu[parent2[i]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          prev_sum_trees_mu2.push_back(proposal_tree[0]);						// append the treetable proposal_tree[0] to the end of the list sum_trees2
+          prev_sum_trees_mat_mu2.push_back(proposal_tree[1]);	
+          NumericMatrix sum_trees_tau2=prev_sum_trees_tau[parent2[i]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+          NumericMatrix sum_trees_mat_tau2=prev_sum_trees_mat_tau[parent2[i]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          List st_tau(1);													// create list, st, of length 2.
+          List st_mat_tau(1);												// create lisr, st_mat of length 2.
+          st_tau[0]=sum_trees_tau2;												// let the first elemetn of st be sum_trees2.
+          st_mat_tau[0]=sum_trees_mat_tau2;										// let the first element of st_mat be sum_trees_mat2.
+          //Rcout << "After Line 2047.\n";
+          //Rcout << "Size of tree table list before sumlik = " << prev_sum_trees_mu2.size() <<" \n";
+          //Rcout << "Size of tree mat list before sumlik = " << prev_sum_trees_mat_mu2.size() <<" \n";
+          lik=sumtree_likelihood_function_bcf_bcf(y_scaled,prev_sum_trees_mu2,st_tau,prev_sum_trees_mat_mu2,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+          
+          //????????????????? check over this
+          // This can all probably be made more efficient by taking account of the fact that there should be just one mu tree
+          for(int t=0;t<prev_sum_trees_mu2.size();t++){							// for-loop of length equal to that of sum_trees2
+            NumericMatrix tree=prev_sum_trees_mu2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
+            NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+            //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+            //if(tree.ncol()<5) throw std::range_error("Line 2006");
+            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          }
+          for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
+            NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+            //other_int_nodes_tau = find_term_nodes_bcf(tree);
+            //p_other_tau+=other_int_nodes_tau.size();
+            NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+            //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+            //if(tree.ncol()<5) throw std::range_error("Line 2013");
+            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          }
+        }
+        
+      }else{															// if s is not a list
+        if(is<List>(s_tau)){												// is s is a list
+          //Rcout << "RELEVANT LINE 2093.\n";
+          
+          NumericMatrix prev_sum_trees_mu2=prev_sum_trees_mu[parent2[i]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
+          NumericMatrix prev_sum_trees_mat_mu2=prev_sum_trees_mat_mu[parent2[i]];		// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          List st_mu(2);													// create list, st, of length 2.
+          List st_mat_mu(2);												// create lisr, st_mat of length 2.
+          st_mu[0]=prev_sum_trees_mu2;												// let the first elemetn of st be sum_trees2.
+          st_mu[1]=proposal_tree[0];												// let the first elemetn of st be sum_trees2.
+          st_mat_mu[0]=prev_sum_trees_mat_mu2;										// let the first element of st_mat be sum_trees_mat2.
+          st_mat_mu[1]=proposal_tree[1];										// let the first element of st_mat be sum_trees_mat2.
+          // return(st);
+          List sum_trees_tau2=prev_sum_trees_tau[parent2[i]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+          List sum_trees_mat_tau2=prev_sum_trees_mat_tau[parent2[i]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          
+          //NumericMatrix prop_table_tau_temp = proposal_tree[0];						// append the treetable proposal_tree[0] to the end of the list sum_trees2
+          //NumericMatrix prop_mat_tau_temp =proposal_tree[1];					// append the tree matreix proposal_tree[1] to the end of the list sum_trees_mat2
+          lik=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,sum_trees_tau2,st_mat_mu,sum_trees_mat_tau2,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+          for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
+            NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
+            NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
+            //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+            //if(tree.ncol()<5) throw std::range_error("Line 2040");
+            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          }
+          for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
+            NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+            //other_int_nodes_tau = find_term_nodes_bcf(tree);
+            //p_other_tau+=other_int_nodes_tau.size();
+            NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+            //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+            //if(tree.ncol()<5) throw std::range_error("Line 2047");
+            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          }
+        }else{
+          //Rcout << "RELEVANT LINE 2124.\n";
+          
+          NumericMatrix prev_sum_trees_mu2=prev_sum_trees_mu[parent2[i]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
+          NumericMatrix prev_sum_trees_mat_mu2=prev_sum_trees_mat_mu[parent2[i]];		// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          List st_mu(2);													// create list, st, of length 2.
+          List st_mat_mu(2);												// create lisr, st_mat of length 2.
+          st_mu[0]=prev_sum_trees_mu2;												// let the first elemetn of st be sum_trees2.
+          st_mu[1]=proposal_tree[0];										// let the second element of st be proposal_tree[0] (tree table).
+          st_mat_mu[0]=prev_sum_trees_mat_mu2;										// let the first element of st_mat be sum_trees_mat2.
+          st_mat_mu[1]=proposal_tree[1];		
+          NumericMatrix sum_trees_tau2=prev_sum_trees_tau[parent2[i]];						// sum_trees2 is the element of the input list sum_trees indexed by parent2[i]
+          NumericMatrix sum_trees_mat_tau2=prev_sum_trees_mat_tau[parent2[i]];				// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
+          List st_tau(1);													// create list, st, of length 2.
+          List st_mat_tau(1);												// create lisr, st_mat of length 2.
+          st_tau[0]=sum_trees_tau2;												// let the first elemetn of st be sum_trees2.
+          st_mat_tau[0]=sum_trees_mat_tau2;										// let the first element of st_mat be sum_trees_mat2.
+          lik=sumtree_likelihood_function_bcf_bcf(y_scaled,st_mu,st_tau,st_mat_mu,st_mat_tau,y_scaled.size(),a_mu,a_tau,nu,lambda,z);  // Defined on line 855. Returns the lof marginal likelihood
+          for(int t=0;t<st_mu.size();t++){									// for-loop of length equal to that of st (which should be length 2)
+            NumericMatrix tree=st_mu[t];									// let tree equal (t+1)^th element of st
+            //other_int_nodes_mu = find_term_nodes_bcf(tree);
+            //p_other_mu+=other_int_nodes_mu.size();
+            NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
+            //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+            //if(tree.ncol()<5) throw std::range_error("Line 2070");
+            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          }
+          for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
+            NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
+            //other_int_nodes_tau = find_term_nodes_bcf(tree);
+            //p_other_tau+=other_int_nodes_tau.size();
+            NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
+            //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
+            //if(tree.ncol()<5) throw std::range_error("Line 2077");
+            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          }
+        }
+      }  
       //} function not used in first round
       
       //at the moment tree prior is only for current tree need to get it for entire sum of tree list.
@@ -3834,7 +5485,7 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
                                         min_num_obs_for_mu_split, min_num_obs_after_mu_split//,first_round
                                               ); // defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
           }else{
-            best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
+            best_subset=get_best_split_mu_update_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                               a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
                                               parent[0],cp_mat_list[i],
                                                                    alpha_mu,beta_mu,maxOWsize,
@@ -3846,8 +5497,8 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
           best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                             a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
                                             parent[0],cp_mat_list[0],
-                                                                 alpha_mu,beta_mu,maxOWsize,
-                                                                 min_num_obs_for_mu_split, min_num_obs_after_mu_split//,first_round
+                                            alpha_mu,beta_mu,maxOWsize,
+                                            min_num_obs_for_mu_split, min_num_obs_after_mu_split//,first_round
           ); 
         }
         
@@ -3964,7 +5615,14 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
         List updated_curr_preds;									// create list. Length not given.
         NumericVector new_mean;										// create vector. Length not given.
         lowest_BIC=min(overall_lik2);								// update lowest_BIC
-        NumericMatrix curr_resids(resids.nrow(),resids.ncol());		// curr_resids is a matrix with dimensions of input matrix resids
+        
+        
+        
+        //NumericMatrix curr_resids(resids.nrow(),resids.ncol());		// curr_resids is a matrix with dimensions of input matrix resids
+
+        List temp(table_subset_curr_round.size());
+        
+        cp_mat_list=temp;
         
         for(int k=0;k<table_subset_curr_round.size();k++){			// for-loop of length equal to number of models proposed in the current iteration
           NumericVector terminal_nodes;							// create a vector called terminal_nodes.
@@ -3977,38 +5635,63 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
           
           terminal_nodes=find_term_nodes_bcf(table_subset_curr_round[k]);		// find term nodes function defined line 168.  gives index of values of table_subset_curr_round[k] that are term nodes (indices from 1 to length of vector). Why not integer vector?
           updated_curr_preds=update_predictions_bcf(table_subset_curr_round[k],mat_subset_curr_round[k],new_mean,x_control_a.n_rows);		// Defined in line 1313. Returns list. First element is updated tree table (6th column contains new predictions). Second element is vector of updated predictions.
-          NumericVector test_res;									// create vector called test_res. Length not given.
           
+          NumericVector test_res;									// create vector called test_res. Length not given.
+
           if(parent_curr_round[k]==-1){							// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
             test_res=resids(_,0);								// let test_res equal the first column of resids
-          }else{													// if the k+1^th element of parent_curr_round does not equal -1 
+          }else{													// if the k+1^th element of parent_curr_round does not equal -1
             test_res=resids(_,parent_curr_round[k]);			// let test_res equal the parent_curr_round[k]+1^th column of resids
           }
           
-          NumericVector curr_test_res=updated_curr_preds[1];		// Let curr_test_res be the vector of updated predictions
           
-          if(parent_curr_round[k]==-1){							// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
-            curr_resids(_,0)=test_res-curr_test_res;			// let first column of curr_resids be ?the updated residuals?
-          }else{													// if the k+1^th element of parent_curr_round does not equal -1 (don't know how it could take a different value)
-            curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
-          }
-        }
-        List temp(0);																	// list of length zero.
-        
-        cp_mat_list=temp;																// reset cp_mat_list to be a list of length zero
-        
-        for(int f=0;f<curr_resids.ncol();f++){											// loop of length equal to number of columns of curr_resids (equals number of columns of resids at start of loop).
+          List Tempcpmatlist(terminal_nodes.size());
+          for(int nodeind=0;nodeind<terminal_nodes.size();nodeind++){
+            //Rcout << "Line 3369. j = " << j << ". k = " << k << " . \n";
+            
+            arma::uvec term_obsarma=find_term_obs_bcf(mat_subset_curr_round[k],terminal_nodes[nodeind]);
+            IntegerVector term_obs=wrap(term_obsarma);
+            
+          // 
+          // NumericVector curr_test_res=updated_curr_preds[1];		// Let curr_test_res be the vector of updated predictions
+          // 
+          // if(parent_curr_round[k]==-1){							// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
+          //   curr_resids(_,0)=test_res-curr_test_res;			// let first column of curr_resids be ?the updated residuals?
+          // }else{													// if the k+1^th element of parent_curr_round does not equal -1 (don't know how it could take a different value)
+          //   curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
+          // }
+          
+          
           List cp_mat_list1;															// create a list cp_mat_list1. Length noy given.
+          arma::mat tempdata_subset = x_control_a.rows(term_obsarma);
           if(gridpoint==0){																// If input Boolean gridpoint equals 0 (false). (i.e. indicator is 1 for grid-search , or 0 for PELT)
-            cp_mat_list1=make_pelt_cpmat_mu_bcf(wrap(x_control_a),curr_resids(_,f),pen_mu,num_cp_mu);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+            //cp_mat_list1=make_pelt_cpmat_mu_bcf(wrap(x_control_a),curr_resids(_,f),pen_mu,num_cp_mu);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+            //cp_mat_list1=make_pelt_cpmat_mu_bcf(wrap(x_control_a),test_res,pen_mu,num_cp_mu);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+            cp_mat_list1=make_pelt_cpmat_mu_bcf(wrap(tempdata_subset),test_res[term_obs],pen_mu,num_cp_mu);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
           }else{																			// If gridpoint equals 1 (or non-zero).
-            cp_mat_list1=make_gridpoint_cpmat_mu_bcf(wrap(x_control_a),curr_resids(_,f),gridsize_mu,num_cp_mu);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+            //cp_mat_list1=make_gridpoint_cpmat_mu_bcf(wrap(x_control_a),curr_resids(_,f),gridsize_mu,num_cp_mu);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+            //cp_mat_list1=make_gridpoint_cpmat_mu_bcf(wrap(x_control_a),test_res,gridsize_mu,num_cp_mu);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+            cp_mat_list1=make_gridpoint_cpmat_mu_bcf(wrap(tempdata_subset),test_res[term_obs],gridsize_mu,num_cp_mu);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
           }
           
-          cp_mat_list.push_back(cp_mat_list1[0]);		// Add the first element of cp_mat_list1 to the end of the list cp_mat_list. cp_mat_list1[0] is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points.
+          
+          Tempcpmatlist[nodeind]=cp_mat_list1[0];
+          //Rcout << "Line 3389. j = " << j << ". k = " << k << " . \n";
+          
+        }
+        //Rcout << "Line 3384. j = " << j << ". k = " << k << " . \n";
+        
+        cp_mat_list[k]=Tempcpmatlist;          
+          
+          //cp_mat_list.push_back(cp_mat_list1[0]);	
+          
+          
         }
         
-      }
+        
+        
+        
+      }//end of split rule node ==1
     }
     overall_trees=resize_bcf(overall_trees,overall_count);							// remove remaining spaces that are not filled in
   overall_mat=resize_bcf(overall_mat,overall_count);								// remove remaining spaces that are not filled in
@@ -4132,7 +5815,7 @@ List get_best_trees_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,Nume
                                         min_num_obs_for_mu_split, min_num_obs_after_mu_split//,first_round
                                           ); // defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
         }else{
-          best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
+          best_subset=get_best_split_mu_update_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                             a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
                                             parent[0],cp_mat_list[i],
                                                                  alpha_mu,beta_mu,maxOWsize,
@@ -4262,7 +5945,12 @@ List get_best_trees_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,Nume
       List updated_curr_preds;									// create list. Length not given.
       NumericVector new_mean;										// create vector. Length not given.
       lowest_BIC=min(overall_lik2);								// update lowest_BIC
-      NumericMatrix curr_resids(resids.nrow(),resids.ncol());		// curr_resids is a matrix with dimensions of input matrix resids
+      
+      //NumericMatrix curr_resids(resids.nrow(),resids.ncol());		// curr_resids is a matrix with dimensions of input matrix resids
+      
+      List temp(table_subset_curr_round.size());
+      
+      cp_mat_list=temp;
       
       for(int k=0;k<table_subset_curr_round.size();k++){			// for-loop of length equal to number of models proposed in the current iteration
         NumericVector terminal_nodes;							// create a vector called terminal_nodes.
@@ -4275,36 +5963,52 @@ List get_best_trees_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,Nume
         
         terminal_nodes=find_term_nodes_bcf(table_subset_curr_round[k]);		// find term nodes function defined line 168.  gives index of values of table_subset_curr_round[k] that are term nodes (indices from 1 to length of vector). Why not integer vector?
         updated_curr_preds=update_predictions_bcf(table_subset_curr_round[k],mat_subset_curr_round[k],new_mean,x_control_a.n_rows);		// Defined in line 1313. Returns list. First element is updated tree table (6th column contains new predictions). Second element is vector of updated predictions.
-        NumericVector test_res;									// create vector called test_res. Length not given.
         
+        NumericVector test_res;									// create vector called test_res. Length not given.
+
         if(parent_curr_round[k]==-1){							// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
           test_res=resids(_,0);								// let test_res equal the first column of resids
-        }else{													// if the k+1^th element of parent_curr_round does not equal -1 
+        }else{													// if the k+1^th element of parent_curr_round does not equal -1
           test_res=resids(_,parent_curr_round[k]);			// let test_res equal the parent_curr_round[k]+1^th column of resids
         }
         
-        NumericVector curr_test_res=updated_curr_preds[1];		// Let curr_test_res be the vector of updated predictions
+        List Tempcpmatlist(terminal_nodes.size());
+        for(int nodeind=0;nodeind<terminal_nodes.size();nodeind++){
+          //Rcout << "Line 3369. j = " << j << ". k = " << k << " . \n";
+          
+          arma::uvec term_obsarma=find_term_obs_bcf(mat_subset_curr_round[k],terminal_nodes[nodeind]);
+          IntegerVector term_obs=wrap(term_obsarma);
         
-        if(parent_curr_round[k]==-1){							// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
-          curr_resids(_,0)=test_res-curr_test_res;			// let first column of curr_resids be ?the updated residuals?
-        }else{													// if the k+1^th element of parent_curr_round does not equal -1 (don't know how it could take a different value)
-          curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
-        }
-      }
-      List temp(0);																	// list of length zero.
-      
-      cp_mat_list=temp;																// reset cp_mat_list to be a list of length zero
-      
-      for(int f=0;f<curr_resids.ncol();f++){											// loop of length equal to number of columns of curr_resids (equals number of columns of resids at start of loop).
+        // 
+        // NumericVector curr_test_res=updated_curr_preds[1];		// Let curr_test_res be the vector of updated predictions
+        // 
+        // if(parent_curr_round[k]==-1){							// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
+        //   curr_resids(_,0)=test_res-curr_test_res;			// let first column of curr_resids be ?the updated residuals?
+        // }else{													// if the k+1^th element of parent_curr_round does not equal -1 (don't know how it could take a different value)
+        //   curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
+        // }
+        
         List cp_mat_list1;															// create a list cp_mat_list1. Length noy given.
+        arma::mat tempdata_subset = x_control_a.rows(term_obsarma);
         if(gridpoint==0){																// If input Boolean gridpoint equals 0 (false). (i.e. indicator is 1 for grid-search , or 0 for PELT)
-          cp_mat_list1=make_pelt_cpmat_mu_bcf(wrap(x_control_a),curr_resids(_,f),pen_mu,num_cp_mu);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_pelt_cpmat_mu_bcf(wrap(x_control_a),curr_resids(_,f),pen_mu,num_cp_mu);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_pelt_cpmat_mu_bcf(wrap(x_control_a),test_res,pen_mu,num_cp_mu);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          cp_mat_list1=make_pelt_cpmat_mu_bcf(wrap(tempdata_subset),test_res[term_obs],pen_mu,num_cp_mu);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
         }else{																			// If gridpoint equals 1 (or non-zero).
-          cp_mat_list1=make_gridpoint_cpmat_mu_bcf(wrap(x_control_a),curr_resids(_,f),gridsize_mu,num_cp_mu);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_gridpoint_cpmat_mu_bcf(wrap(x_control_a),curr_resids(_,f),gridsize_mu,num_cp_mu);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_gridpoint_cpmat_mu_bcf(wrap(x_control_a),test_res,gridsize_mu,num_cp_mu);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          cp_mat_list1=make_gridpoint_cpmat_mu_bcf(wrap(tempdata_subset),test_res[term_obs],gridsize_mu,num_cp_mu);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
         }
         
-        cp_mat_list.push_back(cp_mat_list1[0]);		// Add the first element of cp_mat_list1 to the end of the list cp_mat_list. cp_mat_list1[0] is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points.
+        Tempcpmatlist[nodeind]=cp_mat_list1[0];
+        //Rcout << "Line 3389. j = " << j << ". k = " << k << " . \n";
+        
       }
+      //Rcout << "Line 3384. j = " << j << ". k = " << k << " . \n";
+      
+      cp_mat_list[k]=Tempcpmatlist;        
+      }
+      
       
     }
   }
@@ -4740,7 +6444,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
               best_subset=get_best_split_sum_mu_bcf(y_scaled, //resids(_,parent[i]),
                                                     x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                                     a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
-                                                    lowest_BIC,parent[i],cp_mat_list[i],
+                                                    lowest_BIC,parent[i],cp_mat_list[parent[i]],
                                                                                     alpha_mu,beta_mu,alpha_tau,beta_tau,
                                                                                     maxOWsize,//first_round,
                                                                                     prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
@@ -4749,7 +6453,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
               
             }else{
               //new cp_mat list now ordered according to new tree_table_mu. (parent vector not relevant?)
-              best_subset=get_best_split_sum_mu_bcf(y_scaled, //resids(_,parent[i]),
+              best_subset=get_best_split_sum_mu_update_bcf(y_scaled, //resids(_,parent[i]),
                                                     x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                                     a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                     lowest_BIC,parent[i],cp_mat_list[i],
@@ -4913,7 +6617,15 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
       List updated_curr_preds;										// create list. Length not given.
       NumericVector new_mean;											// create vector. Length not given.
       lowest_BIC=min(overall_lik2);									// update lowest_BIC
-      NumericMatrix curr_resids(resids.nrow(),resids.ncol());			// curr_resids is a matrix with dimensions of input matrix resids
+      
+      
+      //NumericMatrix curr_resids(resids.nrow(),resids.ncol());			// curr_resids is a matrix with dimensions of input matrix resids
+      
+      List temp(table_subset_curr_round.size());
+      
+      cp_mat_list=temp;
+      
+      
       // Rcout << "Get to Line 4101 in get_best_trees_sum_mu_bcf.\n";
       for(int k=0;k<table_subset_curr_round.size();k++){				// for-loop of length equal to number of models proposed in the current iteration
         NumericVector terminal_nodes;								// create a vector called terminal_nodes.
@@ -4926,36 +6638,54 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
         // Rcout << "Get to Line 4110 in get_best_trees_sum_mu_bcf.\n";
         terminal_nodes=find_term_nodes_bcf(table_subset_curr_round[k]);			// find term nodes function defined line 168.  gives index of values of table_subset_curr_round[k] that are term nodes (indices from 1 to length of vector). Why not integer vector?
         updated_curr_preds=update_predictions_bcf(table_subset_curr_round[k],mat_subset_curr_round[k],new_mean,x_control_a.n_rows);	// Defined in line 1313. Returns list. First element is updated tree table (6th column contains new predictions). Second element is vector of updated predictions.
-        NumericVector test_res;												// create vector called test_res. Length not given.
         
+        NumericVector test_res;												// create vector called test_res. Length not given.
+
         if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
           test_res=resids(_,0);											// let test_res equal the first column of resids
-        }else{																// if the k+1^th element of parent_curr_round does not equal -1 
+        }else{																// if the k+1^th element of parent_curr_round does not equal -1
           test_res=resids(_,parent_curr_round[k]);						// let test_res equal the parent_curr_round[k]+1^th column of resids
         }
         
-        NumericVector curr_test_res=updated_curr_preds[1];					// Let curr_test_res be the vector of updated predictions
         
-        if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
-          curr_resids(_,0)=test_res-curr_test_res;						// let first column of curr_resids be ?the updated residuals?
-        }else{																// if the k+1^th element of parent_curr_round does not equal -1 (don't know how it could take a different value)
-          curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
-        }
-      }
-      List temp(0);																	// list of length zero.
-      // Rcout << "Get to Line 4130 in get_best_trees_sum_mu_bcf.\n";
-      cp_mat_list=temp;																// reset cp_mat_list to be a list of length zero
-      
-      for(int f=0;f<curr_resids.ncol();f++){											// loop of length equal to number of columns of curr_resids (equals number of columns of resids at start of loop).
+        List Tempcpmatlist(terminal_nodes.size());
+        for(int nodeind=0;nodeind<terminal_nodes.size();nodeind++){
+          //Rcout << "Line 3369. j = " << j << ". k = " << k << " . \n";
+          
+          arma::uvec term_obsarma=find_term_obs_bcf(mat_subset_curr_round[k],terminal_nodes[nodeind]);
+          IntegerVector term_obs=wrap(term_obsarma);
+        
+        // 
+        // NumericVector curr_test_res=updated_curr_preds[1];					// Let curr_test_res be the vector of updated predictions
+        // 
+        // if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
+        //   curr_resids(_,0)=test_res-curr_test_res;						// let first column of curr_resids be ?the updated residuals?
+        // }else{																// if the k+1^th element of parent_curr_round does not equal -1 (don't know how it could take a different value)
+        //   curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
+        // }
+        
+        
         List cp_mat_list1;															// create a list cp_mat_list1. Length noy given.
+        arma::mat tempdata_subset = x_control_a.rows(term_obsarma);
         if(gridpoint==0){																// If input Boolean gridpoint equals 0 (false). (i.e. indicator is 1 for grid-search , or 0 for PELT)
-          cp_mat_list1=make_pelt_cpmat_mu_bcf(wrap(x_control_a),curr_resids(_,f),pen_mu,num_cp_mu);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_pelt_cpmat_mu_bcf(wrap(x_control_a),curr_resids(_,f),pen_mu,num_cp_mu);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_pelt_cpmat_mu_bcf(wrap(x_control_a),test_res,pen_mu,num_cp_mu);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          cp_mat_list1=make_pelt_cpmat_mu_bcf(wrap(tempdata_subset),test_res[term_obs],pen_mu,num_cp_mu);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
         }else{																			// If gridpoint equals 1 (or non-zero).
-          cp_mat_list1=make_gridpoint_cpmat_mu_bcf(wrap(x_control_a),curr_resids(_,f),gridsize_mu,num_cp_mu);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_gridpoint_cpmat_mu_bcf(wrap(x_control_a),curr_resids(_,f),gridsize_mu,num_cp_mu);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_gridpoint_cpmat_mu_bcf(wrap(x_control_a),test_res,gridsize_mu,num_cp_mu);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          cp_mat_list1=make_gridpoint_cpmat_mu_bcf(wrap(tempdata_subset),test_res[term_obs],gridsize_mu,num_cp_mu);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
         }
         
-        cp_mat_list.push_back(cp_mat_list1[0]);											// Add the first element of cp_mat_list1 to the end of the list cp_mat_list. cp_mat_list1[0] is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points.
+        Tempcpmatlist[nodeind]=cp_mat_list1[0];
+        //Rcout << "Line 3389. j = " << j << ". k = " << k << " . \n";
+        
       }
+      //Rcout << "Line 3384. j = " << j << ". k = " << k << " . \n";
+      
+      cp_mat_list[k]=Tempcpmatlist;        
+      }
+      
       
     }
   }
@@ -5394,7 +7124,7 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
               best_subset=get_best_split_sum_mu_bcf(y_scaled, //resids(_,parent[i]),
                                                 x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                                 a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
-                                                lowest_BIC,parent[i],cp_mat_list[i],
+                                                lowest_BIC,parent[i],cp_mat_list[parent[i]],
                                                 alpha_mu,beta_mu,alpha_tau,beta_tau,
                                                 maxOWsize,//first_round,
                                                 prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
@@ -5402,7 +7132,7 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
                                                 min_num_obs_for_mu_split, min_num_obs_after_mu_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
           
             }else{
-              best_subset=get_best_split_sum_mu_bcf(y_scaled, //resids(_,parent[i]),
+              best_subset=get_best_split_sum_mu_update_bcf(y_scaled, //resids(_,parent[i]),
                                                     x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                                     a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                     lowest_BIC,parent[i],cp_mat_list[i],
@@ -5567,7 +7297,14 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
       List updated_curr_preds;										// create list. Length not given.
       NumericVector new_mean;											// create vector. Length not given.
       lowest_BIC=min(overall_lik2);									// update lowest_BIC
-      NumericMatrix curr_resids(resids.nrow(),resids.ncol());			// curr_resids is a matrix with dimensions of input matrix resids
+      //NumericMatrix curr_resids(resids.nrow(),resids.ncol());			// curr_resids is a matrix with dimensions of input matrix resids
+      
+      List temp(table_subset_curr_round.size());
+      
+      cp_mat_list=temp;
+      
+      
+      
       // Rcout << "Get to Line 4101 in get_best_trees_sum_mu_bcf.\n";
       for(int k=0;k<table_subset_curr_round.size();k++){				// for-loop of length equal to number of models proposed in the current iteration
         NumericVector terminal_nodes;								// create a vector called terminal_nodes.
@@ -5580,36 +7317,53 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
         // Rcout << "Get to Line 4110 in get_best_trees_sum_mu_bcf.\n";
         terminal_nodes=find_term_nodes_bcf(table_subset_curr_round[k]);			// find term nodes function defined line 168.  gives index of values of table_subset_curr_round[k] that are term nodes (indices from 1 to length of vector). Why not integer vector?
         updated_curr_preds=update_predictions_bcf(table_subset_curr_round[k],mat_subset_curr_round[k],new_mean,x_control_a.n_rows);	// Defined in line 1313. Returns list. First element is updated tree table (6th column contains new predictions). Second element is vector of updated predictions.
-        NumericVector test_res;												// create vector called test_res. Length not given.
         
+        NumericVector test_res;												// create vector called test_res. Length not given.
+
         if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
           test_res=resids(_,0);											// let test_res equal the first column of resids
-        }else{																// if the k+1^th element of parent_curr_round does not equal -1 
+        }else{																// if the k+1^th element of parent_curr_round does not equal -1
           test_res=resids(_,parent_curr_round[k]);						// let test_res equal the parent_curr_round[k]+1^th column of resids
         }
         
-        NumericVector curr_test_res=updated_curr_preds[1];					// Let curr_test_res be the vector of updated predictions
+        List Tempcpmatlist(terminal_nodes.size());
+        for(int nodeind=0;nodeind<terminal_nodes.size();nodeind++){
+          //Rcout << "Line 3369. j = " << j << ". k = " << k << " . \n";
+          
+          arma::uvec term_obsarma=find_term_obs_bcf(mat_subset_curr_round[k],terminal_nodes[nodeind]);
+          IntegerVector term_obs=wrap(term_obsarma);
+          
+          // 
+          // NumericVector curr_test_res=updated_curr_preds[1];					// Let curr_test_res be the vector of updated predictions
+          // 
+          // if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
+          //   curr_resids(_,0)=test_res-curr_test_res;						// let first column of curr_resids be ?the updated residuals?
+          // }else{																// if the k+1^th element of parent_curr_round does not equal -1 (don't know how it could take a different value)
+          //   curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
+          // }
         
-        if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
-          curr_resids(_,0)=test_res-curr_test_res;						// let first column of curr_resids be ?the updated residuals?
-        }else{																// if the k+1^th element of parent_curr_round does not equal -1 (don't know how it could take a different value)
-          curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
-        }
-      }
-      List temp(0);																	// list of length zero.
-      // Rcout << "Get to Line 4130 in get_best_trees_sum_mu_bcf.\n";
-      cp_mat_list=temp;																// reset cp_mat_list to be a list of length zero
+        
+          List cp_mat_list1;															// create a list cp_mat_list1. Length noy given.
+          arma::mat tempdata_subset = x_control_a.rows(term_obsarma);
+          if(gridpoint==0){																// If input Boolean gridpoint equals 0 (false). (i.e. indicator is 1 for grid-search , or 0 for PELT)
+            //cp_mat_list1=make_pelt_cpmat_mu_bcf(wrap(x_control_a),curr_resids(_,f),pen_mu,num_cp_mu);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+            //cp_mat_list1=make_pelt_cpmat_mu_bcf(wrap(x_control_a),test_res,pen_mu,num_cp_mu);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+            cp_mat_list1=make_pelt_cpmat_mu_bcf(wrap(tempdata_subset),test_res[term_obs],pen_mu,num_cp_mu);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          }else{																			// If gridpoint equals 1 (or non-zero).
+            //cp_mat_list1=make_gridpoint_cpmat_mu_bcf(wrap(x_control_a),curr_resids(_,f),gridsize_mu,num_cp_mu);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+            //cp_mat_list1=make_gridpoint_cpmat_mu_bcf(wrap(x_control_a),test_res,gridsize_mu,num_cp_mu);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+            cp_mat_list1=make_gridpoint_cpmat_mu_bcf(wrap(tempdata_subset),test_res[term_obs],gridsize_mu,num_cp_mu);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          }  
+          
+          Tempcpmatlist[nodeind]=cp_mat_list1[0];
+        //Rcout << "Line 3389. j = " << j << ". k = " << k << " . \n";
       
-      for(int f=0;f<curr_resids.ncol();f++){											// loop of length equal to number of columns of curr_resids (equals number of columns of resids at start of loop).
-        List cp_mat_list1;															// create a list cp_mat_list1. Length noy given.
-        if(gridpoint==0){																// If input Boolean gridpoint equals 0 (false). (i.e. indicator is 1 for grid-search , or 0 for PELT)
-          cp_mat_list1=make_pelt_cpmat_mu_bcf(wrap(x_control_a),curr_resids(_,f),pen_mu,num_cp_mu);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
-        }else{																			// If gridpoint equals 1 (or non-zero).
-          cp_mat_list1=make_gridpoint_cpmat_mu_bcf(wrap(x_control_a),curr_resids(_,f),gridsize_mu,num_cp_mu);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
-        }
-        
-        cp_mat_list.push_back(cp_mat_list1[0]);											// Add the first element of cp_mat_list1 to the end of the list cp_mat_list. cp_mat_list1[0] is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points.
       }
+      //Rcout << "Line 3384. j = " << j << ". k = " << k << " . \n";
+      
+      cp_mat_list[k]=Tempcpmatlist;      
+      }
+      
       
     }
   }
@@ -5743,7 +7497,7 @@ List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numer
                                          z,
                                          min_num_obs_for_tau_split, min_num_obs_after_tau_split); // defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
           }else{
-            best_subset=get_best_split_tau_bcf(resids(_,0),x_moderate_a,
+            best_subset=get_best_split_tau_update_bcf(resids(_,0),x_moderate_a,
                                                tree_table_tau[i],tree_mat_tau[i],
                                                a_mu, a_tau,mu_tau,nu,lambda,
                                                log(c),
@@ -5895,7 +7649,11 @@ List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numer
       List updated_curr_preds;										// create list. Length not given.
       NumericVector new_mean;											// create vector. Length not given.
       lowest_BIC=min(overall_lik2);									// update lowest_BIC
-      NumericMatrix curr_resids(resids.nrow(),resids.ncol());			// curr_resids is a matrix with dimensions of input matrix resids
+      //NumericMatrix curr_resids(resids.nrow(),resids.ncol());			// curr_resids is a matrix with dimensions of input matrix resids
+      
+      List temp(table_subset_curr_round.size());
+      
+      cp_mat_list=temp;
       
       for(int k=0;k<table_subset_curr_round.size();k++){				// for-loop of length equal to number of models proposed in the current iteration
         NumericVector terminal_nodes;								// create a vector called terminal_nodes.
@@ -5914,38 +7672,56 @@ List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numer
         
         terminal_nodes=find_term_nodes_bcf(table_subset_curr_round[k]);			// find term nodes function defined line 168.  gives index of values of table_subset_curr_round[k] that are term nodes (indices from 1 to length of vector). Why not integer vector?
         updated_curr_preds=update_predictions_bcf(table_subset_curr_round[k],mat_subset_curr_round[k],new_mean,x_moderate_a.n_rows);	// Defined in line 1313. Returns list. First element is updated tree table (6th column contains new predictions). Second element is vector of updated predictions.
-        NumericVector test_res;												// create vector called test_res. Length not given.
         
+        NumericVector test_res;												// create vector called test_res. Length not given.
+
         if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
           test_res=resids(_,0);											// let test_res equal the first column of resids
-        }else{																// if the k+1^th element of parent_curr_round does not equal -1 
+        }else{																// if the k+1^th element of parent_curr_round does not equal -1
           test_res=resids(_,parent_curr_round[k]);						// let test_res equal the parent_curr_round[k]+1^th column of resids
         }
-        //Rcout << "Line 4431.\n";
         
-        NumericVector temp_preds = updated_curr_preds[1];
-        NumericVector curr_test_res=z*temp_preds;				//might be unnecessary to multiply by z because will probably subset correctly when this vector is used	// Let curr_test_res be the vector of updated predictions
+        List Tempcpmatlist(terminal_nodes.size());
+        for(int nodeind=0;nodeind<terminal_nodes.size();nodeind++){
+          //Rcout << "Line 3369. j = " << j << ". k = " << k << " . \n";
+          
+          arma::uvec term_obsarma=find_term_obs_bcf(mat_subset_curr_round[k],terminal_nodes[nodeind]);
+          IntegerVector term_obs=wrap(term_obsarma);
+          
+        // //Rcout << "Line 4431.\n";
+        // 
+        // NumericVector temp_preds = updated_curr_preds[1];
+        // NumericVector curr_test_res=z*temp_preds;				//might be unnecessary to multiply by z because will probably subset correctly when this vector is used	// Let curr_test_res be the vector of updated predictions
+        // 
+        // if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
+        //   curr_resids(_,0)=test_res-curr_test_res;						// let first column of curr_resids be ?the updated residuals?
+        // }else{																// if the k+1^th element of parent_curr_round does not equal -1 (don't know how it could take a different value)
+        //   curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
+        // }
         
-        if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
-          curr_resids(_,0)=test_res-curr_test_res;						// let first column of curr_resids be ?the updated residuals?
-        }else{																// if the k+1^th element of parent_curr_round does not equal -1 (don't know how it could take a different value)
-          curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
-        }
-      }
-      List temp(0);																	// list of length zero.
-      
-      cp_mat_list=temp;																// reset cp_mat_list to be a list of length zero
-      
-      for(int f=0;f<curr_resids.ncol();f++){											// loop of length equal to number of columns of curr_resids (equals number of columns of resids at start of loop).
+        
         List cp_mat_list1;															// create a list cp_mat_list1. Length noy given.
+        arma::mat tempdata_subset = x_moderate_a.rows(term_obsarma);
         if(gridpoint==0){																// If input Boolean gridpoint equals 0 (false). (i.e. indicator is 1 for grid-search , or 0 for PELT)
-          cp_mat_list1=make_pelt_cpmat_tau_bcf(wrap(x_moderate_a),curr_resids(_,f),pen_tau,num_cp_tau,z);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_pelt_cpmat_tau_bcf(wrap(x_moderate_a),curr_resids(_,f),pen_tau,num_cp_tau,z);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_pelt_cpmat_tau_bcf(wrap(x_moderate_a),test_res,pen_tau,num_cp_tau,z);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          cp_mat_list1=make_pelt_cpmat_tau_bcf(wrap(tempdata_subset),test_res[term_obs],pen_tau,num_cp_tau,z[term_obs]);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
         }else{																			// If gridpoint equals 1 (or non-zero).
-          cp_mat_list1=make_gridpoint_cpmat_tau_bcf(wrap(x_moderate_a),curr_resids(_,f),gridsize_tau,num_cp_tau,z);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_gridpoint_cpmat_tau_bcf(wrap(x_moderate_a),curr_resids(_,f),gridsize_tau,num_cp_tau,z);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_gridpoint_cpmat_tau_bcf(wrap(x_moderate_a),test_res,gridsize_tau,num_cp_tau,z);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          cp_mat_list1=make_gridpoint_cpmat_tau_bcf(wrap(tempdata_subset),test_res[term_obs],gridsize_tau,num_cp_tau,z[term_obs]);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
         }
         
-        cp_mat_list.push_back(cp_mat_list1[0]);											// Add the first element of cp_mat_list1 to the end of the list cp_mat_list. cp_mat_list1[0] is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points.
+        Tempcpmatlist[nodeind]=cp_mat_list1[0];
+        //Rcout << "Line 3389. j = " << j << ". k = " << k << " . \n";
+        
       }
+      //Rcout << "Line 3384. j = " << j << ". k = " << k << " . \n";
+      
+      cp_mat_list[k]=Tempcpmatlist;        
+        
+      }
+      
       
     }
   }
@@ -6226,14 +8002,14 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
             best_subset=get_best_split_tau_round1_bcf(y_scaled, //resids(_,parent[i]),
                                                   x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                               a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
-                                              lowest_BIC,parent[i],cp_mat_list[i],
+                                              lowest_BIC,parent[i],cp_mat_list[parent[i]],
                                               alpha_mu,beta_mu,alpha_tau,beta_tau,
                                               maxOWsize,//first_round,
                                               prev_sum_trees_mu,prev_sum_trees_mat_mu,
                                               y_scaled,parent,i,z,
                                               min_num_obs_for_tau_split, min_num_obs_after_tau_split);
             }else{
-              best_subset=get_best_split_tau_round1_bcf(y_scaled, //resids(_,parent[i]),
+              best_subset=get_best_split_tau_round1_update_bcf(y_scaled, //resids(_,parent[i]),
                                                         x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                                         a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                         lowest_BIC,parent[i],cp_mat_list[i],
@@ -6402,7 +8178,13 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
       List updated_curr_preds;										// create list. Length not given.
       NumericVector new_mean;											// create vector. Length not given.
       lowest_BIC=min(overall_lik2);									// update lowest_BIC
-      NumericMatrix curr_resids(resids.nrow(),resids.ncol());			// curr_resids is a matrix with dimensions of input matrix resids
+      //NumericMatrix curr_resids(resids.nrow(),resids.ncol());			// curr_resids is a matrix with dimensions of input matrix resids
+      
+      
+      List temp(table_subset_curr_round.size());
+      
+      cp_mat_list=temp;
+      
       
       for(int k=0;k<table_subset_curr_round.size();k++){				// for-loop of length equal to number of models proposed in the current iteration
         NumericVector terminal_nodes;								// create a vector called terminal_nodes.
@@ -6421,38 +8203,54 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
         
         terminal_nodes=find_term_nodes_bcf(table_subset_curr_round[k]);			// find term nodes function defined line 168.  gives index of values of table_subset_curr_round[k] that are term nodes (indices from 1 to length of vector). Why not integer vector?
         updated_curr_preds=update_predictions_bcf(table_subset_curr_round[k],mat_subset_curr_round[k],new_mean,x_moderate_a.n_rows);	// Defined in line 1313. Returns list. First element is updated tree table (6th column contains new predictions). Second element is vector of updated predictions.
-        NumericVector test_res;												// create vector called test_res. Length not given.
         
+        NumericVector test_res;												// create vector called test_res. Length not given.
+
         if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
           test_res=resids(_,0);											// let test_res equal the first column of resids
-        }else{																// if the k+1^th element of parent_curr_round does not equal -1 
+        }else{																// if the k+1^th element of parent_curr_round does not equal -1
           test_res=resids(_,parent_curr_round[k]);						// let test_res equal the parent_curr_round[k]+1^th column of resids
         }
         
+        List Tempcpmatlist(terminal_nodes.size());
+        for(int nodeind=0;nodeind<terminal_nodes.size();nodeind++){
+          //Rcout << "Line 3369. j = " << j << ". k = " << k << " . \n";
+          
+          arma::uvec term_obsarma=find_term_obs_bcf(mat_subset_curr_round[k],terminal_nodes[nodeind]);
+          IntegerVector term_obs=wrap(term_obsarma);
+        // 
+        // 
+        // NumericVector temp_preds = updated_curr_preds[1];
+        // NumericVector curr_test_res=z*temp_preds;				//might be unnecessary to multiply by z because will probably subset correctly when this vector is used	// Let curr_test_res be the vector of updated predictions
+        // 
+        // if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
+        //   curr_resids(_,0)=test_res-curr_test_res;						// let first column of curr_resids be ?the updated residuals?
+        // }else{																// if the k+1^th element of parent_curr_round does not equal -1 (don't know how it could take a different value)
+        //   curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
+        // }
         
-        NumericVector temp_preds = updated_curr_preds[1];
-        NumericVector curr_test_res=z*temp_preds;				//might be unnecessary to multiply by z because will probably subset correctly when this vector is used	// Let curr_test_res be the vector of updated predictions
         
-        if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
-          curr_resids(_,0)=test_res-curr_test_res;						// let first column of curr_resids be ?the updated residuals?
-        }else{																// if the k+1^th element of parent_curr_round does not equal -1 (don't know how it could take a different value)
-          curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
-        }
-      }
-      List temp(0);																	// list of length zero.
-      
-      cp_mat_list=temp;																// reset cp_mat_list to be a list of length zero
-      
-      for(int f=0;f<curr_resids.ncol();f++){											// loop of length equal to number of columns of curr_resids (equals number of columns of resids at start of loop).
         List cp_mat_list1;															// create a list cp_mat_list1. Length noy given.
+        arma::mat tempdata_subset = (x_moderate_a).rows(term_obsarma);
         if(gridpoint==0){																// If input Boolean gridpoint equals 0 (false). (i.e. indicator is 1 for grid-search , or 0 for PELT)
-          cp_mat_list1=make_pelt_cpmat_tau_bcf(wrap(x_moderate_a),curr_resids(_,f),pen_tau,num_cp_tau,z);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_pelt_cpmat_tau_bcf(wrap(x_moderate_a),curr_resids(_,f),pen_tau,num_cp_tau,z);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_pelt_cpmat_tau_bcf(wrap(x_moderate_a),test_res,pen_tau,num_cp_tau,z);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          cp_mat_list1=make_pelt_cpmat_tau_bcf(wrap(tempdata_subset),test_res[term_obs],pen_tau,num_cp_tau,z[term_obs]);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
         }else{																			// If gridpoint equals 1 (or non-zero).
-          cp_mat_list1=make_gridpoint_cpmat_tau_bcf(wrap(x_moderate_a),curr_resids(_,f),gridsize_tau,num_cp_tau,z);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_gridpoint_cpmat_tau_bcf(wrap(x_moderate_a),curr_resids(_,f),gridsize_tau,num_cp_tau,z);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_gridpoint_cpmat_tau_bcf(wrap(x_moderate_a),test_res,gridsize_tau,num_cp_tau,z);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          cp_mat_list1=make_gridpoint_cpmat_tau_bcf(wrap(tempdata_subset),test_res[term_obs],gridsize_tau,num_cp_tau,z[term_obs]);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
         }
         
-        cp_mat_list.push_back(cp_mat_list1[0]);											// Add the first element of cp_mat_list1 to the end of the list cp_mat_list. cp_mat_list1[0] is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points.
+        Tempcpmatlist[nodeind]=cp_mat_list1[0];
+        //Rcout << "Line 3389. j = " << j << ". k = " << k << " . \n";
+        
       }
+      //Rcout << "Line 3384. j = " << j << ". k = " << k << " . \n";
+      
+      cp_mat_list[k]=Tempcpmatlist;        
+      }
+      
       
     }
   }
@@ -6894,14 +8692,14 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
               best_subset=get_best_split_sum_tau_bcf(y_scaled, //resids(_,parent[i]),
                                             x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                              a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
-                                             lowest_BIC,parent[i],cp_mat_list[i],
+                                             lowest_BIC,parent[i],cp_mat_list[parent[i]],
                                              alpha_mu,beta_mu,alpha_tau,beta_tau,
                                              maxOWsize,//first_round,
                                              prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
                                              y_scaled,parent,i,z,
                                              min_num_obs_for_tau_split, min_num_obs_after_tau_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
               }else{
-                best_subset=get_best_split_sum_tau_bcf(y_scaled, //resids(_,parent[i]),
+                best_subset=get_best_split_sum_tau_update_bcf(y_scaled, //resids(_,parent[i]),
                                                       x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                                       a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                       lowest_BIC,parent[i],cp_mat_list[i],
@@ -7061,7 +8859,11 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
       List updated_curr_preds;										// create list. Length not given.
       NumericVector new_mean;											// create vector. Length not given.
       lowest_BIC=min(overall_lik2);									// update lowest_BIC
-      NumericMatrix curr_resids(resids.nrow(),resids.ncol());			// curr_resids is a matrix with dimensions of input matrix resids
+      //NumericMatrix curr_resids(resids.nrow(),resids.ncol());			// curr_resids is a matrix with dimensions of input matrix resids
+      
+      List temp(table_subset_curr_round.size());
+      
+      cp_mat_list=temp;
       
       for(int k=0;k<table_subset_curr_round.size();k++){				// for-loop of length equal to number of models proposed in the current iteration
         NumericVector terminal_nodes;								// create a vector called terminal_nodes.
@@ -7080,37 +8882,53 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
         
         terminal_nodes=find_term_nodes_bcf(table_subset_curr_round[k]);			// find term nodes function defined line 168.  gives index of values of table_subset_curr_round[k] that are term nodes (indices from 1 to length of vector). Why not integer vector?
         updated_curr_preds=update_predictions_bcf(table_subset_curr_round[k],mat_subset_curr_round[k],new_mean,x_moderate_a.n_rows);	// Defined in line 1313. Returns list. First element is updated tree table (6th column contains new predictions). Second element is vector of updated predictions.
-        NumericVector test_res;												// create vector called test_res. Length not given.
         
+        NumericVector test_res;												// create vector called test_res. Length not given.
+
         if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
           test_res=resids(_,0);											// let test_res equal the first column of resids
-        }else{																// if the k+1^th element of parent_curr_round does not equal -1 
+        }else{																// if the k+1^th element of parent_curr_round does not equal -1
           test_res=resids(_,parent_curr_round[k]);						// let test_res equal the parent_curr_round[k]+1^th column of resids
         }
         
-        NumericVector temppreds = updated_curr_preds[1];
-        NumericVector curr_test_res=z*temppreds;				//might be unnecessary to multiply by z because will probably subset correctly when this vector is used	// Let curr_test_res be the vector of updated predictions
         
-        if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
-          curr_resids(_,0)=test_res-curr_test_res;						// let first column of curr_resids be ?the updated residuals?
-        }else{																// if the k+1^th element of parent_curr_round does not equal -1 (don't know how it could take a different value)
-          curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
-        }
-      }
-      List temp(0);																	// list of length zero.
-      
-      cp_mat_list=temp;																// reset cp_mat_list to be a list of length zero
-      
-      for(int f=0;f<curr_resids.ncol();f++){											// loop of length equal to number of columns of curr_resids (equals number of columns of resids at start of loop).
+        List Tempcpmatlist(terminal_nodes.size());
+        for(int nodeind=0;nodeind<terminal_nodes.size();nodeind++){
+          //Rcout << "Line 3369. j = " << j << ". k = " << k << " . \n";
+          
+          arma::uvec term_obsarma=find_term_obs_bcf(mat_subset_curr_round[k],terminal_nodes[nodeind]);
+          IntegerVector term_obs=wrap(term_obsarma);
+        // 
+        // NumericVector temppreds = updated_curr_preds[1];
+        // NumericVector curr_test_res=z*temppreds;				//might be unnecessary to multiply by z because will probably subset correctly when this vector is used	// Let curr_test_res be the vector of updated predictions
+        // 
+        // if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
+        //   curr_resids(_,0)=test_res-curr_test_res;						// let first column of curr_resids be ?the updated residuals?
+        // }else{																// if the k+1^th element of parent_curr_round does not equal -1 (don't know how it could take a different value)
+        //   curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
+        // }
+        
+        
         List cp_mat_list1;															// create a list cp_mat_list1. Length noy given.
+        arma::mat tempdata_subset = x_moderate_a.rows(term_obsarma);
         if(gridpoint==0){																// If input Boolean gridpoint equals 0 (false). (i.e. indicator is 1 for grid-search , or 0 for PELT)
-          cp_mat_list1=make_pelt_cpmat_tau_bcf(wrap(x_moderate_a),curr_resids(_,f),pen_tau,num_cp_tau,z);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_pelt_cpmat_tau_bcf(wrap(x_moderate_a),curr_resids(_,f),pen_tau,num_cp_tau,z);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_pelt_cpmat_tau_bcf(wrap(x_moderate_a),test_res,pen_tau,num_cp_tau,z);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          cp_mat_list1=make_pelt_cpmat_tau_bcf(wrap(tempdata_subset),test_res[term_obs],pen_tau,num_cp_tau,z[term_obs]);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
         }else{																			// If gridpoint equals 1 (or non-zero).
-          cp_mat_list1=make_gridpoint_cpmat_tau_bcf(wrap(x_moderate_a),curr_resids(_,f),gridsize_tau,num_cp_tau,z);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_gridpoint_cpmat_tau_bcf(wrap(x_moderate_a),curr_resids(_,f),gridsize_tau,num_cp_tau,z);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_gridpoint_cpmat_tau_bcf(wrap(x_moderate_a),test_res,gridsize_tau,num_cp_tau,z);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          cp_mat_list1=make_gridpoint_cpmat_tau_bcf(wrap(tempdata_subset),test_res[term_obs],gridsize_tau,num_cp_tau,z[term_obs]);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
         }
         
-        cp_mat_list.push_back(cp_mat_list1[0]);											// Add the first element of cp_mat_list1 to the end of the list cp_mat_list. cp_mat_list1[0] is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points.
+        Tempcpmatlist[nodeind]=cp_mat_list1[0];
+        
       }
+      cp_mat_list[k]=Tempcpmatlist;
+      
+        
+      }
+      
       
     }
   }
@@ -7541,7 +9359,10 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
     std::vector<int> parent_curr_round(lsize);			// create a vector of length 1000.
     int count=0;										// create a varialble. Initialized equal to 0.
     //Rcout << "Line 7396. j == " << j << ". \n";
+    
+    
     //Rcout << "Line tree_table_tau.size() == " << tree_table_tau.size() << ". \n";
+    
     for(int i=0;i<tree_table_tau.size();i++){				// for loop of length equal to that of the list tree_table (input or updated in previous iteration)
       
       //Rcout << "Line 7400.  i == " << i << ", j == " << j << ". \n";
@@ -7578,14 +9399,14 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
               best_subset=get_best_split_sum_tau_bcf(y_scaled, //resids(_,parent[i]),
                                                  x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                                  a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
-                                                 lowest_BIC,parent[i],cp_mat_list[i],
+                                                 lowest_BIC,parent[i],cp_mat_list[parent[i]],
                                                  alpha_mu,beta_mu,alpha_tau,beta_tau,
                                                  maxOWsize,//first_round,
                                                  prev_sum_trees_mu,prev_sum_trees_tau,prev_sum_trees_mat_mu,prev_sum_trees_mat_tau,
                                                  y_scaled,parent,i,z,
                                                  min_num_obs_for_tau_split, min_num_obs_after_tau_split);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
             }else{
-              best_subset=get_best_split_sum_tau_bcf(y_scaled, //resids(_,parent[i]),
+              best_subset=get_best_split_sum_tau_update_bcf(y_scaled, //resids(_,parent[i]),
                                                   x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                                   a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                   lowest_BIC,parent[i],cp_mat_list[i],
@@ -7611,7 +9432,7 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
           
           
           
-          //Rcout << "Line 7434.  i == " << i << ", j == " << j << ". \n";
+          //Rcout << "Line 9433.  i == " << i << ", j == " << j << ". \n";
             
           // return(best_subset);
         
@@ -7675,7 +9496,7 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
         }
       }
     }
-    //Rcout << "Line 7488, j == " << j << ". \n";
+    //Rcout << "Line 9497, j == " << j << ". \n";
     
     
     table_subset_curr_round=resize_bcf(table_subset_curr_round,count);		// remove remaining spaces that are not filled in
@@ -7684,7 +9505,7 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
     parent_curr_round.resize(count);									// remove remaining spaces that are not filled in
     
     if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0 
-      //Rcout << "Line 7483. Break out of for-loop, j == " << j << ". \n";
+      //Rcout << "Line 9506. Break out of for-loop, j == " << j << ". \n";
       
       break;															// break out of the for-loop,
     }
@@ -7715,7 +9536,7 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
     overall_parent2=eval_model[3];										// tree parent vector for all models in Occam's window.
     //add in check to see if OW accepted more than the top maxOW models...
     
-    //Rcout << "Line 7528, j == " << j << ". \n";
+    //Rcout << "Line 9537, j == " << j << ". \n";
     
     if(overall_lik2.size()>maxOWsize){									// If more than maxOWsize models kept in Occam's window
       //find the maxOWsize best models and continue with those!
@@ -7760,12 +9581,22 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
     tree_mat_tau=mat_subset_curr_round;										// reset tree_mat to list of treematrices obtained in current round of for-loop)
     parent=parent_curr_round;											// reset parent to parent vector obtained in current round of for-loop.
     
+    //Rcout << "Line 9582, j == " << j << ". \n";
+    
     if(split_rule_node==1){												// If input boolean split_rule_node = 1 (true)
+      //Rcout << "Line 9585, j == " << j << ". \n";
+      
       NumericVector temp_preds;										// create vector. Length not given.
       List updated_curr_preds;										// create list. Length not given.
       NumericVector new_mean;											// create vector. Length not given.
       lowest_BIC=min(overall_lik2);									// update lowest_BIC
-      NumericMatrix curr_resids(resids.nrow(),resids.ncol());			// curr_resids is a matrix with dimensions of input matrix resids
+      
+      
+      //NumericMatrix curr_resids(resids.nrow(),resids.ncol());			// curr_resids is a matrix with dimensions of input matrix resids
+      
+      List temp(table_subset_curr_round.size());
+      
+      cp_mat_list=temp;
       
       for(int k=0;k<table_subset_curr_round.size();k++){				// for-loop of length equal to number of models proposed in the current iteration
         NumericVector terminal_nodes;								// create a vector called terminal_nodes.
@@ -7784,44 +9615,59 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
         
         terminal_nodes=find_term_nodes_bcf(table_subset_curr_round[k]);			// find term nodes function defined line 168.  gives index of values of table_subset_curr_round[k] that are term nodes (indices from 1 to length of vector). Why not integer vector?
         updated_curr_preds=update_predictions_bcf(table_subset_curr_round[k],mat_subset_curr_round[k],new_mean,x_moderate_a.n_rows);	// Defined in line 1313. Returns list. First element is updated tree table (6th column contains new predictions). Second element is vector of updated predictions.
+        
+        
         NumericVector test_res;												// create vector called test_res. Length not given.
+
+        List Tempcpmatlist(terminal_nodes.size());
+        for(int nodeind=0;nodeind<terminal_nodes.size();nodeind++){
+          
+          arma::uvec term_obsarma=find_term_obs_bcf(mat_subset_curr_round[k],terminal_nodes[nodeind]);
+          IntegerVector term_obs=wrap(term_obsarma);
+          
+          if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
+            test_res=resids(_,0);											// let test_res equal the first column of resids
+          }else{																// if the k+1^th element of parent_curr_round does not equal -1
+            test_res=resids(_,parent_curr_round[k]);						// let test_res equal the parent_curr_round[k]+1^th column of resids
+          }
         
-        if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
-          test_res=resids(_,0);											// let test_res equal the first column of resids
-        }else{																// if the k+1^th element of parent_curr_round does not equal -1 
-          test_res=resids(_,parent_curr_round[k]);						// let test_res equal the parent_curr_round[k]+1^th column of resids
+        //NumericVector temppreds = updated_curr_preds[1];
+        //NumericVector curr_test_res=z*temppreds;				//might be unnecessary to multiply by z because will probably subset correctly when this vector is used	// Let curr_test_res be the vector of updated predictions
+        
+        // if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
+        //   curr_resids(_,0)=test_res-curr_test_res;						// let first column of curr_resids be ?the updated residuals?
+        // }else{																// if the k+1^th element of parent_curr_round does not equal -1 (don't know how it could take a different value)
+        //   curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
+        // }
+      
+      
+          List cp_mat_list1;															// create a list cp_mat_list1. Length noy given.
+          arma::mat tempdata_subset = x_moderate_a.rows(term_obsarma);
+          if(gridpoint==0){																// If input Boolean gridpoint equals 0 (false). (i.e. indicator is 1 for grid-search , or 0 for PELT)
+          //cp_mat_list1=make_pelt_cpmat_tau_bcf(wrap(x_moderate_a),curr_resids(_,f),pen_tau,num_cp_tau,z);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          //cp_mat_list1=make_pelt_cpmat_tau_bcf(wrap(x_moderate_a),test_res,pen_tau,num_cp_tau,z);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          cp_mat_list1=make_pelt_cpmat_tau_bcf(wrap(tempdata_subset),test_res[term_obs],pen_tau,num_cp_tau,z[term_obs]);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          }else{																			// If gridpoint equals 1 (or non-zero).
+            //cp_mat_list1=make_gridpoint_cpmat_tau_bcf(wrap(x_moderate_a),curr_resids(_,f),gridsize_tau,num_cp_tau,z);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+            cp_mat_list1=make_gridpoint_cpmat_tau_bcf(wrap(tempdata_subset),test_res[term_obs],gridsize_tau,num_cp_tau,z[term_obs]);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
+          }
+          Tempcpmatlist[nodeind]=cp_mat_list1[0];
+          
+          //Rcout << "Line 9643, j == " << j << ". k == " << k << ". nodeind == " <<  nodeind << " . \n";
         }
-        
-        NumericVector temppreds = updated_curr_preds[1];
-        NumericVector curr_test_res=z*temppreds;				//might be unnecessary to multiply by z because will probably subset correctly when this vector is used	// Let curr_test_res be the vector of updated predictions
-        
-        if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
-          curr_resids(_,0)=test_res-curr_test_res;						// let first column of curr_resids be ?the updated residuals?
-        }else{																// if the k+1^th element of parent_curr_round does not equal -1 (don't know how it could take a different value)
-          curr_resids(_,parent_curr_round[k])=test_res-curr_test_res;		// let parent_curr_round[k]^th column of curr_resids be ?the updated residuals?
-        }
+      
+      cp_mat_list[k]=Tempcpmatlist;
+        //Rcout << "Line 9648, j == " << j << ". k == " << k << ". \n";
+      
       }
       
-      List temp(0);																	// list of length zero.
       
-      cp_mat_list=temp;																// reset cp_mat_list to be a list of length zero
-      
-      for(int f=0;f<curr_resids.ncol();f++){											// loop of length equal to number of columns of curr_resids (equals number of columns of resids at start of loop).
-        List cp_mat_list1;															// create a list cp_mat_list1. Length noy given.
-        if(gridpoint==0){																// If input Boolean gridpoint equals 0 (false). (i.e. indicator is 1 for grid-search , or 0 for PELT)
-          cp_mat_list1=make_pelt_cpmat_tau_bcf(wrap(x_moderate_a),curr_resids(_,f),pen_tau,num_cp_tau,z);			// make_pelt_cpmat defined on line 1612. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
-        }else{																			// If gridpoint equals 1 (or non-zero).
-          cp_mat_list1=make_gridpoint_cpmat_tau_bcf(wrap(x_moderate_a),curr_resids(_,f),gridsize_tau,num_cp_tau,z);	// make_gridpoint_cpmat defined on line 1550. First element of list is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points. Second element of list records error.
-        }
-        
-        cp_mat_list.push_back(cp_mat_list1[0]);											// Add the first element of cp_mat_list1 to the end of the list cp_mat_list. cp_mat_list1[0] is a matrix, where the first column is a list of variable numbers for potential splits (column of variable in data), and the second column gives values of the covariates for the split points.
-      }
       
     }
-    //Rcout << "Line 7631, j == " << j << ". \n";
+    //Rcout << "Line 9654, j == " << j << ". \n";
     
   }
-  //Rcout << "Line 7612.\n";
+  //Rcout << "Line 9657.\n";
   
   overall_trees=resize_bcf(overall_trees,overall_count);		// remove remaining spaces that are not filled in
   overall_mat=resize_bcf(overall_mat,overall_count);			// remove remaining spaces that are not filled in
@@ -10602,7 +12448,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
         if(j>0 && separate_tree_numbers==1){
           List temp_mutrees = prev_sum_trees_mu[f];
           if(temp_mutrees.size()==ntree_control){
-            NumericMatrix temp_mat_err(0,3);
+            NumericMatrix temp_mat_err(0,2);
             resids_cp_mat_mu[resids_count]= temp_mat_err;
             err_list[resids_count]= 1;
             no_more_mu_trees[resids_count]= 1;
@@ -10742,7 +12588,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
         if(j>0 && separate_tree_numbers==1){
             List temp_tautrees = prev_sum_trees_tau[f];
             if(temp_tautrees.size()==ntree_moderate){
-              NumericMatrix temp_mat_err(0,3);
+              NumericMatrix temp_mat_err(0,2);
               resids_cp_mat_tau[resids_count2]= temp_mat_err;
               err_list2[resids_count2]= 1;
               no_more_tau_trees[resids_count2]= 1;

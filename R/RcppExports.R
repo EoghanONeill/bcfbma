@@ -165,20 +165,40 @@ get_best_split_mu_bcf <- function(resids, data, treetable, tree_mat, a, mu, nu, 
     .Call(`_bcfbma_get_best_split_mu_bcf`, resids, data, treetable, tree_mat, a, mu, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha, beta, maxOWsize, min_num_obs_for_mu_split, min_num_obs_after_mu_split)
 }
 
+get_best_split_mu_update_bcf <- function(resids, data, treetable, tree_mat, a, mu, nu, lambda, c, lowest_BIC, parent, cp_matlist, alpha, beta, maxOWsize, min_num_obs_for_mu_split, min_num_obs_after_mu_split) {
+    .Call(`_bcfbma_get_best_split_mu_update_bcf`, resids, data, treetable, tree_mat, a, mu, nu, lambda, c, lowest_BIC, parent, cp_matlist, alpha, beta, maxOWsize, min_num_obs_for_mu_split, min_num_obs_after_mu_split)
+}
+
 get_best_split_tau_bcf <- function(resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, z, min_num_obs_for_tau_split, min_num_obs_after_tau_split) {
     .Call(`_bcfbma_get_best_split_tau_bcf`, resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, z, min_num_obs_for_tau_split, min_num_obs_after_tau_split)
+}
+
+get_best_split_tau_update_bcf <- function(resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_matlist, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, z, min_num_obs_for_tau_split, min_num_obs_after_tau_split) {
+    .Call(`_bcfbma_get_best_split_tau_update_bcf`, resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_matlist, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, z, min_num_obs_for_tau_split, min_num_obs_after_tau_split)
 }
 
 get_best_split_tau_round1_bcf <- function(resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, prev_sum_trees_mu, prev_sum_trees_mat_mu, y_scaled, parent2, i, z, min_num_obs_for_tau_split, min_num_obs_after_tau_split) {
     .Call(`_bcfbma_get_best_split_tau_round1_bcf`, resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, prev_sum_trees_mu, prev_sum_trees_mat_mu, y_scaled, parent2, i, z, min_num_obs_for_tau_split, min_num_obs_after_tau_split)
 }
 
+get_best_split_tau_round1_update_bcf <- function(resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_matlist, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, prev_sum_trees_mu, prev_sum_trees_mat_mu, y_scaled, parent2, i, z, min_num_obs_for_tau_split, min_num_obs_after_tau_split) {
+    .Call(`_bcfbma_get_best_split_tau_round1_update_bcf`, resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_matlist, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, prev_sum_trees_mu, prev_sum_trees_mat_mu, y_scaled, parent2, i, z, min_num_obs_for_tau_split, min_num_obs_after_tau_split)
+}
+
 get_best_split_sum_tau_bcf <- function(resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, parent2, i, z, min_num_obs_for_tau_split, min_num_obs_after_tau_split) {
     .Call(`_bcfbma_get_best_split_sum_tau_bcf`, resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, parent2, i, z, min_num_obs_for_tau_split, min_num_obs_after_tau_split)
 }
 
+get_best_split_sum_tau_update_bcf <- function(resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_matlist, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, parent2, i, z, min_num_obs_for_tau_split, min_num_obs_after_tau_split) {
+    .Call(`_bcfbma_get_best_split_sum_tau_update_bcf`, resids, x_moderate_a, tree_table_tau, tree_mat_tau, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_matlist, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, parent2, i, z, min_num_obs_for_tau_split, min_num_obs_after_tau_split)
+}
+
 get_best_split_sum_mu_bcf <- function(resids, x_control_a, tree_table_mu, tree_mat_mu, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, parent2, i, z, min_num_obs_for_mu_split, min_num_obs_after_mu_split) {
     .Call(`_bcfbma_get_best_split_sum_mu_bcf`, resids, x_control_a, tree_table_mu, tree_mat_mu, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_mat, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, parent2, i, z, min_num_obs_for_mu_split, min_num_obs_after_mu_split)
+}
+
+get_best_split_sum_mu_update_bcf <- function(resids, x_control_a, tree_table_mu, tree_mat_mu, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_matlist, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, parent2, i, z, min_num_obs_for_mu_split, min_num_obs_after_mu_split) {
+    .Call(`_bcfbma_get_best_split_sum_mu_update_bcf`, resids, x_control_a, tree_table_mu, tree_mat_mu, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, lowest_BIC, parent, cp_matlist, alpha_mu, beta_mu, alpha_tau, beta_tau, maxOWsize, prev_sum_trees_mu, prev_sum_trees_tau, prev_sum_trees_mat_mu, prev_sum_trees_mat_tau, y_scaled, parent2, i, z, min_num_obs_for_mu_split, min_num_obs_after_mu_split)
 }
 
 update_mean_var_bcf <- function(tree_table, tree_matrix, resids, a) {
