@@ -397,6 +397,18 @@ mean_vars_lin_alg_outsamp_par_bcf <- function(overall_sum_trees_mu, overall_sum_
     .Call(`_bcfbma_mean_vars_lin_alg_outsamp_par_bcf`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, num_cores)
 }
 
+mean_vars_lin_alg_insamp_par_cate <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, num_cores) {
+    .Call(`_bcfbma_mean_vars_lin_alg_insamp_par_cate`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, num_cores)
+}
+
+mean_vars_lin_alg_outsamp_par_cate <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, num_cores) {
+    .Call(`_bcfbma_mean_vars_lin_alg_outsamp_par_cate`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, num_cores)
+}
+
+pred_ints_lin_alg_fields_LDL_insamp_cate <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores) {
+    .Call(`_bcfbma_pred_ints_lin_alg_fields_LDL_insamp_cate`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores)
+}
+
 find_term_nodes_gs <- function(tree_table) {
     .Call(`_bcfbma_find_term_nodes_gs`, tree_table)
 }
