@@ -41,6 +41,8 @@
 #' @param min_num_obs_after_mu_split This integer determines the minimum number of observations in a (mu tree) child node resulting from a split in order for a split to occur. If the left or right child node has less than this number of observations, then the split can not occur.
 #' @param min_num_obs_for_tau_split This integer determines the minimum number of treated observations in a (parent) tau tree node for the algorithm to consider potential splits of the node.
 #' @param min_num_obs_after_tau_split This integer determines the minimum number of treated observations in a (tau tree) child node resulting from a split in order for a split to occur. If the left or right child node has less than this number of observations, then the split can not occur.
+#' @param exact_residuals Binary variable. If equal to 1, then trees are added to sum-of-tree models within each round of the algorithm by detecting changepoints in the exact residuals. If equals zero, then changepoints are detected in residuals that are constructed from approximate predictions.
+
 #' @export 
 #' @return The following objects are returned by bcfbma:
 #' \item{fitted.values_outcome}{The vector of predictions of the outcome for all training observations.} 
@@ -79,7 +81,8 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                           gridpoint=0,maxOWsize=100, num_splits_mu =5, num_splits_tau =5, gridsize_mu=10, gridsize_tau=10,
                           include_pi= "control", zero_split=1, only_max_num_trees=1, mu_or_tau_each_round=1,separate_tree_numbers=1,
                          min_num_obs_for_mu_split=2, min_num_obs_after_mu_split=2,
-                         min_num_obs_for_tau_split=2, min_num_obs_after_tau_split=2){
+                         min_num_obs_for_tau_split=2, min_num_obs_after_tau_split=2,
+                         exact_residuals=1){
   binary=FALSE
   start_mean=0
   start_sd=1
@@ -183,7 +186,8 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                                                   num_splits_mu,num_splits_tau,gridsize_mu, gridsize_tau,
                                                   include_pi2,zero_split,only_max_num_trees,separate_tree_numbers,
                                                   min_num_obs_for_mu_split, min_num_obs_after_mu_split,
-                                                  min_num_obs_for_tau_split, min_num_obs_after_tau_split)
+                                                  min_num_obs_for_tau_split, min_num_obs_after_tau_split,
+                                                  exact_residuals)
   }else{
   bcfBMA_call=BCF_BMA_sumLikelihood(x.train,y.train,z,pihat,
                                     a_mu,a_tau,mu_mu,mu_tau,
@@ -195,7 +199,8 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                                     num_splits_mu,num_splits_tau,gridsize_mu, gridsize_tau,
                                     include_pi2,zero_split,only_max_num_trees,
                                     min_num_obs_for_mu_split, min_num_obs_after_mu_split,
-                                    min_num_obs_for_tau_split, min_num_obs_after_tau_split)
+                                    min_num_obs_for_tau_split, min_num_obs_after_tau_split,
+                                    exact_residuals)
   }
   
   
