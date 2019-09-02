@@ -309,34 +309,6 @@ get_original_bcf <- function(low, high, sp_low, sp_high, sum_preds) {
     .Call(`_bcfbma_get_original_bcf`, low, high, sp_low, sp_high, sum_preds)
 }
 
-BCF_BMA_sumLikelihood <- function(data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2, zero_split, only_max_num_trees, min_num_obs_for_mu_split, min_num_obs_after_mu_split, min_num_obs_for_tau_split, min_num_obs_after_tau_split, exact_residuals) {
-    .Call(`_bcfbma_BCF_BMA_sumLikelihood`, data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2, zero_split, only_max_num_trees, min_num_obs_for_mu_split, min_num_obs_after_mu_split, min_num_obs_for_tau_split, min_num_obs_after_tau_split, exact_residuals)
-}
-
-fuse_intvecs <- function(a, b) {
-    .Call(`_bcfbma_fuse_intvecs`, a, b)
-}
-
-fuse_numvecs <- function(a, b) {
-    .Call(`_bcfbma_fuse_numvecs`, a, b)
-}
-
-fuse_lists <- function(a, b) {
-    .Call(`_bcfbma_fuse_lists`, a, b)
-}
-
-fuse_listsof_intvecs <- function(a, b) {
-    .Call(`_bcfbma_fuse_listsof_intvecs`, a, b)
-}
-
-mmult1 <- function(a, b) {
-    .Call(`_bcfbma_mmult1`, a, b)
-}
-
-BCF_BMA_sumLikelihood_add_mu_or_tau <- function(data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2, zero_split, only_max_num_trees, separate_tree_numbers, min_num_obs_for_mu_split, min_num_obs_after_mu_split, min_num_obs_for_tau_split, min_num_obs_after_tau_split, exact_residuals) {
-    .Call(`_bcfbma_BCF_BMA_sumLikelihood_add_mu_or_tau`, data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2, zero_split, only_max_num_trees, separate_tree_numbers, min_num_obs_for_mu_split, min_num_obs_after_mu_split, min_num_obs_for_tau_split, min_num_obs_after_tau_split, exact_residuals)
-}
-
 get_termobs_test_data_all <- function(test_data, tree_data) {
     .Call(`_bcfbma_get_termobs_test_data_all`, test_data, tree_data)
 }
@@ -367,6 +339,34 @@ preds_bcfbma_lin_alg_insamp <- function(overall_sum_trees_mu, overall_sum_trees_
 
 preds_bcfbma_lin_alg_outsamp <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs) {
     .Call(`_bcfbma_preds_bcfbma_lin_alg_outsamp`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs)
+}
+
+BCF_BMA_sumLikelihood <- function(data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2, zero_split, only_max_num_trees, min_num_obs_for_mu_split, min_num_obs_after_mu_split, min_num_obs_for_tau_split, min_num_obs_after_tau_split, exact_residuals) {
+    .Call(`_bcfbma_BCF_BMA_sumLikelihood`, data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2, zero_split, only_max_num_trees, min_num_obs_for_mu_split, min_num_obs_after_mu_split, min_num_obs_for_tau_split, min_num_obs_after_tau_split, exact_residuals)
+}
+
+fuse_intvecs <- function(a, b) {
+    .Call(`_bcfbma_fuse_intvecs`, a, b)
+}
+
+fuse_numvecs <- function(a, b) {
+    .Call(`_bcfbma_fuse_numvecs`, a, b)
+}
+
+fuse_lists <- function(a, b) {
+    .Call(`_bcfbma_fuse_lists`, a, b)
+}
+
+fuse_listsof_intvecs <- function(a, b) {
+    .Call(`_bcfbma_fuse_listsof_intvecs`, a, b)
+}
+
+mmult1 <- function(a, b) {
+    .Call(`_bcfbma_mmult1`, a, b)
+}
+
+BCF_BMA_sumLikelihood_add_mu_or_tau <- function(data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2, zero_split, only_max_num_trees, separate_tree_numbers, min_num_obs_for_mu_split, min_num_obs_after_mu_split, min_num_obs_for_tau_split, min_num_obs_after_tau_split, exact_residuals) {
+    .Call(`_bcfbma_BCF_BMA_sumLikelihood_add_mu_or_tau`, data, y, z, pihat, a_mu, a_tau, mu_mu, mu_tau, nu, lambda, c, sigma_mu_mu, sigma_mu_tau, pen_mu, pen_tau, num_cp_mu, num_cp_tau, test_data, test_z, test_pihat, ntree_control, ntree_moderate, alpha_mu, alpha_tau, beta_mu, beta_tau, split_rule_node, gridpoint, maxOWsize, num_splits_mu, num_splits_tau, gridsize_mu, gridsize_tau, include_pi2, zero_split, only_max_num_trees, separate_tree_numbers, min_num_obs_for_mu_split, min_num_obs_after_mu_split, min_num_obs_for_tau_split, min_num_obs_after_tau_split, exact_residuals)
 }
 
 mean_vars_lin_alg_insamp_bcf <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z) {
