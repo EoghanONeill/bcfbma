@@ -5,10 +5,10 @@
 \title{Obtain BARTBMA predictions}
 \usage{
 pred_ints_exact_outsamp_bcf(overall_sum_trees_mu, overall_sum_trees_tau,
-  overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter,
-  num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z,
-  test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs,
-  lower_prob, upper_prob, num_cores, root_alg_precision)
+  overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_obs, a_mu,
+  a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat,
+  z_test, include_pi2, num_propscores, num_test_obs, lower_prob,
+  upper_prob, num_cores, root_alg_precision)
 }
 \description{
 Obtain BARTBMA predictions

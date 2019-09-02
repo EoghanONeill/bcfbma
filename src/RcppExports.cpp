@@ -2370,8 +2370,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // pred_ints_exact_outsamp_bcf
-List pred_ints_exact_outsamp_bcf(List overall_sum_trees_mu, List overall_sum_trees_tau, List overall_sum_mat_mu, List overall_sum_mat_tau, NumericVector y, NumericVector BIC_weights, int num_iter, int num_obs, double a_mu, double a_tau, double sigma, double mu_mu_mu, double mu_mu_tau, double nu, double lambda, NumericVector z, NumericMatrix test_data, NumericMatrix test_pihat, NumericVector z_test, int include_pi2, int num_propscores, int num_test_obs, double lower_prob, double upper_prob, int num_cores, double root_alg_precision);
-RcppExport SEXP _bcfbma_pred_ints_exact_outsamp_bcf(SEXP overall_sum_trees_muSEXP, SEXP overall_sum_trees_tauSEXP, SEXP overall_sum_mat_muSEXP, SEXP overall_sum_mat_tauSEXP, SEXP ySEXP, SEXP BIC_weightsSEXP, SEXP num_iterSEXP, SEXP num_obsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP sigmaSEXP, SEXP mu_mu_muSEXP, SEXP mu_mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP zSEXP, SEXP test_dataSEXP, SEXP test_pihatSEXP, SEXP z_testSEXP, SEXP include_pi2SEXP, SEXP num_propscoresSEXP, SEXP num_test_obsSEXP, SEXP lower_probSEXP, SEXP upper_probSEXP, SEXP num_coresSEXP, SEXP root_alg_precisionSEXP) {
+List pred_ints_exact_outsamp_bcf(List overall_sum_trees_mu, List overall_sum_trees_tau, List overall_sum_mat_mu, List overall_sum_mat_tau, NumericVector y, NumericVector BIC_weights, int num_obs, double a_mu, double a_tau, double sigma, double mu_mu_mu, double mu_mu_tau, double nu, double lambda, NumericVector z, NumericMatrix test_data, NumericMatrix test_pihat, NumericVector z_test, int include_pi2, int num_propscores, int num_test_obs, double lower_prob, double upper_prob, int num_cores, double root_alg_precision);
+RcppExport SEXP _bcfbma_pred_ints_exact_outsamp_bcf(SEXP overall_sum_trees_muSEXP, SEXP overall_sum_trees_tauSEXP, SEXP overall_sum_mat_muSEXP, SEXP overall_sum_mat_tauSEXP, SEXP ySEXP, SEXP BIC_weightsSEXP, SEXP num_obsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP sigmaSEXP, SEXP mu_mu_muSEXP, SEXP mu_mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP zSEXP, SEXP test_dataSEXP, SEXP test_pihatSEXP, SEXP z_testSEXP, SEXP include_pi2SEXP, SEXP num_propscoresSEXP, SEXP num_test_obsSEXP, SEXP lower_probSEXP, SEXP upper_probSEXP, SEXP num_coresSEXP, SEXP root_alg_precisionSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2381,7 +2381,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type overall_sum_mat_tau(overall_sum_mat_tauSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
     Rcpp::traits::input_parameter< NumericVector >::type BIC_weights(BIC_weightsSEXP);
-    Rcpp::traits::input_parameter< int >::type num_iter(num_iterSEXP);
     Rcpp::traits::input_parameter< int >::type num_obs(num_obsSEXP);
     Rcpp::traits::input_parameter< double >::type a_mu(a_muSEXP);
     Rcpp::traits::input_parameter< double >::type a_tau(a_tauSEXP);
@@ -2401,13 +2400,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type upper_prob(upper_probSEXP);
     Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
     Rcpp::traits::input_parameter< double >::type root_alg_precision(root_alg_precisionSEXP);
-    rcpp_result_gen = Rcpp::wrap(pred_ints_exact_outsamp_bcf(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, lower_prob, upper_prob, num_cores, root_alg_precision));
+    rcpp_result_gen = Rcpp::wrap(pred_ints_exact_outsamp_bcf(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, lower_prob, upper_prob, num_cores, root_alg_precision));
     return rcpp_result_gen;
 END_RCPP
 }
 // pred_ints_exact_insamp_bcf
-List pred_ints_exact_insamp_bcf(List overall_sum_trees_mu, List overall_sum_trees_tau, List overall_sum_mat_mu, List overall_sum_mat_tau, NumericVector y, NumericVector BIC_weights, int num_iter, int num_obs, double a_mu, double a_tau, double sigma, double mu_mu_mu, double mu_mu_tau, double nu, double lambda, NumericVector z, double lower_prob, double upper_prob, int num_cores, double root_alg_precision);
-RcppExport SEXP _bcfbma_pred_ints_exact_insamp_bcf(SEXP overall_sum_trees_muSEXP, SEXP overall_sum_trees_tauSEXP, SEXP overall_sum_mat_muSEXP, SEXP overall_sum_mat_tauSEXP, SEXP ySEXP, SEXP BIC_weightsSEXP, SEXP num_iterSEXP, SEXP num_obsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP sigmaSEXP, SEXP mu_mu_muSEXP, SEXP mu_mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP zSEXP, SEXP lower_probSEXP, SEXP upper_probSEXP, SEXP num_coresSEXP, SEXP root_alg_precisionSEXP) {
+List pred_ints_exact_insamp_bcf(List overall_sum_trees_mu, List overall_sum_trees_tau, List overall_sum_mat_mu, List overall_sum_mat_tau, NumericVector y, NumericVector BIC_weights, int num_obs, double a_mu, double a_tau, double sigma, double mu_mu_mu, double mu_mu_tau, double nu, double lambda, NumericVector z, double lower_prob, double upper_prob, int num_cores, double root_alg_precision);
+RcppExport SEXP _bcfbma_pred_ints_exact_insamp_bcf(SEXP overall_sum_trees_muSEXP, SEXP overall_sum_trees_tauSEXP, SEXP overall_sum_mat_muSEXP, SEXP overall_sum_mat_tauSEXP, SEXP ySEXP, SEXP BIC_weightsSEXP, SEXP num_obsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP sigmaSEXP, SEXP mu_mu_muSEXP, SEXP mu_mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP zSEXP, SEXP lower_probSEXP, SEXP upper_probSEXP, SEXP num_coresSEXP, SEXP root_alg_precisionSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2417,7 +2416,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type overall_sum_mat_tau(overall_sum_mat_tauSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
     Rcpp::traits::input_parameter< NumericVector >::type BIC_weights(BIC_weightsSEXP);
-    Rcpp::traits::input_parameter< int >::type num_iter(num_iterSEXP);
     Rcpp::traits::input_parameter< int >::type num_obs(num_obsSEXP);
     Rcpp::traits::input_parameter< double >::type a_mu(a_muSEXP);
     Rcpp::traits::input_parameter< double >::type a_tau(a_tauSEXP);
@@ -2431,7 +2429,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type upper_prob(upper_probSEXP);
     Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
     Rcpp::traits::input_parameter< double >::type root_alg_precision(root_alg_precisionSEXP);
-    rcpp_result_gen = Rcpp::wrap(pred_ints_exact_insamp_bcf(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores, root_alg_precision));
+    rcpp_result_gen = Rcpp::wrap(pred_ints_exact_insamp_bcf(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores, root_alg_precision));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -3056,8 +3054,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bcfbma_pred_ints_lin_alg_fields_LDL_insamp_cate", (DL_FUNC) &_bcfbma_pred_ints_lin_alg_fields_LDL_insamp_cate, 19},
     {"_bcfbma_mixt_eval_cdf", (DL_FUNC) &_bcfbma_mixt_eval_cdf, 6},
     {"_bcfbma_rootmixt", (DL_FUNC) &_bcfbma_rootmixt, 8},
-    {"_bcfbma_pred_ints_exact_outsamp_bcf", (DL_FUNC) &_bcfbma_pred_ints_exact_outsamp_bcf, 26},
-    {"_bcfbma_pred_ints_exact_insamp_bcf", (DL_FUNC) &_bcfbma_pred_ints_exact_insamp_bcf, 20},
+    {"_bcfbma_pred_ints_exact_outsamp_bcf", (DL_FUNC) &_bcfbma_pred_ints_exact_outsamp_bcf, 25},
+    {"_bcfbma_pred_ints_exact_insamp_bcf", (DL_FUNC) &_bcfbma_pred_ints_exact_insamp_bcf, 19},
     {"_bcfbma_find_term_nodes_gs", (DL_FUNC) &_bcfbma_find_term_nodes_gs, 1},
     {"_bcfbma_find_term_obs_gs", (DL_FUNC) &_bcfbma_find_term_obs_gs, 2},
     {"_bcfbma_calc_rowsums", (DL_FUNC) &_bcfbma_calc_rowsums, 1},

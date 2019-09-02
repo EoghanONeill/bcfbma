@@ -435,14 +435,14 @@ rootmixt <- function(d_o_f, a, b, mean_vec, var_vec, weights_vec, quant_val, roo
 
 #' @title Obtain BARTBMA predictions
 #' @export
-pred_ints_exact_outsamp_bcf <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, lower_prob, upper_prob, num_cores, root_alg_precision) {
-    .Call(`_bcfbma_pred_ints_exact_outsamp_bcf`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, lower_prob, upper_prob, num_cores, root_alg_precision)
+pred_ints_exact_outsamp_bcf <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, lower_prob, upper_prob, num_cores, root_alg_precision) {
+    .Call(`_bcfbma_pred_ints_exact_outsamp_bcf`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, lower_prob, upper_prob, num_cores, root_alg_precision)
 }
 
 #' @title Obtain BARTBMA predictions
 #' @export
-pred_ints_exact_insamp_bcf <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores, root_alg_precision) {
-    .Call(`_bcfbma_pred_ints_exact_insamp_bcf`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores, root_alg_precision)
+pred_ints_exact_insamp_bcf <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores, root_alg_precision) {
+    .Call(`_bcfbma_pred_ints_exact_insamp_bcf`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores, root_alg_precision)
 }
 
 find_term_nodes_gs <- function(tree_table) {

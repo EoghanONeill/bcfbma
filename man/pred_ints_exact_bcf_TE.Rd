@@ -4,23 +4,17 @@
 \alias{pred_ints_exact_bcf_TE}
 \title{Prediction intervals for BCF-BMA Treatment Effect estimates}
 \usage{
-pred_ints_exact_bcf_TE(object, num_iter, l_quant, u_quant,
-  newdata = NULL, num_cores = 1, root_alg_precision = 1e-05)
+pred_ints_exact_bcf_TE(object, l_quant, u_quant, newdata = NULL,
+  num_cores = 1, root_alg_precision = 1e-05)
 }
 \arguments{
 \item{object}{bartBMA object obtained from function bartBMA}
-
-\item{num_iter}{Total number of iterations of the Gibbs sampler (including burn-in).}
 
 \item{l_quant}{Lower quartile of the prediction interval.}
 
 \item{u_quant}{Upper quartile of the prediction interval.}
 
 \item{newdata}{Test data for which predictions are to be produced. Default = NULL. If NULL, then produces prediction intervals for training data if no test data was used in producing the bartBMA object, or produces prediction intervals for the original test data if test data was used in producing the bartBMA object.}
-
-\item{burnin}{Number of burn-on iterations of the Gibbs sampler.}
-
-\item{update_resids}{Option for whether to update the partial residuals in the gibbs sampler. If equal to 1, updates partial residuals, if equal to zero, does not update partial residuals. The defaullt setting is to update the partial residua;s.}
 }
 \value{
 The output is a list of length one. The one element in this list is a vector of prediction intervals???
