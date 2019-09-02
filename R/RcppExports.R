@@ -425,6 +425,26 @@ pred_ints_lin_alg_fields_LDL_insamp_cate <- function(overall_sum_trees_mu, overa
     .Call(`_bcfbma_pred_ints_lin_alg_fields_LDL_insamp_cate`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores)
 }
 
+mixt_eval_cdf <- function(x_val, d_o_f, mean_vec, var_vec, weights_vec, quant_val) {
+    .Call(`_bcfbma_mixt_eval_cdf`, x_val, d_o_f, mean_vec, var_vec, weights_vec, quant_val)
+}
+
+rootmixt <- function(d_o_f, a, b, mean_vec, var_vec, weights_vec, quant_val, root_alg_precision) {
+    .Call(`_bcfbma_rootmixt`, d_o_f, a, b, mean_vec, var_vec, weights_vec, quant_val, root_alg_precision)
+}
+
+#' @title Obtain BARTBMA predictions
+#' @export
+pred_ints_exact_outsamp_bcf <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, lower_prob, upper_prob, num_cores, root_alg_precision) {
+    .Call(`_bcfbma_pred_ints_exact_outsamp_bcf`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, lower_prob, upper_prob, num_cores, root_alg_precision)
+}
+
+#' @title Obtain BARTBMA predictions
+#' @export
+pred_ints_exact_insamp_bcf <- function(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores, root_alg_precision) {
+    .Call(`_bcfbma_pred_ints_exact_insamp_bcf`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores, root_alg_precision)
+}
+
 find_term_nodes_gs <- function(tree_table) {
     .Call(`_bcfbma_find_term_nodes_gs`, tree_table)
 }

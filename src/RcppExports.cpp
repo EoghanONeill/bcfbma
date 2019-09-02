@@ -2335,6 +2335,106 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mixt_eval_cdf
+double mixt_eval_cdf(double x_val, double d_o_f, std::vector<double> mean_vec, std::vector<double> var_vec, std::vector<double> weights_vec, double quant_val);
+RcppExport SEXP _bcfbma_mixt_eval_cdf(SEXP x_valSEXP, SEXP d_o_fSEXP, SEXP mean_vecSEXP, SEXP var_vecSEXP, SEXP weights_vecSEXP, SEXP quant_valSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x_val(x_valSEXP);
+    Rcpp::traits::input_parameter< double >::type d_o_f(d_o_fSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type mean_vec(mean_vecSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type var_vec(var_vecSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type weights_vec(weights_vecSEXP);
+    Rcpp::traits::input_parameter< double >::type quant_val(quant_valSEXP);
+    rcpp_result_gen = Rcpp::wrap(mixt_eval_cdf(x_val, d_o_f, mean_vec, var_vec, weights_vec, quant_val));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rootmixt
+double rootmixt(double d_o_f, double a, double b, std::vector<double> mean_vec, std::vector<double> var_vec, std::vector<double> weights_vec, double quant_val, double root_alg_precision);
+RcppExport SEXP _bcfbma_rootmixt(SEXP d_o_fSEXP, SEXP aSEXP, SEXP bSEXP, SEXP mean_vecSEXP, SEXP var_vecSEXP, SEXP weights_vecSEXP, SEXP quant_valSEXP, SEXP root_alg_precisionSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type d_o_f(d_o_fSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type mean_vec(mean_vecSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type var_vec(var_vecSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type weights_vec(weights_vecSEXP);
+    Rcpp::traits::input_parameter< double >::type quant_val(quant_valSEXP);
+    Rcpp::traits::input_parameter< double >::type root_alg_precision(root_alg_precisionSEXP);
+    rcpp_result_gen = Rcpp::wrap(rootmixt(d_o_f, a, b, mean_vec, var_vec, weights_vec, quant_val, root_alg_precision));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pred_ints_exact_outsamp_bcf
+List pred_ints_exact_outsamp_bcf(List overall_sum_trees_mu, List overall_sum_trees_tau, List overall_sum_mat_mu, List overall_sum_mat_tau, NumericVector y, NumericVector BIC_weights, int num_iter, int num_obs, double a_mu, double a_tau, double sigma, double mu_mu_mu, double mu_mu_tau, double nu, double lambda, NumericVector z, NumericMatrix test_data, NumericMatrix test_pihat, NumericVector z_test, int include_pi2, int num_propscores, int num_test_obs, double lower_prob, double upper_prob, int num_cores, double root_alg_precision);
+RcppExport SEXP _bcfbma_pred_ints_exact_outsamp_bcf(SEXP overall_sum_trees_muSEXP, SEXP overall_sum_trees_tauSEXP, SEXP overall_sum_mat_muSEXP, SEXP overall_sum_mat_tauSEXP, SEXP ySEXP, SEXP BIC_weightsSEXP, SEXP num_iterSEXP, SEXP num_obsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP sigmaSEXP, SEXP mu_mu_muSEXP, SEXP mu_mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP zSEXP, SEXP test_dataSEXP, SEXP test_pihatSEXP, SEXP z_testSEXP, SEXP include_pi2SEXP, SEXP num_propscoresSEXP, SEXP num_test_obsSEXP, SEXP lower_probSEXP, SEXP upper_probSEXP, SEXP num_coresSEXP, SEXP root_alg_precisionSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type overall_sum_trees_mu(overall_sum_trees_muSEXP);
+    Rcpp::traits::input_parameter< List >::type overall_sum_trees_tau(overall_sum_trees_tauSEXP);
+    Rcpp::traits::input_parameter< List >::type overall_sum_mat_mu(overall_sum_mat_muSEXP);
+    Rcpp::traits::input_parameter< List >::type overall_sum_mat_tau(overall_sum_mat_tauSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type BIC_weights(BIC_weightsSEXP);
+    Rcpp::traits::input_parameter< int >::type num_iter(num_iterSEXP);
+    Rcpp::traits::input_parameter< int >::type num_obs(num_obsSEXP);
+    Rcpp::traits::input_parameter< double >::type a_mu(a_muSEXP);
+    Rcpp::traits::input_parameter< double >::type a_tau(a_tauSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< double >::type mu_mu_mu(mu_mu_muSEXP);
+    Rcpp::traits::input_parameter< double >::type mu_mu_tau(mu_mu_tauSEXP);
+    Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type z(zSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type test_data(test_dataSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type test_pihat(test_pihatSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type z_test(z_testSEXP);
+    Rcpp::traits::input_parameter< int >::type include_pi2(include_pi2SEXP);
+    Rcpp::traits::input_parameter< int >::type num_propscores(num_propscoresSEXP);
+    Rcpp::traits::input_parameter< int >::type num_test_obs(num_test_obsSEXP);
+    Rcpp::traits::input_parameter< double >::type lower_prob(lower_probSEXP);
+    Rcpp::traits::input_parameter< double >::type upper_prob(upper_probSEXP);
+    Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
+    Rcpp::traits::input_parameter< double >::type root_alg_precision(root_alg_precisionSEXP);
+    rcpp_result_gen = Rcpp::wrap(pred_ints_exact_outsamp_bcf(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, test_data, test_pihat, z_test, include_pi2, num_propscores, num_test_obs, lower_prob, upper_prob, num_cores, root_alg_precision));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pred_ints_exact_insamp_bcf
+List pred_ints_exact_insamp_bcf(List overall_sum_trees_mu, List overall_sum_trees_tau, List overall_sum_mat_mu, List overall_sum_mat_tau, NumericVector y, NumericVector BIC_weights, int num_iter, int num_obs, double a_mu, double a_tau, double sigma, double mu_mu_mu, double mu_mu_tau, double nu, double lambda, NumericVector z, double lower_prob, double upper_prob, int num_cores, double root_alg_precision);
+RcppExport SEXP _bcfbma_pred_ints_exact_insamp_bcf(SEXP overall_sum_trees_muSEXP, SEXP overall_sum_trees_tauSEXP, SEXP overall_sum_mat_muSEXP, SEXP overall_sum_mat_tauSEXP, SEXP ySEXP, SEXP BIC_weightsSEXP, SEXP num_iterSEXP, SEXP num_obsSEXP, SEXP a_muSEXP, SEXP a_tauSEXP, SEXP sigmaSEXP, SEXP mu_mu_muSEXP, SEXP mu_mu_tauSEXP, SEXP nuSEXP, SEXP lambdaSEXP, SEXP zSEXP, SEXP lower_probSEXP, SEXP upper_probSEXP, SEXP num_coresSEXP, SEXP root_alg_precisionSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type overall_sum_trees_mu(overall_sum_trees_muSEXP);
+    Rcpp::traits::input_parameter< List >::type overall_sum_trees_tau(overall_sum_trees_tauSEXP);
+    Rcpp::traits::input_parameter< List >::type overall_sum_mat_mu(overall_sum_mat_muSEXP);
+    Rcpp::traits::input_parameter< List >::type overall_sum_mat_tau(overall_sum_mat_tauSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type BIC_weights(BIC_weightsSEXP);
+    Rcpp::traits::input_parameter< int >::type num_iter(num_iterSEXP);
+    Rcpp::traits::input_parameter< int >::type num_obs(num_obsSEXP);
+    Rcpp::traits::input_parameter< double >::type a_mu(a_muSEXP);
+    Rcpp::traits::input_parameter< double >::type a_tau(a_tauSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< double >::type mu_mu_mu(mu_mu_muSEXP);
+    Rcpp::traits::input_parameter< double >::type mu_mu_tau(mu_mu_tauSEXP);
+    Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type z(zSEXP);
+    Rcpp::traits::input_parameter< double >::type lower_prob(lower_probSEXP);
+    Rcpp::traits::input_parameter< double >::type upper_prob(upper_probSEXP);
+    Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
+    Rcpp::traits::input_parameter< double >::type root_alg_precision(root_alg_precisionSEXP);
+    rcpp_result_gen = Rcpp::wrap(pred_ints_exact_insamp_bcf(overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores, root_alg_precision));
+    return rcpp_result_gen;
+END_RCPP
+}
 // find_term_nodes_gs
 NumericVector find_term_nodes_gs(NumericMatrix tree_table);
 RcppExport SEXP _bcfbma_find_term_nodes_gs(SEXP tree_tableSEXP) {
@@ -2954,6 +3054,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bcfbma_mean_vars_lin_alg_insamp_par_cate", (DL_FUNC) &_bcfbma_mean_vars_lin_alg_insamp_par_cate, 17},
     {"_bcfbma_mean_vars_lin_alg_outsamp_par_cate", (DL_FUNC) &_bcfbma_mean_vars_lin_alg_outsamp_par_cate, 23},
     {"_bcfbma_pred_ints_lin_alg_fields_LDL_insamp_cate", (DL_FUNC) &_bcfbma_pred_ints_lin_alg_fields_LDL_insamp_cate, 19},
+    {"_bcfbma_mixt_eval_cdf", (DL_FUNC) &_bcfbma_mixt_eval_cdf, 6},
+    {"_bcfbma_rootmixt", (DL_FUNC) &_bcfbma_rootmixt, 8},
+    {"_bcfbma_pred_ints_exact_outsamp_bcf", (DL_FUNC) &_bcfbma_pred_ints_exact_outsamp_bcf, 26},
+    {"_bcfbma_pred_ints_exact_insamp_bcf", (DL_FUNC) &_bcfbma_pred_ints_exact_insamp_bcf, 20},
     {"_bcfbma_find_term_nodes_gs", (DL_FUNC) &_bcfbma_find_term_nodes_gs, 1},
     {"_bcfbma_find_term_obs_gs", (DL_FUNC) &_bcfbma_find_term_obs_gs, 2},
     {"_bcfbma_calc_rowsums", (DL_FUNC) &_bcfbma_calc_rowsums, 1},

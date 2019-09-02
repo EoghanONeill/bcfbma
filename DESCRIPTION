@@ -9,5 +9,5 @@ Description: Bayesian Causal Forests using Bayesian Model Averaging is an extens
   This is based on the BART-BMA (Hernandez et al. 2018) of BART (Chipman et al. 2010).
 License: GPL (>= 2)
 Imports: Rcpp (>= 0.12.18), mvnfast
-LinkingTo: Rcpp, RcppArmadillo
+LinkingTo: Rcpp, RcppArmadillo, BH
 RoxygenNote: 6.1.1
