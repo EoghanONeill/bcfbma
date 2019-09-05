@@ -651,76 +651,174 @@ IntegerVector orderforOW__bcf(NumericVector x) {	// gives vector of position of 
   return match(sorted, x);	//  match is the Rcpp sugar version of the R function match, which returns a vector of the positions of the first matches of the first argument in the second.
 }
 //######################################################################################################################//
-
+#include <math.h>       /* tgamma */
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
-double get_tree_prior_bcf(NumericMatrix tree_table,NumericMatrix tree_matrix,double alpha,double beta){
-  double propsplit=1;
-  IntegerVector d;
-  IntegerVector d2;
-  // int col=tree_matrix.ncol();
-  // std::vector<int> int_nodes_index(100*col); // Why  100* ? 
-  // std::vector<int> term_nodes_index(100*col); //
+double get_tree_prior_bcf(double spike_tree, double num_obs, double num_vars, double lambda_poisson,
+                          NumericMatrix tree_table,
+                          NumericMatrix tree_matrix,
+                          double alpha,double beta){
   
-  // int index_count=0;  
-  // int index_count2=0;
-  arma::uvec internal_nodes_prop=find_internal_nodes_bcf(tree_table);
-  NumericVector terminal_nodes_prop_wrapped=find_term_nodes_bcf(tree_table);
-  arma::uvec terminal_nodes_prop=as<arma::uvec>(terminal_nodes_prop_wrapped);
-  arma::mat tree_matrix2(tree_matrix.begin(),tree_matrix.nrow(),tree_matrix.ncol(),false);
-  int count=internal_nodes_prop.size();
-  int count_term_nodes=terminal_nodes_prop.size();
   
-  if(count==0) propsplit=1-alpha;
-  
-  for(int k=0;k<count;k++){ 
-    for(int j=0;j<tree_matrix.ncol();j++){
-      arma::vec armacol=tree_matrix2.col(j);
-      arma::uvec found=find(armacol==internal_nodes_prop[k]);      
-      if(found.size()>0){        
-        //int_nodes_index[index_count]=j;
-        //index_count++;
-        propsplit*=alpha*pow((j+1),-beta) ;  
-        break;
-      }        
+  if(spike_tree==1){
+    arma::uvec internal_nodes_prop=find_internal_nodes_bcf(tree_table);
+    arma::mat tree_table2(tree_table.begin(),tree_table.nrow(),tree_table.ncol(),false);
+    
+    //Rcout << "line 600.internal_nodes_prop = " << internal_nodes_prop <<".\n";
+    
+    double k_temp=internal_nodes_prop.size()+1;
+    
+    //Rcout << "line 600.k_temp = " << k_temp <<".\n";
+    
+    arma::mat split_var_rows=tree_table2.rows(internal_nodes_prop-1);
+    arma::vec split_var_vec=split_var_rows.col(2);
+    arma::vec uniquesplitvars=arma::unique(split_var_vec);
+    double q_temp=uniquesplitvars.n_elem;
+    // Rcout << "line 606.\n";
+    // Rcout << "line 600.q_temp = " << q_temp <<".\n";
+    // Rcout << "line 600.lambda_poisson = " << lambda_poisson <<".\n";
+    // Rcout << "line 600.num_obs = " << num_obs <<".\n";
+    // Rcout << "line double(tgamma(1))= " << double(std::tgamma(1)) <<".\n";
+    // Rcout << "line double(tgamma(100)) = " << double(std::tgamma(100)) <<".\n";
+    // Rcout << "line double(tgamma(400)) = " << double(std::tgamma(400)) <<".\n";
+    // Rcout << "line double(tgamma(400)) = " << double(std::tgamma(double(400))) <<".\n";
+    // Rcout << "line double(lgamma(400)) = " << double(std::lgamma(double(400))) <<".\n";
+    
+    //int qint = q_temp;
+    //int num_obsint = num_obs;
+    
+    //FIRST CALCULATE THE log of denom and right_truncatin
+    //Then take the exponential
+    //then take the difference
+    
+    double denom=1;
+    for(int i=0; i<q_temp+1;i++){
+      //denom= denom-(pow(lambda_poisson,double(i))*exp(-lambda_poisson)/double(tgamma(i+1))); 
+      denom = denom-exp(i*log(lambda_poisson)-lambda_poisson-std::lgamma(double(i+1)));
     }
-    // int_nodes_index.resize(index_count);
-    // if(int_nodes_index.size()!=0){      
-    //   d=unique(as<IntegerVector>(wrap(int_nodes_index)));
-    //   double d1=d[0];
-    //   propsplit*=alpha*pow((d1+1),-beta) ;  
-    // }
-    // std::vector<int> temp(col);
-    // int_nodes_index=temp;
-    // index_count=0;
-  } 
-  
-  if(count!=0){  
-    for(int k=0;k<count_term_nodes;k++){ 
+    double right_truncation=1;
+    for(int i=0; i<num_obs+1;i++){
+      //right_truncation= right_truncation-(pow(lambda_poisson,double(i))*std::exp(-lambda_poisson)/double(tgamma(i+1))); 
+      right_truncation= right_truncation-exp(i*log(lambda_poisson)-lambda_poisson-std::lgamma(double(i+1)));
+    }
+    //Rcout << " right_truncation= " << right_truncation << ".\n";
+    denom=denom-right_truncation;
+    //Rcout << " denom= " << denom << ".\n";
+    
+    //double propsplit=(tgamma(num_vars+1)/(tgamma(q_temp+1)*(tgamma(num_vars-q_temp+1)))*tgamma(q_temp+1)*tgamma(num_vars-q_temp+1)/tgamma(num_vars+2));
+    //Beta(1,1) on binomial probability implies uniform prior on numbers of variables from 0 to p (i.e. number of vars has prob (1/(p+1)))
+    //double propsplit=(1/double(num_vars+1))*pow(lambda_poisson,k_temp)*
+    //  exp(-lambda_poisson)*(1/double(tgamma(k_temp)*denom))*
+    //  (1/(tgamma(num_obs)*pow(q_temp,k_temp-1-q_temp)*
+    //  tgamma(q_temp+1)/double(tgamma(num_obs-k_temp+1))));
+    
+    // double propsplit=(1/double(num_vars+1))*
+    //   pow(lambda_poisson,k_temp)*
+    //   exp(-lambda_poisson)*(1/double(tgamma(k_temp)*denom))*
+    //   (1/exp(lgamma(num_obs)+(k_temp-1-q_temp)*log(q_temp)+
+    //   lgamma(q_temp+1)-(lgamma(num_obs-k_temp+1))));
+    // 
+    // double propsplit=(1/double(num_vars+1))*
+    //   exp(  k_temp*log(lambda_poisson)-
+    //   -lambda_poisson-std::lgamma(k_temp)-denom  )*
+    //   (1/exp(std::lgamma(num_obs)+(k_temp-1-q_temp)*log(q_temp)+
+    //   std::lgamma(q_temp+1)-(std::lgamma(num_obs-k_temp+1))));
+    
+    if(q_temp==0){
+      double propsplit=(1/double(num_vars+1))*
+        exp(  k_temp*log(lambda_poisson)-
+        lambda_poisson-std::lgamma(k_temp+1)-denom)  ;
+      //Rcout << " propsplit= " << propsplit << ".\n";
+      return(propsplit);
+      
+    }else{
+      double propsplit=(1/double(num_vars+1))*
+        exp(  k_temp*log(lambda_poisson)-
+        lambda_poisson-std::lgamma(k_temp+1)-denom  -
+        (std::lgamma(num_obs)+(k_temp-1-q_temp)*log(q_temp)+
+        std::lgamma(q_temp+1)-(std::lgamma(num_obs-k_temp+1))));
+      //Rcout << " propsplit= " << propsplit << ".\n";
+      return(propsplit);
+      
+    }
+    
+    // Rcout << "line 621.\n";
+    //Rcout << " propsplit= " << propsplit << ".\n";
+    
+    
+    
+    //return(propsplit);
+    
+  }else{
+    
+    
+    double propsplit=1;
+    IntegerVector d;
+    IntegerVector d2;
+    // int col=tree_matrix.ncol();
+    // std::vector<int> int_nodes_index(100*col); // Why  100* ? 
+    // std::vector<int> term_nodes_index(100*col); //
+    
+    // int index_count=0;  
+    // int index_count2=0;
+    arma::uvec internal_nodes_prop=find_internal_nodes_bcf(tree_table);
+    NumericVector terminal_nodes_prop_wrapped=find_term_nodes_bcf(tree_table);
+    arma::uvec terminal_nodes_prop=as<arma::uvec>(terminal_nodes_prop_wrapped);
+    arma::mat tree_matrix2(tree_matrix.begin(),tree_matrix.nrow(),tree_matrix.ncol(),false);
+    int count=internal_nodes_prop.size();
+    int count_term_nodes=terminal_nodes_prop.size();
+    
+    if(count==0) propsplit=1-alpha;
+    
+    for(int k=0;k<count;k++){ 
       for(int j=0;j<tree_matrix.ncol();j++){
         arma::vec armacol=tree_matrix2.col(j);
-        arma::uvec found=find(armacol==terminal_nodes_prop[k]);      
+        arma::uvec found=find(armacol==internal_nodes_prop[k]);      
         if(found.size()>0){        
-          //term_nodes_index[index_count2]=j;
-          //index_count2++;
-          propsplit*=1-alpha*pow((j+1),-beta) ; 
+          //int_nodes_index[index_count]=j;
+          //index_count++;
+          propsplit*=alpha*pow((j+1),-beta) ;  
           break;
         }        
       }
-      // term_nodes_index.resize(index_count2);
-      // if(term_nodes_index.size()!=0){      
-      //   d2=unique(as<IntegerVector>(wrap(term_nodes_index)));
-      //   double d1=d2[0];
-      //   propsplit*=1-alpha*pow((d1+1),-beta) ;  
+      // int_nodes_index.resize(index_count);
+      // if(int_nodes_index.size()!=0){      
+      //   d=unique(as<IntegerVector>(wrap(int_nodes_index)));
+      //   double d1=d[0];
+      //   propsplit*=alpha*pow((d1+1),-beta) ;  
       // }
-      // std::vector<int> temp2(col);
-      // term_nodes_index=temp2;
-      // index_count2=0;
+      // std::vector<int> temp(col);
+      // int_nodes_index=temp;
+      // index_count=0;
+    } 
+    
+    if(count!=0){  
+      for(int k=0;k<count_term_nodes;k++){ 
+        for(int j=0;j<tree_matrix.ncol();j++){
+          arma::vec armacol=tree_matrix2.col(j);
+          arma::uvec found=find(armacol==terminal_nodes_prop[k]);      
+          if(found.size()>0){        
+            //term_nodes_index[index_count2]=j;
+            //index_count2++;
+            propsplit*=1-alpha*pow((j+1),-beta) ; 
+            break;
+          }        
+        }
+        // term_nodes_index.resize(index_count2);
+        // if(term_nodes_index.size()!=0){      
+        //   d2=unique(as<IntegerVector>(wrap(term_nodes_index)));
+        //   double d1=d2[0];
+        //   propsplit*=1-alpha*pow((d1+1),-beta) ;  
+        // }
+        // std::vector<int> temp2(col);
+        // term_nodes_index=temp2;
+        // index_count2=0;
+      }
     }
+    
+    return(propsplit);
   }
-  
-  return(propsplit);
 }
 //######################################################################################################################//
 
@@ -1302,11 +1400,17 @@ arma::mat J_bcf(NumericMatrix obs_to_nodes_temp,NumericVector tree_term_nodes){
     double tn=tree_term_nodes[i];									// let tn equal the i-1^th value in tree_term_nodes
     arma::uvec term_obs=find_term_obs_bcf(obs_to_nodes_temp,tn);		// function find_term_obs_bcf. Gives indices of elements equal to tn (for leftmost column of obs_to_nodes_temp that has elements equal to tn).
     //assign term_obs to the correct index of J_bcf
-    NumericVector term_obs2=as<NumericVector>(wrap(term_obs));		// convert term_obs to Numeric Vector. Could use IntegerVector?
-    NumericVector obs_col(obs_to_nodes_temp.nrow());				// create a vector obs_col of length equal to number of rows of obs_to_nodes_temp. Other values automatically 0.
-    obs_col[term_obs2]=1;											// elements of obs_col indexed by term_obs2 set equal to 1. Other values automatically 0.
-    arma::vec colmat=Rcpp::as<arma::vec>(obs_col);					// convert obs_col to vec called colmat 
-    Jmat.col(i)= colmat;											// Set i-1^th column of Jmat equal to comat
+    
+    // NumericVector term_obs2=as<NumericVector>(wrap(term_obs));		// convert term_obs to Numeric Vector. Could use IntegerVector?
+    // NumericVector obs_col(obs_to_nodes_temp.nrow());				// create a vector obs_col of length equal to number of rows of obs_to_nodes_temp. Other values automatically 0.
+    // obs_col[term_obs2]=1;											// elements of obs_col indexed by term_obs2 set equal to 1. Other values automatically 0.
+    // arma::vec colmat=Rcpp::as<arma::vec>(obs_col);					// convert obs_col to vec called colmat
+    // Jmat.col(i)= colmat;											// Set i-1^th column of Jmat equal to comat
+    
+    arma::vec  colmat=arma::zeros(Jmat.n_rows) ;// colmattest(Jmat.n_rows,0);
+    colmat.elem(term_obs).fill(1);
+    Jmat.col(i)= colmat;
+    
   }
   return(Jmat);			// return the arma mat Jmat
 }
@@ -1712,7 +1816,7 @@ List sumtree_likelihood_tau_round1_exact_bcf(NumericVector y_temp,NumericMatrix 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
-List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix treetable,NumericMatrix tree_mat,
+List get_best_split_mu_bcf(double spike_tree, double num_obs, double num_vars,double lambda_poisson,NumericVector resids,arma::mat& data,NumericMatrix treetable,NumericMatrix tree_mat,
                            double a,double mu,double nu,double lambda,double c,double lowest_BIC,
                            int parent,NumericMatrix cp_mat,double alpha,double beta,int maxOWsize,
                            unsigned int min_num_obs_for_mu_split, unsigned int min_num_obs_after_mu_split,
@@ -1839,7 +1943,7 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
       //if(temptestingtabcols.ncol()<5) throw std::range_error("Line 1021");
       
       
-      tree_prior=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha,beta);	// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+      tree_prior=get_tree_prior_bcf(spike_tree,num_obs,num_vars,lambda_poisson,proposal_tree[0],proposal_tree[1],alpha,beta);	// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
       //int_nodes=find_term_nodes_bcf(proposal_tree[0]);							// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector?
       //p=int_nodes.size();														// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
       //BIC=-2*(lik+log(tree_prior))+p*log(data.n_rows);						// data.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -2024,7 +2128,8 @@ List get_best_split_mu_bcf(NumericVector resids,arma::mat& data,NumericMatrix tr
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
-List get_best_split_mu_update_bcf(NumericVector resids,arma::mat& data,NumericMatrix treetable,NumericMatrix tree_mat,
+List get_best_split_mu_update_bcf(double spike_tree, double num_obs,double num_vars,double lambda_poisson,
+                                  NumericVector resids,arma::mat& data,NumericMatrix treetable,NumericMatrix tree_mat,
                            double a,double mu,double nu,double lambda,double c,double lowest_BIC,
                            int parent,List cp_matlist,double alpha,double beta,int maxOWsize,
                            unsigned int min_num_obs_for_mu_split, unsigned int min_num_obs_after_mu_split,
@@ -2150,7 +2255,7 @@ List get_best_split_mu_update_bcf(NumericVector resids,arma::mat& data,NumericMa
       //if(temptestingtabcols.ncol()<5) throw std::range_error("Line 1021");
       
       
-      tree_prior=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha,beta);	// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+      tree_prior=get_tree_prior_bcf(spike_tree,num_obs,num_vars,lambda_poisson,proposal_tree[0],proposal_tree[1],alpha,beta);	// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
       //int_nodes=find_term_nodes_bcf(proposal_tree[0]);							// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector?
       //p=int_nodes.size();														// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
       //BIC=-2*(lik+log(tree_prior))+p*log(data.n_rows);						// data.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -2318,7 +2423,8 @@ List get_best_split_mu_update_bcf(NumericVector resids,arma::mat& data,NumericMa
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
-List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
+List get_best_split_tau_bcf(double spike_tree, double num_obs, double num_vars_mu,double lambda_poisson_mu,double num_vars_tau,double lambda_poisson_tau,
+                            NumericVector resids,arma::mat& x_moderate_a,
                             NumericMatrix tree_table_tau,NumericMatrix tree_mat_tau,
                                    double a_mu,double a_tau,double mu_tau,double nu,double lambda,
                                    double c,
@@ -2471,7 +2577,7 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
       //if(temptestingtabcols.ncol()<5) throw std::range_error("Line 1021");
       
       
-      tree_prior=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);	// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+      tree_prior=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);	// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
       //int_nodes=find_term_nodes_bcf(proposal_tree[0]);							// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector?
       //p=int_nodes.size();														// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
       //BIC=-2*(lik+log(tree_prior))+p*log(x_moderate_a.n_rows);	
@@ -2650,7 +2756,8 @@ List get_best_split_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
-List get_best_split_tau_update_bcf(NumericVector resids,arma::mat& x_moderate_a,
+List get_best_split_tau_update_bcf(double spike_tree, double num_obs,double num_vars_mu,double lambda_poisson_mu,double num_vars_tau,double lambda_poisson_tau,
+                                   NumericVector resids,arma::mat& x_moderate_a,
                             NumericMatrix tree_table_tau,NumericMatrix tree_mat_tau,
                             double a_mu,double a_tau,double mu_tau,double nu,double lambda,
                             double c,
@@ -2802,7 +2909,7 @@ List get_best_split_tau_update_bcf(NumericVector resids,arma::mat& x_moderate_a,
       //if(temptestingtabcols.ncol()<5) throw std::range_error("Line 1021");
       
       
-      tree_prior=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);	// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+      tree_prior=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);	// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
       //int_nodes=find_term_nodes_bcf(proposal_tree[0]);							// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector?
       //p=int_nodes.size();														// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
       //BIC=-2*(lik+log(tree_prior))+p*log(x_moderate_a.n_rows);	
@@ -2981,7 +3088,8 @@ List get_best_split_tau_update_bcf(NumericVector resids,arma::mat& x_moderate_a,
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
-List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,NumericMatrix tree_table_tau,NumericMatrix tree_mat_tau,
+List get_best_split_tau_round1_bcf(double spike_tree, double num_obs,double num_vars_mu,double lambda_poisson_mu,double num_vars_tau,double lambda_poisson_tau,
+                                   NumericVector resids,arma::mat& x_moderate_a,NumericMatrix tree_table_tau,NumericMatrix tree_mat_tau,
                                double a_mu,double a_tau,double mu_mu,double mu_tau,double nu,double lambda,double c,
                                double lowest_BIC,int parent,NumericMatrix cp_mat,
                                double alpha_mu,double beta_mu,double alpha_tau,double beta_tau,
@@ -3176,13 +3284,13 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
             NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1412");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not well defined
           //NumericMatrix temptestingtabcols = proposal_tree[0];
           //if(temptestingtabcols.ncol()<5) throw std::range_error("Line 1417");
           
-          tree_prior*=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }else{															// if s is not a list
           NumericMatrix prev_sum_trees_mu2=prev_sum_trees_mu[parent2[i]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
           NumericMatrix prev_sum_trees_mat_mu2=prev_sum_trees_mat_mu[parent2[i]];		// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
@@ -3220,13 +3328,13 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
             //NumericMatrix mat=prev_sum_trees_mat_mu2;								// let mat equal (t+1)^th element of st_mat
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             if(prev_sum_trees_mu2.ncol()<5) throw std::range_error("Line 1438");
-            tree_prior*=get_tree_prior_bcf(prev_sum_trees_mu2,prev_sum_trees_mat_mu2,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,prev_sum_trees_mu2,prev_sum_trees_mat_mu2,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not well defined
           //NumericMatrix temptestingtabcols = proposal_tree[0];
           //if(temptestingtabcols.ncol()<5) throw std::range_error("Line 1443");
           
-          tree_prior*=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }  
       //}else{
       //  throw std::range_error("get_best_split_tau_round1_bcf should only be used in the first round");	// throw an error.
@@ -3410,7 +3518,8 @@ List get_best_split_tau_round1_bcf(NumericVector resids,arma::mat& x_moderate_a,
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
-List get_best_split_tau_round1_update_bcf(NumericVector resids,arma::mat& x_moderate_a,NumericMatrix tree_table_tau,NumericMatrix tree_mat_tau,
+List get_best_split_tau_round1_update_bcf(double spike_tree, double num_obs,double num_vars_mu,double lambda_poisson_mu,double num_vars_tau,double lambda_poisson_tau,
+                                          NumericVector resids,arma::mat& x_moderate_a,NumericMatrix tree_table_tau,NumericMatrix tree_mat_tau,
                                    double a_mu,double a_tau,double mu_mu,double mu_tau,double nu,double lambda,double c,
                                    double lowest_BIC,int parent,List cp_matlist,
                                    double alpha_mu,double beta_mu,double alpha_tau,double beta_tau,
@@ -3604,13 +3713,13 @@ List get_best_split_tau_round1_update_bcf(NumericVector resids,arma::mat& x_mode
           NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 1412");
-          tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not well defined
         //NumericMatrix temptestingtabcols = proposal_tree[0];
         //if(temptestingtabcols.ncol()<5) throw std::range_error("Line 1417");
         
-        tree_prior*=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
       }else{															// if s is not a list
         NumericMatrix prev_sum_trees_mu2=prev_sum_trees_mu[parent2[i]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
         NumericMatrix prev_sum_trees_mat_mu2=prev_sum_trees_mat_mu[parent2[i]];		// sum_trees_mat2 is the element of the input list sum_trees_mat indexed by parent2[i]
@@ -3647,13 +3756,13 @@ List get_best_split_tau_round1_update_bcf(NumericVector resids,arma::mat& x_mode
         //NumericMatrix mat=prev_sum_trees_mat_mu2;								// let mat equal (t+1)^th element of st_mat
         //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
         if(prev_sum_trees_mu2.ncol()<5) throw std::range_error("Line 1438");
-        tree_prior*=get_tree_prior_bcf(prev_sum_trees_mu2,prev_sum_trees_mat_mu2,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,prev_sum_trees_mu2,prev_sum_trees_mat_mu2,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         
         //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not well defined
         //NumericMatrix temptestingtabcols = proposal_tree[0];
         //if(temptestingtabcols.ncol()<5) throw std::range_error("Line 1443");
         
-        tree_prior*=get_tree_prior_bcf(proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+        tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,proposal_tree[0],proposal_tree[1],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
       }  
       //}else{
       //  throw std::range_error("get_best_split_tau_round1_bcf should only be used in the first round");	// throw an error.
@@ -3837,7 +3946,8 @@ List get_best_split_tau_round1_update_bcf(NumericVector resids,arma::mat& x_mode
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
-List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,NumericMatrix tree_table_tau,NumericMatrix tree_mat_tau,
+List get_best_split_sum_tau_bcf(double spike_tree, double num_obs,double num_vars_mu,double lambda_poisson_mu,double num_vars_tau,double lambda_poisson_tau,
+                                NumericVector resids,arma::mat& x_moderate_a,NumericMatrix tree_table_tau,NumericMatrix tree_mat_tau,
                             double a_mu,double a_tau,double mu_mu,double mu_tau,double nu,double lambda,double c,
                             double lowest_BIC,int parent,NumericMatrix cp_mat,
                             double alpha_mu,double beta_mu,double alpha_tau,double beta_tau,
@@ -4008,7 +4118,7 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
               NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               //if(tree.ncol()<5) throw std::range_error("Line 1660");
-              tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+              tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -4017,7 +4127,7 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
               NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               //if(tree.ncol()<5) throw std::range_error("Line 1667");
-              tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+              tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             
           }else{
@@ -4052,7 +4162,7 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
               NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               //if(tree.ncol()<5) throw std::range_error("Line 1689");
-              tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+              tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -4061,7 +4171,7 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
               NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               //if(tree.ncol()<5) throw std::range_error("Line 1695");
-              tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+              tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
           }
           
@@ -4099,7 +4209,7 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
               NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               //if(tree.ncol()<5) throw std::range_error("Line 1723");
-              tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+              tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -4108,7 +4218,7 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
               NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               //if(tree.ncol()<5) throw std::range_error("Line 1730");
-              tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+              tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
           }else{
             NumericMatrix prev_sum_trees_mu2=prev_sum_trees_mu[parent2[i]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
@@ -4144,7 +4254,7 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
               NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               //if(tree.ncol()<5) throw std::range_error("Line 1753");
-              tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+              tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -4153,7 +4263,7 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
               NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               //if(tree.ncol()<5) throw std::range_error("Line 1760");
-              tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+              tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
           }
         }  
@@ -4338,7 +4448,8 @@ List get_best_split_sum_tau_bcf(NumericVector resids,arma::mat& x_moderate_a,Num
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
-List get_best_split_sum_tau_update_bcf(NumericVector resids,arma::mat& x_moderate_a,NumericMatrix tree_table_tau,NumericMatrix tree_mat_tau,
+List get_best_split_sum_tau_update_bcf(double spike_tree,double num_obs, double num_vars_mu,double lambda_poisson_mu,double num_vars_tau,double lambda_poisson_tau,
+                                       NumericVector resids,arma::mat& x_moderate_a,NumericMatrix tree_table_tau,NumericMatrix tree_mat_tau,
                                 double a_mu,double a_tau,double mu_mu,double mu_tau,double nu,double lambda,double c,
                                 double lowest_BIC,int parent,List cp_matlist,
                                 double alpha_mu,double beta_mu,double alpha_tau,double beta_tau,
@@ -4509,7 +4620,7 @@ List get_best_split_sum_tau_update_bcf(NumericVector resids,arma::mat& x_moderat
             NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1660");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -4518,7 +4629,7 @@ List get_best_split_sum_tau_update_bcf(NumericVector resids,arma::mat& x_moderat
             NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1667");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           
         }else{
@@ -4552,7 +4663,7 @@ List get_best_split_sum_tau_update_bcf(NumericVector resids,arma::mat& x_moderat
             NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1689");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -4561,7 +4672,7 @@ List get_best_split_sum_tau_update_bcf(NumericVector resids,arma::mat& x_moderat
             NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1695");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
         }
         
@@ -4601,7 +4712,7 @@ List get_best_split_sum_tau_update_bcf(NumericVector resids,arma::mat& x_moderat
             NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1723");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -4610,7 +4721,7 @@ List get_best_split_sum_tau_update_bcf(NumericVector resids,arma::mat& x_moderat
             NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1730");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
         }else{
           NumericMatrix prev_sum_trees_mu2=prev_sum_trees_mu[parent2[i]];				// sum_trees2 is the element of the input list sum_trees indexed by parent2[i] 
@@ -4645,7 +4756,7 @@ List get_best_split_sum_tau_update_bcf(NumericVector resids,arma::mat& x_moderat
             NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1753");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -4654,7 +4765,7 @@ List get_best_split_sum_tau_update_bcf(NumericVector resids,arma::mat& x_moderat
             NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1760");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
         }
       }  
@@ -4840,7 +4951,8 @@ List get_best_split_sum_tau_update_bcf(NumericVector resids,arma::mat& x_moderat
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
-List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,NumericMatrix tree_table_mu,NumericMatrix tree_mat_mu,
+List get_best_split_sum_mu_bcf(double spike_tree,double num_obs, double num_vars_mu,double lambda_poisson_mu,double num_vars_tau,double lambda_poisson_tau,
+                               NumericVector resids,arma::mat& x_control_a,NumericMatrix tree_table_mu,NumericMatrix tree_mat_mu,
                            double a_mu,double a_tau,double mu_mu,double mu_tau,double nu,double lambda,double c,
                            double lowest_BIC,int parent,NumericMatrix cp_mat,
                            double alpha_mu,double beta_mu,double alpha_tau,double beta_tau,
@@ -5007,7 +5119,7 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
               NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               //if(tree.ncol()<5) throw std::range_error("Line 1977");
-              tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+              tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -5016,7 +5128,7 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
               NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               //if(tree.ncol()<5) throw std::range_error("Line 1984");
-              tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+              tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             // Rcout << "get to line 2480. l= " << l << ". k= " << k << ". \n";
             
@@ -5056,7 +5168,7 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
               NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               //if(tree.ncol()<5) throw std::range_error("Line 2006");
-              tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+              tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -5065,7 +5177,7 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
               NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               //if(tree.ncol()<5) throw std::range_error("Line 2013");
-              tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+              tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
           }
           
@@ -5105,7 +5217,7 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
               NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               //if(tree.ncol()<5) throw std::range_error("Line 2040");
-              tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+              tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -5114,7 +5226,7 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
               NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               //if(tree.ncol()<5) throw std::range_error("Line 2047");
-              tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+              tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
           }else{
             //Rcout << "RELEVANT LINE 2124.\n";
@@ -5153,7 +5265,7 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
               NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               //if(tree.ncol()<5) throw std::range_error("Line 2070");
-              tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+              tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
             for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
               NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -5162,7 +5274,7 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
               NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
               //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
               //if(tree.ncol()<5) throw std::range_error("Line 2077");
-              tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+              tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             }
           }
         }  
@@ -5349,7 +5461,8 @@ List get_best_split_sum_mu_bcf(NumericVector resids,arma::mat& x_control_a,Numer
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 
-List get_best_split_sum_mu_update_bcf(NumericVector resids,arma::mat& x_control_a,NumericMatrix tree_table_mu,NumericMatrix tree_mat_mu,
+List get_best_split_sum_mu_update_bcf(double spike_tree, double num_obs,double num_vars_mu,double lambda_poisson_mu,double num_vars_tau,double lambda_poisson_tau,
+                                      NumericVector resids,arma::mat& x_control_a,NumericMatrix tree_table_mu,NumericMatrix tree_mat_mu,
                                double a_mu,double a_tau,double mu_mu,double mu_tau,double nu,double lambda,double c,
                                double lowest_BIC,int parent,List cp_matlist,
                                double alpha_mu,double beta_mu,double alpha_tau,double beta_tau,
@@ -5519,7 +5632,7 @@ List get_best_split_sum_mu_update_bcf(NumericVector resids,arma::mat& x_control_
             NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1977");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -5528,7 +5641,7 @@ List get_best_split_sum_mu_update_bcf(NumericVector resids,arma::mat& x_control_
             NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1984");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           // Rcout << "get to line 2480. l= " << l << ". k= " << k << ". \n";
           
@@ -5568,7 +5681,7 @@ List get_best_split_sum_mu_update_bcf(NumericVector resids,arma::mat& x_control_
             NumericMatrix mat=prev_sum_trees_mat_mu2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 2006");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -5577,7 +5690,7 @@ List get_best_split_sum_mu_update_bcf(NumericVector resids,arma::mat& x_control_
             NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 2013");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
         }
         
@@ -5618,7 +5731,7 @@ List get_best_split_sum_mu_update_bcf(NumericVector resids,arma::mat& x_control_
             NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 2040");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<sum_trees_tau2.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=sum_trees_tau2[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -5627,7 +5740,7 @@ List get_best_split_sum_mu_update_bcf(NumericVector resids,arma::mat& x_control_
             NumericMatrix mat=sum_trees_mat_tau2[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 2047");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
         }else{
           //Rcout << "RELEVANT LINE 2124.\n";
@@ -5665,7 +5778,7 @@ List get_best_split_sum_mu_update_bcf(NumericVector resids,arma::mat& x_control_
             NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 2070");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -5674,7 +5787,7 @@ List get_best_split_sum_mu_update_bcf(NumericVector resids,arma::mat& x_control_
             NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 2077");
-            tree_prior*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
         }
       }  
@@ -6505,7 +6618,8 @@ List make_pelt_cpmat_tau_bcf(NumericMatrix data,NumericVector resp,double pen,in
 
 // [[Rcpp::export]]
 
-List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,NumericVector z,NumericMatrix resids,
+List get_best_trees_mu_bcf(double spike_tree, double num_obs, double num_vars_mu,double lambda_poisson_mu,double num_vars_tau,double lambda_poisson_tau,
+                           arma::mat& x_control_a,arma::mat& x_moderate_a,NumericVector z,NumericMatrix resids,
                        double a_mu,double a_tau,double mu_mu,double mu_tau,
                        double nu,double lambda,double c,double sigma_mu_mu,double sigma_mu_tau,
                        List tree_table_mu,List tree_mat_mu,List tree_table_tau,List tree_mat_tau,
@@ -6560,7 +6674,7 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
       lik_temp=likelihood_function_bcf(resids(_,0),tree_table_mu[0],tree_mat_mu[0],a_mu,mu_mu,nu,lambda);
     }
     
-    double tree_prior_temp=get_tree_prior_bcf(tree_table_mu[0],tree_mat_mu[0],alpha_mu,beta_mu);
+    double tree_prior_temp=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree_table_mu[0],tree_mat_mu[0],alpha_mu,beta_mu);
     //double lowest_BIC_temp=-2*(lik_temp+log(tree_prior_temp))+1*log(x_control_a.n_rows);
     double lowest_BIC_temp=-2*(lik_temp+log(tree_prior_temp));
     overall_lik[0]= lowest_BIC_temp;
@@ -6601,7 +6715,8 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
         if(split_rule_node==1){
           
           if(j==0){
-            best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
+            best_subset=get_best_split_mu_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,
+                                              resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                         a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
                                         parent[0],cp_mat_list[0],
                                         alpha_mu,beta_mu,maxOWsize,
@@ -6609,7 +6724,8 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
                                         exact_residuals//,first_round
                                               ); // defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
           }else{
-            best_subset=get_best_split_mu_update_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
+            best_subset=get_best_split_mu_update_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,
+                                                     resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                               a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
                                               parent[0],cp_mat_list[i],
                                               alpha_mu,beta_mu,maxOWsize,
@@ -6619,7 +6735,8 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
           }
           
         }else{
-          best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
+          best_subset=get_best_split_mu_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,
+                                            resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                             a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
                                             parent[0],cp_mat_list[0],
                                             alpha_mu,beta_mu,maxOWsize,
@@ -6983,7 +7100,8 @@ List get_best_trees_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numeri
 
 // [[Rcpp::export]]
 
-List get_best_trees_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,NumericVector z,NumericMatrix resids,
+List get_best_trees_mu_bcf_2(double spike_tree, double num_obs, double num_vars_mu,double lambda_poisson_mu,double num_vars_tau,double lambda_poisson_tau,
+                             arma::mat& x_control_a,arma::mat& x_moderate_a,NumericVector z,NumericMatrix resids,
                            double a_mu,double a_tau,double mu_mu,double mu_tau,
                            double nu,double lambda,double c,double sigma_mu_mu,double sigma_mu_tau,
                            List tree_table_mu,List tree_mat_mu,List tree_table_tau,List tree_mat_tau,
@@ -7037,7 +7155,7 @@ List get_best_trees_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,Nume
       lik_temp=likelihood_function_bcf(resids(_,0),tree_table_mu[0],tree_mat_mu[0],a_mu,mu_mu,nu,lambda);
     }
     
-    double tree_prior_temp=get_tree_prior_bcf(tree_table_mu[0],tree_mat_mu[0],alpha_mu,beta_mu);
+    double tree_prior_temp=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree_table_mu[0],tree_mat_mu[0],alpha_mu,beta_mu);
     //double lowest_BIC_temp=-2*(lik_temp+log(tree_prior_temp))+1*log(x_control_a.n_rows);
     double lowest_BIC_temp=-2*(lik_temp+log(tree_prior_temp));
     overall_lik[0]= lowest_BIC_temp;
@@ -7077,7 +7195,8 @@ List get_best_trees_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,Nume
       if(split_rule_node==1){
         
         if(j==0){
-          best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
+          best_subset=get_best_split_mu_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,
+                                            resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                         a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
                                         parent[0],cp_mat_list[0],
                                         alpha_mu,beta_mu,maxOWsize,
@@ -7085,7 +7204,8 @@ List get_best_trees_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,Nume
                                         exact_residuals//,first_round
                                           ); // defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
         }else{
-          best_subset=get_best_split_mu_update_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
+          best_subset=get_best_split_mu_update_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,
+                                                   resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                             a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
                                             parent[0],cp_mat_list[i],
                                             alpha_mu,beta_mu,maxOWsize,
@@ -7094,7 +7214,8 @@ List get_best_trees_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,Nume
           ); 
         }
       }else{
-        best_subset=get_best_split_mu_bcf(resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
+        best_subset=get_best_split_mu_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,
+                                          resids(_,0),x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                           a_mu,mu_mu,nu,lambda,log(c),lowest_BIC,
                                           parent[0],cp_mat_list[0],
                                           alpha_mu,beta_mu,maxOWsize,
@@ -7443,7 +7564,8 @@ List get_best_trees_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,Nume
 //######################################################################################################################//
 // [[Rcpp::export]]
 
-List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,NumericVector z,NumericMatrix resids,
+List get_best_trees_sum_mu_bcf(double spike_tree, double num_obs, double num_vars_mu,double lambda_poisson_mu,double num_vars_tau,double lambda_poisson_tau,
+                               arma::mat& x_control_a,arma::mat& x_moderate_a,NumericVector z,NumericMatrix resids,
                            double a_mu,double a_tau,double mu_mu,double mu_tau,
                            double nu,double lambda,double c,double sigma_mu_mu,double sigma_mu_tau,
                            List tree_table_mu,List tree_mat_mu,List tree_table_tau,List tree_mat_tau,
@@ -7536,7 +7658,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
           NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 1977");
-          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -7545,7 +7667,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
           NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 1984");
-          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         
         // Rcout << "Get to Line 3693 in get_best_trees_sum_mu_bcf.\n";
@@ -7610,7 +7732,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
           NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 2006");
-          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -7619,7 +7741,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
           NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 2013");
-          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -7690,7 +7812,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
           NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 2040");
-          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -7699,7 +7821,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
           NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 2047");
-          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
         double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -7769,7 +7891,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
           NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 2070");
-          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -7778,7 +7900,7 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
           NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 2077");
-          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
         double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -7971,7 +8093,8 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
           if(split_rule_node==1){
             if(j==0){
               //parent[i] = i? at the start of the round, this is how parent is defined
-              best_subset=get_best_split_sum_mu_bcf(y_scaled, //resids(_,parent[i]),
+              best_subset=get_best_split_sum_mu_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                    y_scaled, //resids(_,parent[i]),
                                                     x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                                     a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                     lowest_BIC,parent[i],cp_mat_list[parent[i]],
@@ -7984,7 +8107,8 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
               
             }else{
               //new cp_mat list now ordered according to new tree_table_mu. (parent vector not relevant?)
-              best_subset=get_best_split_sum_mu_update_bcf(y_scaled, //resids(_,parent[i]),
+              best_subset=get_best_split_sum_mu_update_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                           y_scaled, //resids(_,parent[i]),
                                                     x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                                     a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                     lowest_BIC,parent[i],cp_mat_list[i],
@@ -7998,7 +8122,8 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
             }
           }else{
             //cp_mat list unchanged throughout, but parent vector is updated, therefore use parent[i]
-            best_subset=get_best_split_sum_mu_bcf(y_scaled, //resids(_,parent[i]),
+            best_subset=get_best_split_sum_mu_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                  y_scaled, //resids(_,parent[i]),
                                                   x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                                   a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                   lowest_BIC,parent[i],cp_mat_list[parent[i]],
@@ -8400,7 +8525,8 @@ List get_best_trees_sum_mu_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Nu
 //######################################################################################################################//
 // [[Rcpp::export]]
 
-List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,NumericVector z,NumericMatrix resids,
+List get_best_trees_sum_mu_bcf_2(double spike_tree, double num_obs, double num_vars_mu,double lambda_poisson_mu,double num_vars_tau,double lambda_poisson_tau,
+                                 arma::mat& x_control_a,arma::mat& x_moderate_a,NumericVector z,NumericMatrix resids,
                                double a_mu,double a_tau,double mu_mu,double mu_tau,
                                double nu,double lambda,double c,double sigma_mu_mu,double sigma_mu_tau,
                                List tree_table_mu,List tree_mat_mu,List tree_table_tau,List tree_mat_tau,
@@ -8500,7 +8626,7 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
             NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1977");
-            tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -8509,7 +8635,7 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
             NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1984");
-            tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           
           // Rcout << "Get to Line 3693 in get_best_trees_sum_mu_bcf.\n";
@@ -8578,7 +8704,7 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
             NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 2006");
-            tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -8587,7 +8713,7 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
             NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 2013");
-            tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -8659,7 +8785,7 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
             NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 2040");
-            tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -8668,7 +8794,7 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
             NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 2047");
-            tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -8741,7 +8867,7 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
             NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 2070");
-            tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -8750,7 +8876,7 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
             NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 2077");
-            tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_control_a.n_rows);			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_control_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -8937,7 +9063,8 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
           
           if(split_rule_node==1){
             if(j==0){
-              best_subset=get_best_split_sum_mu_bcf(y_scaled, //resids(_,parent[i]),
+              best_subset=get_best_split_sum_mu_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                    y_scaled, //resids(_,parent[i]),
                                                 x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                                 a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                 lowest_BIC,parent[i],cp_mat_list[parent[i]],
@@ -8949,7 +9076,8 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
                                                 exact_residuals);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
           
             }else{
-              best_subset=get_best_split_sum_mu_update_bcf(y_scaled, //resids(_,parent[i]),
+              best_subset=get_best_split_sum_mu_update_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                           y_scaled, //resids(_,parent[i]),
                                                     x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                                     a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                     lowest_BIC,parent[i],cp_mat_list[i],
@@ -8962,7 +9090,8 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
               
             }
           }else{
-            best_subset=get_best_split_sum_mu_bcf(y_scaled, //resids(_,parent[i]),
+            best_subset=get_best_split_sum_mu_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                  y_scaled, //resids(_,parent[i]),
                                                   x_control_a,tree_table_mu[i],tree_mat_mu[i],
                                                   a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                   lowest_BIC,parent[i],cp_mat_list[parent[i]],
@@ -9369,7 +9498,8 @@ List get_best_trees_sum_mu_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,
 //######################################################################################################################//
 // [[Rcpp::export]]
 
-List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,NumericVector z,NumericMatrix resids,
+List get_best_trees_tau_bcf(double spike_tree, double num_obs, double num_vars_mu,double lambda_poisson_mu,double num_vars_tau,double lambda_poisson_tau,
+                            arma::mat& x_control_a,arma::mat& x_moderate_a,NumericVector z,NumericMatrix resids,
                                        double a_mu,double a_tau,double mu_mu,double mu_tau,double nu,double lambda,double c,
                                        double sigma_mu_mu,double sigma_mu_tau,List tree_table_mu,List tree_mat_mu,List tree_table_tau,List tree_mat_tau,
                                        double lowest_BIC,//int first_round,
@@ -9429,7 +9559,7 @@ List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numer
       lik_temp=sumtree_likelihood_tau_round1_bcf(resids(_,0),tree_table_tau[0],tree_mat_tau[0],resids(_,0).size(),a_mu,a_tau,nu,lambda,z);
     }
     
-    double tree_prior_temp=get_tree_prior_bcf(tree_table_tau[0],tree_mat_tau[0],alpha_tau,beta_tau);
+    double tree_prior_temp=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree_table_tau[0],tree_mat_tau[0],alpha_tau,beta_tau);
     //double lowest_BIC_temp=-2*(lik_temp+log(tree_prior_temp))+1*log(x_control_a.n_rows);
     double lowest_BIC_temp=-2*(lik_temp+log(tree_prior_temp));
     overall_lik[0]= lowest_BIC_temp;
@@ -9463,7 +9593,8 @@ List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numer
       
       if(split_rule_node==1){
         if(j==0){
-          best_subset=get_best_split_tau_bcf(resids(_,0),x_moderate_a,
+          best_subset=get_best_split_tau_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                             resids(_,0),x_moderate_a,
                                          tree_table_tau[i],tree_mat_tau[i],
                                          a_mu, a_tau,mu_tau,nu,lambda,
                                          log(c),
@@ -9476,7 +9607,8 @@ List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numer
                                          min_num_obs_for_tau_split, min_num_obs_after_tau_split,
                                          exact_residuals); // defined on line 890, Returns list including BICS, tree tables, tree matrices, splitting variables, splitting points, and so on.
           }else{
-            best_subset=get_best_split_tau_update_bcf(resids(_,0),x_moderate_a,
+            best_subset=get_best_split_tau_update_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                      resids(_,0),x_moderate_a,
                                                tree_table_tau[i],tree_mat_tau[i],
                                                a_mu, a_tau,mu_tau,nu,lambda,
                                                log(c),
@@ -9492,7 +9624,8 @@ List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numer
           
           }
           }else{
-            best_subset=get_best_split_tau_bcf(resids(_,0),x_moderate_a,
+            best_subset=get_best_split_tau_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                               resids(_,0),x_moderate_a,
                                                tree_table_tau[i],tree_mat_tau[i],
                                                a_mu, a_tau,mu_tau,nu,lambda,
                                                log(c),
@@ -9877,7 +10010,8 @@ List get_best_trees_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,Numer
 //######################################################################################################################//
 // [[Rcpp::export]]
 
-List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,NumericVector z,NumericMatrix resids,
+List get_best_trees_sum_tau_round1_bcf(double spike_tree, double num_obs, double num_vars_mu,double lambda_poisson_mu,double num_vars_tau,double lambda_poisson_tau,
+                                       arma::mat& x_control_a,arma::mat& x_moderate_a,NumericVector z,NumericMatrix resids,
                                    double a_mu,double a_tau,double mu_mu,double mu_tau,double nu,double lambda,double c,
                                    double sigma_mu_mu,double sigma_mu_tau,List tree_table_mu,List tree_mat_mu,List tree_table_tau,List tree_mat_tau,
                                    double lowest_BIC,//int first_round,
@@ -9967,9 +10101,9 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
       NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
       //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
       //if(tree.ncol()<5) throw std::range_error("Line 1412");
-      tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+      tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
     }
-    tree_prior_temp*=get_tree_prior_bcf(tree_table_tau[0],tree_mat_tau[0],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+    tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree_table_tau[0],tree_mat_tau[0],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
  
  //NumericVector int_nodes_tau=find_term_nodes_bcf(tree_table_tau[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
  //int p_other_tau=int_nodes_tau.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
@@ -10028,9 +10162,9 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
     
     double tree_prior_temp=1;
 
-    tree_prior_temp*=get_tree_prior_bcf(prev_sum_trees_mu2_temp,prev_sum_trees_mat_mu2_temp,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+    tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,prev_sum_trees_mu2_temp,prev_sum_trees_mat_mu2_temp,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
 
-    tree_prior_temp*=get_tree_prior_bcf(tree_table_tau[0],tree_mat_tau[0],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+    tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree_table_tau[0],tree_mat_tau[0],alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
 
   //NumericVector int_nodes_tau=find_term_nodes_bcf(tree_table_tau[0]);				// find term nodes function defined line 168. Gives index of values of proposal_tree[0] that are term nodes (indices from 1 to length of vector). Why not integer vector? 
   //int p_other_tau=int_nodes_tau.size();											// p is length of int_nodes. Number of terminal nodes is used as numbr of parameters/ (B in equation 7 of the paper)
@@ -10200,7 +10334,8 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
         
         if(split_rule_node==1){
           if(j==0){
-            best_subset=get_best_split_tau_round1_bcf(y_scaled, //resids(_,parent[i]),
+            best_subset=get_best_split_tau_round1_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                      y_scaled, //resids(_,parent[i]),
                                                   x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                               a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                               lowest_BIC,parent[i],cp_mat_list[parent[i]],
@@ -10211,7 +10346,8 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
                                               min_num_obs_for_tau_split, min_num_obs_after_tau_split,
                                               exact_residuals);
             }else{
-              best_subset=get_best_split_tau_round1_update_bcf(y_scaled, //resids(_,parent[i]),
+              best_subset=get_best_split_tau_round1_update_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                               y_scaled, //resids(_,parent[i]),
                                                         x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                                         a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                         lowest_BIC,parent[i],cp_mat_list[i],
@@ -10223,7 +10359,8 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
                                                         exact_residuals);
             }
             }else{
-              best_subset=get_best_split_tau_round1_bcf(y_scaled, //resids(_,parent[i]),
+              best_subset=get_best_split_tau_round1_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                        y_scaled, //resids(_,parent[i]),
                                                         x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                                         a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                         lowest_BIC,parent[i],cp_mat_list[parent[i]],
@@ -10628,7 +10765,8 @@ List get_best_trees_sum_tau_round1_bcf(arma::mat& x_control_a,arma::mat& x_moder
 //######################################################################################################################//
 // [[Rcpp::export]]
 
-List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,NumericVector z,NumericMatrix resids,
+List get_best_trees_sum_tau_bcf(double spike_tree, double num_obs, double num_vars_mu,double lambda_poisson_mu,double num_vars_tau,double lambda_poisson_tau,
+                                arma::mat& x_control_a,arma::mat& x_moderate_a,NumericVector z,NumericMatrix resids,
                             double a_mu,double a_tau,double mu_mu,double mu_tau,
                             double nu,double lambda,double c,double sigma_mu_mu,double sigma_mu_tau,
                             List tree_table_mu,List tree_mat_mu,List tree_table_tau,List tree_mat_tau,
@@ -10730,7 +10868,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 1660");
-          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           // Rcout << "LINE 4378 t =" << t << ".\n";
           // Rcout << "LINE 4378 tree_prior_temp =" << tree_prior_temp << ".\n";
           
@@ -10742,7 +10880,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 1667");
-          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           // Rcout << "LINE 4390 t =" << t << ".\n";
           // Rcout << "LINE 4390 tree_prior_temp =" << tree_prior_temp << ".\n";
         }
@@ -10811,7 +10949,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 1689");
-          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -10820,7 +10958,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 1695");
-          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
         double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -10892,7 +11030,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 1723");
-          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -10901,7 +11039,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 1730");
-          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
         double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -10967,7 +11105,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 1753");
-          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
           NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -10976,7 +11114,7 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
           //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
           //if(tree.ncol()<5) throw std::range_error("Line 1760");
-          tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+          tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
         }
         //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
         double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -11150,7 +11288,8 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
           
           if(split_rule_node==1){
             if(j==0){
-              best_subset=get_best_split_sum_tau_bcf(y_scaled, //resids(_,parent[i]),
+              best_subset=get_best_split_sum_tau_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                     y_scaled, //resids(_,parent[i]),
                                             x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                              a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                              lowest_BIC,parent[i],cp_mat_list[parent[i]],
@@ -11161,7 +11300,8 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
                                              min_num_obs_for_tau_split, min_num_obs_after_tau_split,
                                              exact_residuals);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
               }else{
-                best_subset=get_best_split_sum_tau_update_bcf(y_scaled, //resids(_,parent[i]),
+                best_subset=get_best_split_sum_tau_update_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                              y_scaled, //resids(_,parent[i]),
                                                       x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                                       a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                       lowest_BIC,parent[i],cp_mat_list[i],
@@ -11174,7 +11314,8 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
                 
               }
               }else{
-                best_subset=get_best_split_sum_tau_bcf(y_scaled, //resids(_,parent[i]),
+                best_subset=get_best_split_sum_tau_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                       y_scaled, //resids(_,parent[i]),
                                                       x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                                       a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                       lowest_BIC,parent[i],cp_mat_list[parent[i]],
@@ -11553,7 +11694,8 @@ List get_best_trees_sum_tau_bcf(arma::mat& x_control_a,arma::mat& x_moderate_a,N
 //######################################################################################################################//
 // [[Rcpp::export]]
 
-List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a,NumericVector z,NumericMatrix resids,
+List get_best_trees_sum_tau_bcf_2(double spike_tree, double num_obs, double num_vars_mu,double lambda_poisson_mu,double num_vars_tau,double lambda_poisson_tau,
+                                  arma::mat& x_control_a,arma::mat& x_moderate_a,NumericVector z,NumericMatrix resids,
                                 double a_mu,double a_tau,double mu_mu,double mu_tau,
                                 double nu,double lambda,double c,double sigma_mu_mu,double sigma_mu_tau,
                                 List tree_table_mu,List tree_mat_mu,List tree_table_tau,List tree_mat_tau,
@@ -11664,7 +11806,7 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
             NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1660");
-            tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             // Rcout << "LINE 4378 t =" << t << ".\n";
             // Rcout << "LINE 4378 tree_prior_temp =" << tree_prior_temp << ".\n";
             
@@ -11676,7 +11818,7 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
             NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1667");
-            tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
             // Rcout << "LINE 4390 t =" << t << ".\n";
             // Rcout << "LINE 4390 tree_prior_temp =" << tree_prior_temp << ".\n";
           }
@@ -11743,7 +11885,7 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
             NumericMatrix mat=prev_sum_trees_mat_mu2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1689");
-            tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -11752,7 +11894,7 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
             NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1695");
-            tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -11822,7 +11964,7 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
             NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1723");
-            tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<sum_trees_tau2_temp.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=sum_trees_tau2_temp[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -11831,7 +11973,7 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
             NumericMatrix mat=sum_trees_mat_tau2_temp[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1730");
-            tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -11895,7 +12037,7 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
             NumericMatrix mat=st_mat_mu[t];								// let mat equal (t+1)^th element of st_mat
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1753");
-            tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,tree,mat,alpha_mu,beta_mu);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           for(int t=0;t<st_tau.size();t++){							// for-loop of length equal to that of sum_trees2
             NumericMatrix tree=st_tau[t];							// tree equals (t+1)^th element of the list sum_trees2 (tree table)
@@ -11904,7 +12046,7 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
             NumericMatrix mat=st_mat_tau[t];						// mat equals (t+1)^th element of the list sum_trees_mat2 (tree matrix)
             //THIS SHOULD PROBABLY BE CHANGED TO *= , and actually the prior is still probably not properly defined
             //if(tree.ncol()<5) throw std::range_error("Line 1760");
-            tree_prior_temp*=get_tree_prior_bcf(tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
+            tree_prior_temp*=get_tree_prior_bcf(spike_tree,num_obs,num_vars_tau,lambda_poisson_tau,tree,mat,alpha_tau,beta_tau);			// iteratively add to tree_prior. get_tree_prior_bcf defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees?)
           }
           //double BIC=-2*(lik_temp+log(tree_prior_temp))+(p_other_mu+p_other_tau)*log(x_moderate_a.n_rows);			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
           double BIC=-2*(lik_temp+log(tree_prior_temp));			// x_moderate_a.nrows is number of obs. Not sure why tree_prior is included here. Only need likelihood?
@@ -12090,7 +12232,8 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
           
           if(split_rule_node==1){
             if(j==0){
-              best_subset=get_best_split_sum_tau_bcf(y_scaled, //resids(_,parent[i]),
+              best_subset=get_best_split_sum_tau_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                     y_scaled, //resids(_,parent[i]),
                                                  x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                                  a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                  lowest_BIC,parent[i],cp_mat_list[parent[i]],
@@ -12101,7 +12244,8 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
                                                  min_num_obs_for_tau_split, min_num_obs_after_tau_split,
                                                  exact_residuals);	// defined on line 1074. Returns the BIC, best splitting variable (column number), value of covariate for splitting variable, list including tree table and tree matrix, list of tree tables, list of BICs, list of tree matrices, tree parent vector.
             }else{
-              best_subset=get_best_split_sum_tau_update_bcf(y_scaled, //resids(_,parent[i]),
+              best_subset=get_best_split_sum_tau_update_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                            y_scaled, //resids(_,parent[i]),
                                                   x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                                   a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                   lowest_BIC,parent[i],cp_mat_list[i],
@@ -12114,7 +12258,8 @@ List get_best_trees_sum_tau_bcf_2(arma::mat& x_control_a,arma::mat& x_moderate_a
               
             }
             }else{
-              best_subset=get_best_split_sum_tau_bcf(y_scaled, //resids(_,parent[i]),
+              best_subset=get_best_split_sum_tau_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                     y_scaled, //resids(_,parent[i]),
                                                      x_moderate_a,tree_table_tau[i],tree_mat_tau[i],
                                                      a_mu,a_tau,mu_mu,mu_tau,nu,lambda,log(c),
                                                      lowest_BIC,parent[i],cp_mat_list[parent[i]],
@@ -13239,7 +13384,8 @@ NumericVector preds_bcfbma_lin_alg_outsamp(List overall_sum_trees_mu,List overal
 //' @export
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
-List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, NumericMatrix pihat,
+List BCF_BMA_sumLikelihood(double spike_tree, double lambda_poisson_mu, double lambda_poisson_tau,
+                           NumericMatrix data,NumericVector y, NumericVector z, NumericMatrix pihat,
                            double a_mu,double a_tau,double mu_mu,double mu_tau,double nu,double lambda,double c,
                            double sigma_mu_mu,double sigma_mu_tau,double pen_mu,double pen_tau,int num_cp_mu,int num_cp_tau,
                            NumericMatrix test_data,NumericVector test_z,NumericMatrix test_pihat,
@@ -13372,6 +13518,11 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
   
   NumericVector y_scaled=scale_response_bcf(min(y),max(y),-0.5,0.5,y);		// re-scale the outcome variable
   double n=D1.n_rows;					// number of rows of the data matrix (number of training observations)
+  
+  double num_obs=D1.n_rows;	
+  double num_vars_mu=x_control_a.n_cols;	
+  double num_vars_tau=x_moderate_a.n_cols;	
+  
   //	CHANGE ABOVE LINE IF REMOVE data and D1
   
   // BELOW FUNCTIONS AND LINES ONLY USED DIRECTLY HERE FOR OBTAINING lowest_BIC
@@ -13384,7 +13535,7 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
   // 	currently: will add tau stump after first mu(x) tree grown
   double lik=likelihood_function_mu_bcf(y_scaled,treetable_mu,treemat_mu,a_mu,mu_mu,nu,lambda);	// defined on line 201. Returns log likelihood of initial model with no trees?
   if(treetable_mu.ncol()<5) throw std::range_error("Line 4081");
-  double tree_prior=get_tree_prior_bcf(treetable_mu,treemat_mu,alpha_mu,beta_mu);				// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees? but the tree is empty  at this stage?)
+  double tree_prior=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,treetable_mu,treemat_mu,alpha_mu,beta_mu);				// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees? but the tree is empty  at this stage?)
   //double lowest_BIC=-2*(lik+log(tree_prior))+1*log(n);						// BIC actually not the BIC because add 2*log(prior). Closer to the Bayes factor? (Not noted in paper).
   double lowest_BIC=-2*(lik+log(tree_prior));						// BIC actually not the BIC because add 2*log(prior). Closer to the Bayes factor? (Not noted in paper).
   
@@ -13611,7 +13762,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       
       //get current set of trees.
       if(j==0){						// If in the first round of the for-loop.
-        CART_BMA_mu=get_best_trees_mu_bcf(x_control_a, x_moderate_a,z,resids,
+        CART_BMA_mu=get_best_trees_mu_bcf(spike_tree, num_obs, num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                          x_control_a, x_moderate_a,z,resids,
                                       a_mu,a_tau,mu_mu,mu_tau,nu,lambda,c,sigma_mu_mu,sigma_mu_tau,
                                       tree_table_mu,tree_mat_mu,tree_table_tau,tree_mat_tau,
                                       lowest_BIC,//first_round,
@@ -13626,7 +13778,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
       }else{							// If not in the first round of the for-loop.
         //if j >0 then sum of trees become a list so need to read in list and get likelihood for each split point and terminal node
 
-        CART_BMA_mu=get_best_trees_sum_mu_bcf(x_control_a, x_moderate_a,z,resids,
+        CART_BMA_mu=get_best_trees_sum_mu_bcf(spike_tree, num_obs, num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                              x_control_a, x_moderate_a,z,resids,
                                           a_mu,a_tau,mu_mu,mu_tau,nu,lambda,c,sigma_mu_mu,sigma_mu_tau,
                                           tree_table_mu,tree_mat_mu,tree_table_tau,tree_mat_tau,
                                           lowest_BIC,//first_round,
@@ -14516,7 +14669,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
         //alpha_mu,alpha_tau,beta_mu,beta_tau,
         //is_test_data,pen_mu,num_cp_mu,pen_tau,num_cp_tau,	// some of these arguments are probably unnecessary
         //split_rule_node,gridpoint,maxOWsize);
-        CART_BMA_tau=get_best_trees_sum_tau_round1_bcf(x_control_a, x_moderate_a,z,resids,
+        CART_BMA_tau=get_best_trees_sum_tau_round1_bcf(spike_tree, num_obs, num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                       x_control_a, x_moderate_a,z,resids,
                                                    a_mu,a_tau,mu_mu,mu_tau,nu,lambda,c,sigma_mu_mu,sigma_mu_tau,
                                                    tree_table_mu,tree_mat_mu,tree_table_tau,tree_mat_tau,
                                                    lowest_BIC,//first_round,
@@ -14534,7 +14688,8 @@ List BCF_BMA_sumLikelihood(NumericMatrix data,NumericVector y, NumericVector z, 
                                                    exact_residuals);	// function defined on line 1953.
       }else{							// If not in the first round of the for-loop.
         //if j >0 then sum of trees become a list so need to read in list and get likelihood for each split point and terminal node
-        CART_BMA_tau=get_best_trees_sum_tau_bcf(x_control_a, x_moderate_a,z,resids,
+        CART_BMA_tau=get_best_trees_sum_tau_bcf(spike_tree, num_obs, num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                x_control_a, x_moderate_a,z,resids,
                                             a_mu,a_tau,mu_mu,mu_tau,nu,lambda,c,sigma_mu_mu,sigma_mu_tau,
                                             tree_table_mu,tree_mat_mu,tree_table_tau,tree_mat_tau,
                                             lowest_BIC,//first_round,
@@ -15602,7 +15757,8 @@ NumericMatrix mmult1(NumericMatrix a, NumericMatrix b) {
 //' @export
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
-List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, NumericVector z, NumericMatrix pihat,
+List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, double lambda_poisson_mu, double lambda_poisson_tau,
+                                         NumericMatrix data,NumericVector y, NumericVector z, NumericMatrix pihat,
                            double a_mu,double a_tau,double mu_mu,double mu_tau,double nu,double lambda,double c,
                            double sigma_mu_mu,double sigma_mu_tau,double pen_mu,double pen_tau,int num_cp_mu,int num_cp_tau,
                            NumericMatrix test_data,NumericVector test_z,NumericMatrix test_pihat,
@@ -15741,6 +15897,14 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
   
   NumericVector y_scaled=scale_response_bcf(min(y),max(y),-0.5,0.5,y);		// re-scale the outcome variable
   double n=D1.n_rows;					// number of rows of the data matrix (number of training observations)
+  
+  
+  double num_obs=D1.n_rows;	
+  double num_vars_mu=x_control_a.n_cols;	
+  double num_vars_tau=x_moderate_a.n_cols;	
+  
+  
+  
   //	CHANGE ABOVE LINE IF REMOVE data and D1
   
   // BELOW FUNCTIONS AND LINES ONLY USED DIRECTLY HERE FOR OBTAINING lowest_BIC
@@ -15753,7 +15917,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
   // 	currently: will add tau stump after first mu(x) tree grown
   double lik=likelihood_function_mu_bcf(y_scaled,treetable_mu,treemat_mu,a_mu,mu_mu,nu,lambda);	// defined on line 201. Returns log likelihood of initial model with no trees?
   if(treetable_mu.ncol()<5) throw std::range_error("Line 4081");
-  double tree_prior=get_tree_prior_bcf(treetable_mu,treemat_mu,alpha_mu,beta_mu);				// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees? but the tree is empty  at this stage?)
+  double tree_prior=get_tree_prior_bcf(spike_tree,num_obs,num_vars_mu,lambda_poisson_mu,treetable_mu,treemat_mu,alpha_mu,beta_mu);				// defined on line 566. Presumably returns a prior probability. (prior for single tree or sum of trees? but the tree is empty  at this stage?)
   //double lowest_BIC=-2*(lik+log(tree_prior))+1*log(n);						// BIC actually not the BIC because add 2*log(prior). Closer to the Bayes factor? (Not noted in paper).
   double lowest_BIC=-2*(lik+log(tree_prior));						// BIC actually not the BIC because add 2*log(prior). Closer to the Bayes factor? (Not noted in paper).
   
@@ -16082,7 +16246,8 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
         //Rcout << "Get to Line 15338 in loop j = " << j << ".\n";
       //get current set of trees.
       if(j==0){						// If in the first round of the for-loop.
-        CART_BMA_mu=get_best_trees_mu_bcf_2(x_control_a, x_moderate_a,z,resids,
+        CART_BMA_mu=get_best_trees_mu_bcf_2(spike_tree, num_obs, num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                            x_control_a, x_moderate_a,z,resids,
                                           a_mu,a_tau,mu_mu,mu_tau,nu,lambda,c,sigma_mu_mu,sigma_mu_tau,
                                           tree_table_mu,tree_mat_mu,tree_table_tau,tree_mat_tau,
                                           lowest_BIC,//first_round,
@@ -16100,7 +16265,8 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
       }else{							// If not in the first round of the for-loop.
         //if j >0 then sum of trees become a list so need to read in list and get likelihood for each split point and terminal node
         
-        CART_BMA_mu=get_best_trees_sum_mu_bcf_2(x_control_a, x_moderate_a,z,resids,
+        CART_BMA_mu=get_best_trees_sum_mu_bcf_2(spike_tree, num_obs, num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                x_control_a, x_moderate_a,z,resids,
                                               a_mu,a_tau,mu_mu,mu_tau,nu,lambda,c,sigma_mu_mu,sigma_mu_tau,
                                               tree_table_mu,tree_mat_mu,tree_table_tau,tree_mat_tau,
                                               lowest_BIC,//first_round,
@@ -16237,7 +16403,8 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
         //is_test_data,pen_mu,num_cp_mu,pen_tau,num_cp_tau,	// some of these arguments are probably unnecessary
         //split_rule_node,gridpoint,maxOWsize);
         //Rcout << "Get to 10590 get_best_trees_tau_bcf in loop j = " << j << ".\n";
-        CART_BMA_tau=get_best_trees_tau_bcf(x_control_a, x_moderate_a,z,resids,
+        CART_BMA_tau=get_best_trees_tau_bcf(spike_tree, num_obs, num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                            x_control_a, x_moderate_a,z,resids,
                                             a_mu,a_tau,mu_mu,mu_tau,nu,lambda,c,
                                             sigma_mu_mu,sigma_mu_tau,
                                             tree_table_mu,tree_mat_mu,tree_table_tau,tree_mat_tau,
@@ -16258,7 +16425,8 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(NumericMatrix data,NumericVector y, Num
         //if j >0 then sum of trees become a list so need to read in list and get likelihood for each split point and terminal node
         //Rcout << "Get to 10606 get_best_trees_sum_tau_bcf_2 in loop j = " << j << ".\n";
         
-        CART_BMA_tau=get_best_trees_sum_tau_bcf_2(x_control_a, x_moderate_a,z,resids,
+        CART_BMA_tau=get_best_trees_sum_tau_bcf_2(spike_tree, num_obs, num_vars_mu,lambda_poisson_mu,num_vars_tau,lambda_poisson_tau,
+                                                  x_control_a, x_moderate_a,z,resids,
                                                 a_mu,a_tau,mu_mu,mu_tau,nu,lambda,c,sigma_mu_mu,sigma_mu_tau,
                                                 tree_table_mu,tree_mat_mu,tree_table_tau,tree_mat_tau,
                                                 lowest_BIC,//first_round,

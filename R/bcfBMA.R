@@ -82,7 +82,7 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                           include_pi= "control", zero_split=1, only_max_num_trees=1, mu_or_tau_each_round=1,separate_tree_numbers=1,
                          min_num_obs_for_mu_split=2, min_num_obs_after_mu_split=2,
                          min_num_obs_for_tau_split=2, min_num_obs_after_tau_split=2,
-                         exact_residuals=1){
+                         exact_residuals=1, spike_tree=0,lambda_poisson_mu=10,lambda_poisson_tau=10){
   binary=FALSE
   start_mean=0
   start_sd=1
@@ -176,7 +176,8 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
   
   
   if(mu_or_tau_each_round==1){
-  bcfBMA_call=BCF_BMA_sumLikelihood_add_mu_or_tau(x.train,y.train,z,pihat,
+  bcfBMA_call=BCF_BMA_sumLikelihood_add_mu_or_tau(spike_tree,lambda_poisson_mu,lambda_poisson_tau,
+                                                  x.train,y.train,z,pihat,
                                                   a_mu,a_tau,mu_mu,mu_tau,
                                                   nu,lambda,c,sigma_mu_mu,sigma_mu_tau,
                                                   pen_mu,pen_tau,num_cp_mu,num_cp_tau,
@@ -189,7 +190,8 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                                                   min_num_obs_for_tau_split, min_num_obs_after_tau_split,
                                                   exact_residuals)
   }else{
-  bcfBMA_call=BCF_BMA_sumLikelihood(x.train,y.train,z,pihat,
+  bcfBMA_call=BCF_BMA_sumLikelihood(spike_tree,lambda_poisson_mu,lambda_poisson_tau,
+                                    x.train,y.train,z,pihat,
                                     a_mu,a_tau,mu_mu,mu_tau,
                                     nu,lambda,c,sigma_mu_mu,sigma_mu_tau,
                                     pen_mu,pen_tau,num_cp_mu,num_cp_tau,
