@@ -84,6 +84,8 @@ bcfBMA(x, ...)
 \item{min_num_obs_after_tau_split}{This integer determines the minimum number of treated observations in a (tau tree) child node resulting from a split in order for a split to occur. If the left or right child node has less than this number of observations, then the split can not occur.}
 
 \item{exact_residuals}{Binary variable. If equal to 1, then trees are added to sum-of-tree models within each round of the algorithm by detecting changepoints in the exact residuals. If equals zero, then changepoints are detected in residuals that are constructed from approximate predictions.}
+
+\item{transform_resids}{Binary variable. If equal to 1, then a Horvitz-Thompson transformation is applied to residuals before finding chanegpoints for building tau trees.}
 }
 \value{
 The following objects are returned by bcfbma:

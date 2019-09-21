@@ -71,7 +71,13 @@ pred_ints_from_rmixt_bcf_TE<-function(object,num_iter,l_quant,u_quant,newdata=NU
   
   PI<-apply(draws_from_mixture,2,function(x)quantile(x,probs=c(l_quant,0.5,u_quant)))
   
+  PI_scaled <- matrix(0, nrow = nrow(PI), ncol = ncol(PI))
   
+  
+  ytemp <- object$response
+  for(i in 1:ncol(PI)){
+    PI_scaled[,i]=get_original_TE_bcf(min(ytemp),max(ytemp),-0.5,0.5,  PI[,i]);
+  }
   
   #each row is a vector drawn from the mixture distribution
   
@@ -80,7 +86,7 @@ pred_ints_from_rmixt_bcf_TE<-function(object,num_iter,l_quant,u_quant,newdata=NU
   # ret[[2]] <- inputs_for_draws[[1]]
   # class(ret)<-"pred_intervals.bcfBMA"  
   
-  ret <- PI
+  ret <- PI_scaled
   class(ret)<-"pred_intervals.bcfBMA"  
   
   ret

@@ -42,6 +42,7 @@
 #' @param min_num_obs_for_tau_split This integer determines the minimum number of treated observations in a (parent) tau tree node for the algorithm to consider potential splits of the node.
 #' @param min_num_obs_after_tau_split This integer determines the minimum number of treated observations in a (tau tree) child node resulting from a split in order for a split to occur. If the left or right child node has less than this number of observations, then the split can not occur.
 #' @param exact_residuals Binary variable. If equal to 1, then trees are added to sum-of-tree models within each round of the algorithm by detecting changepoints in the exact residuals. If equals zero, then changepoints are detected in residuals that are constructed from approximate predictions.
+#' @param transform_resids Binary variable. If equal to 1, then a Horvitz-Thompson transformation is applied to residuals before finding chanegpoints for building tau trees.
 
 #' @export 
 #' @return The following objects are returned by bcfbma:
@@ -82,7 +83,12 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                           include_pi= "control", zero_split=1, only_max_num_trees=1, mu_or_tau_each_round=1,separate_tree_numbers=1,
                          min_num_obs_for_mu_split=2, min_num_obs_after_mu_split=2,
                          min_num_obs_for_tau_split=2, min_num_obs_after_tau_split=2,
-                         exact_residuals=1, spike_tree=0,lambda_poisson_mu=10,lambda_poisson_tau=10){
+                         exact_residuals=1, 
+                         spike_tree=0,s_t_hyperprior=1, 
+                         p_s_t_mu=0.5, a_s_t_mu=1,b_s_t_mu=3,
+                         p_s_t_tau=0.5, a_s_t_tau=1,b_s_t_tau=3,
+                         lambda_poisson_mu=10,lambda_poisson_tau=10,
+                         transform_resids=0){
   binary=FALSE
   start_mean=0
   start_sd=1
@@ -176,7 +182,10 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
   
   
   if(mu_or_tau_each_round==1){
-  bcfBMA_call=BCF_BMA_sumLikelihood_add_mu_or_tau(spike_tree,lambda_poisson_mu,lambda_poisson_tau,
+  bcfBMA_call=BCF_BMA_sumLikelihood_add_mu_or_tau(spike_tree,s_t_hyperprior, 
+                                                  p_s_t_mu, a_s_t_mu,b_s_t_mu,
+                                                  p_s_t_tau, a_s_t_tau,b_s_t_tau,
+                                                  lambda_poisson_mu,lambda_poisson_tau,
                                                   x.train,y.train,z,pihat,
                                                   a_mu,a_tau,mu_mu,mu_tau,
                                                   nu,lambda,c,sigma_mu_mu,sigma_mu_tau,
@@ -188,9 +197,13 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                                                   include_pi2,zero_split,only_max_num_trees,separate_tree_numbers,
                                                   min_num_obs_for_mu_split, min_num_obs_after_mu_split,
                                                   min_num_obs_for_tau_split, min_num_obs_after_tau_split,
-                                                  exact_residuals)
+                                                  exact_residuals,
+                                                  transform_resids)
   }else{
-  bcfBMA_call=BCF_BMA_sumLikelihood(spike_tree,lambda_poisson_mu,lambda_poisson_tau,
+  bcfBMA_call=BCF_BMA_sumLikelihood(spike_tree,s_t_hyperprior, 
+                                    p_s_t_mu, a_s_t_mu,b_s_t_mu,
+                                    p_s_t_tau, a_s_t_tau,b_s_t_tau,
+                                    lambda_poisson_mu,lambda_poisson_tau,
                                     x.train,y.train,z,pihat,
                                     a_mu,a_tau,mu_mu,mu_tau,
                                     nu,lambda,c,sigma_mu_mu,sigma_mu_tau,
@@ -202,7 +215,8 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
                                     include_pi2,zero_split,only_max_num_trees,
                                     min_num_obs_for_mu_split, min_num_obs_after_mu_split,
                                     min_num_obs_for_tau_split, min_num_obs_after_tau_split,
-                                    exact_residuals)
+                                    exact_residuals,
+                                    transform_resids)
   }
   
   
