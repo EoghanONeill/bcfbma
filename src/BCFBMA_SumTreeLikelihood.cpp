@@ -146,7 +146,7 @@ IntegerVector order_intvec_bcf(IntegerVector x) {		// input is a vector of integ
 NumericVector get_gnp_bcf(NumericVector nodes_at_depth,int grow_node){		
   arma::uvec grow_node_pos=arma::find(as<arma::vec>(nodes_at_depth)==grow_node);	// uvec is vector of unsigned integers for index. Set equal to the index number for member(members?) of nodes_at_depth equal to grow_node
   
-  return(wrap(grow_node_pos));  // converts from C++ object ro R object and returns the vector of indices
+  return(wrap(arma::conv_to<arma::vec>::from(grow_node_pos)));  // converts from C++ object ro R object and returns the vector of indices
 }
 
 //######################################################################################################################//
@@ -160,7 +160,7 @@ NumericVector find_term_nodes_bcf(NumericMatrix tree_table){
   arma::uvec term_nodes=arma::find(colmat==-1);		// vector of indices giving positions of values in colmat that are equal to -1
   term_nodes=term_nodes+1;		// Add one to all elements of term_nodes
   
-  return(wrap(term_nodes));		// convert term_nodes to an R object and return
+  return(wrap(arma::conv_to<arma::vec>::from(term_nodes)));		// convert term_nodes to an R object and return
 } 
 
 //######################################################################################################################//
@@ -432,26 +432,46 @@ NumericMatrix find_obs_to_update_grow_bcf(NumericMatrix prior_tree_matrix_temp,d
 
 List get_daughter_obs_bcf(arma::mat& xmat,NumericVector obs_to_update,int split_var,double split_point){		// Reference to xmat? What is the purpose of "&"?
   
-  arma::uvec ld_obs_ind(obs_to_update.size());		// create a vector of unsigned integers called ld_obd_ind (presumably indices). Not initialized?
-  arma::uvec rd_obs_ind(obs_to_update.size());		// create a vector of unsigned integers called rd_obd_ind (presumably indices). Not initialized?
+  // arma::uvec ld_obs_ind(obs_to_update.size());		// create a vector of unsigned integers called ld_obd_ind (presumably indices). Not initialized?
+  // arma::uvec rd_obs_ind(obs_to_update.size());		// create a vector of unsigned integers called rd_obd_ind (presumably indices). Not initialized?
+  // 
+  // arma::colvec sv_col;								// create a arma colvec called sv_col (not initialized?)
+  // List daughter_obs(2);								// create a List called daughter_obs with two elements. (List is a rcpp type)
+  // 
+  // sv_col=xmat.col(split_var-1);						// let sv_col be equal to the split_var^th column of xmat
+  // 
+  // arma::uvec obs_to_update_arma=as<arma::uvec>(obs_to_update);				// Let obs_to_update_arma be a vector of unsige integers equal to obs_to_update. (why isn't obs_to_update an IntegerVector?)
+  // ld_obs_ind = arma::find(sv_col.elem(obs_to_update_arma)<=split_point);		// ld_obs_ind is the indices of sv_col.elem(obs_to_update_arma)that are <= split_point. LHS is elements of sv_col given by indices in obs_to_update_arma.
+  // rd_obs_ind = arma::find(sv_col.elem(obs_to_update_arma)>split_point);		// rd_obs_ind is the indices of sv_col.elem(obs_to_update_arma)that are > split_point.
+  // 
+  // NumericVector ld_ind2(as<NumericVector>(wrap(ld_obs_ind)));		// Let ld_ind2 (converted from arma uvec ld_obs_ind). Why not IntegerVector?
+  // NumericVector rd_ind2(as<NumericVector>(wrap(rd_obs_ind)));		// Let rd_ind2 (converted from arma uvec rd_obs_ind). Why not IntegerVector?
+  // 
+  // NumericVector ld_obs=obs_to_update[ld_ind2];		// ld_obs is the vector of elements of obs_to_update given by the indices in ld_ind2 [obs_to_update might itself be a set of indices?]
+  // NumericVector rd_obs=obs_to_update[rd_ind2];		// rd_obs is the vector of elements of obs_to_update given by the indices in rd_ind2
+  // 
+  // daughter_obs[0]=ld_obs;			// Fist element of list is the vector ld_obs
+  // daughter_obs[1]=rd_obs;			// Second element of list is the vector rd_obs
   
-  arma::colvec sv_col;								// create a arma colvec called sv_col (not initialized?)
-  List daughter_obs(2);								// create a List called daughter_obs with two elements. (List is a rcpp type)
   
-  sv_col=xmat.col(split_var-1);						// let sv_col be equal to the split_var^th column of xmat
   
-  arma::uvec obs_to_update_arma=as<arma::uvec>(obs_to_update);				// Let obs_to_update_arma be a vector of unsige integers equal to obs_to_update. (why isn't obs_to_update an IntegerVector?)
-  ld_obs_ind = arma::find(sv_col.elem(obs_to_update_arma)<=split_point);		// ld_obs_ind is the indices of sv_col.elem(obs_to_update_arma)that are <= split_point. LHS is elements of sv_col given by indices in obs_to_update_arma.
-  rd_obs_ind = arma::find(sv_col.elem(obs_to_update_arma)>split_point);		// rd_obs_ind is the indices of sv_col.elem(obs_to_update_arma)that are > split_point.
+  arma::colvec sv_col;
+  List daughter_obs(2);
   
-  NumericVector ld_ind2(as<NumericVector>(wrap(ld_obs_ind)));		// Let ld_ind2 (converted from arma uvec ld_obs_ind). Why not IntegerVector?
-  NumericVector rd_ind2(as<NumericVector>(wrap(rd_obs_ind)));		// Let rd_ind2 (converted from arma uvec rd_obs_ind). Why not IntegerVector?
+  sv_col=xmat.col(split_var-1);
+
+  arma::vec obs_to_update_arma=as<arma::vec>(obs_to_update);
+  arma::uvec obs_to_update_arma_u=as<arma::uvec>(obs_to_update);
   
-  NumericVector ld_obs=obs_to_update[ld_ind2];		// ld_obs is the vector of elements of obs_to_update given by the indices in ld_ind2 [obs_to_update might itself be a set of indices?]
-  NumericVector rd_obs=obs_to_update[rd_ind2];		// rd_obs is the vector of elements of obs_to_update given by the indices in rd_ind2
+  arma::uvec ld_obs_ind = arma::find(sv_col.elem(obs_to_update_arma_u)<=split_point);
+  arma::uvec rd_obs_ind = arma::find(sv_col.elem(obs_to_update_arma_u)>split_point);
+
+  arma::vec obs_to_update_arma_left=obs_to_update_arma.elem(ld_obs_ind);
+  arma::vec obs_to_update_arma_right=obs_to_update_arma.elem(rd_obs_ind);
   
-  daughter_obs[0]=ld_obs;			// Fist element of list is the vector ld_obs
-  daughter_obs[1]=rd_obs;			// Second element of list is the vector rd_obs
+  
+  daughter_obs[0]=wrap(obs_to_update_arma_left);
+  daughter_obs[1]=wrap(obs_to_update_arma_right);
   
   return(daughter_obs);		// Return the list
   
@@ -597,7 +617,7 @@ List grow_tree_bcf(arma::mat& xmat,//NumericVector y,
     }else{
       //if the daughter node number already exists in the tree and existing node numbers have to be updated
       // Rcout << "Line 575.\n";
-      prior_tree_table_temp=set_tree_to_middle_bcf(wrap(node_to_update),prior_tree_table_temp,grow_node,left_daughter);	// line 283 defines the function. Adds two tows and changes first and second column.
+      prior_tree_table_temp=set_tree_to_middle_bcf(wrap(arma::conv_to<arma::vec>::from(node_to_update)),prior_tree_table_temp,grow_node,left_daughter);	// line 283 defines the function. Adds two tows and changes first and second column.
       // Rcout << "Line 577.\n";
       // Rcout << "d = " << d << ".\n";
       
@@ -951,13 +971,19 @@ List evaluate_model_occams_window_bcf(NumericVector tree_lik,double lowest_BIC,d
   
   // check tree is in Occam's window if it isn't then delete it from list                    
   while((tree_lik[sorted_lik_index[s]-1])-(lowest_BIC) > c){	// while element of tree_lik -lowestBIC >c. (starts with largest, and then s increases, giving next largest element of tree_lik, and so on
-    if(s==(tree_lik.size()-1)){								// finish if at last element of tree_lik. Should this be tree_lik.size() instead of tree_lik.size()-1? Want to be able to remove the last tree?
-      break;												// break out of while loop?
-    }
+    // if(s==(tree_lik.size()-1)){								// finish if at last element of tree_lik. Should this be tree_lik.size() instead of tree_lik.size()-1? Want to be able to remove the last tree?
+    //   break;												// break out of while loop?
+    // }
     //delete tree from tree list
     //if((tree_lik[sorted_lik_index[s]-1])-(lowest_BIC)>c){	// same condition as for while loop above. Presuably tree_lik actually includes the BICs
       //set indicator for index of trees to be removed
       to_be_removed[s]=sorted_lik_index[s]-1;				// include the index number sorted_lik_index[s]-1 in to_be_removed. (Records models to be removed).
+      
+      if(s==(tree_lik.size()-1)){
+        s+=1;
+        break;
+      }
+      
       s+=1;												// increase s by 1
     //}
   }
@@ -993,13 +1019,18 @@ List evaluate_model_occams_window_exact_bcf(NumericVector tree_lik,double lowest
   
   // check tree is in Occam's window if it isn't then delete it from list                    
   while((tree_lik[sorted_lik_index[s]-1])-(lowest_BIC) > c){
-    if(s==(tree_lik.size()-1)){
-      break;
-    }
+
     //delete tree from tree list
     //if((tree_lik[sorted_lik_index[s]-1])-(lowest_BIC)>c){
     //set indicator for index of trees to be removed 
     to_be_removed[s]=sorted_lik_index[s]-1;
+    
+    if(s==(tree_lik.size()-1)){
+      s+=1;
+      break;
+    }
+    
+    
     s+=1;
     //}
   }
@@ -1027,7 +1058,155 @@ List evaluate_model_occams_window_exact_bcf(NumericVector tree_lik,double lowest
   return(ret);  
 }
 
+//######################################################################################################################//
 
+// [[Rcpp::export]]
+List evaluate_model_OW_fusedlists_bcf(IntegerVector curr_round_added_mu_addall,
+                                            NumericVector tree_lik,
+                                            double lowest_BIC,double c,
+                                            List tree_list,
+                                            List tree_mat_list,
+                                            IntegerVector tree_parent, 
+                                            NumericMatrix curr_round_preds,
+                                            NumericMatrix curr_round_test_preds,
+                                            bool is_test_data){
+  
+  
+  arma::mat curr_round_preds_arma = Rcpp::as<arma::mat>(curr_round_preds);
+  arma::mat curr_round_test_preds_arma = Rcpp::as<arma::mat>(curr_round_test_preds);
+  //arma::mat curr_true_preds_arma = Rcpp::as<arma::mat>(curr_true_preds);
+  
+  arma::uvec keep_inds_temp=arma::find(Rcpp::as<arma::vec>(tree_lik) -(lowest_BIC) <= c );
+  
+  //descending order indices of BIC positions
+  IntegerVector sorted_lik_index=order__bcf(tree_lik);
+  std::vector<double> to_be_removed(tree_lik.size());
+  int s=0;
+  
+  // check tree is in Occam's window if it isn't then delete it from list                    
+  while((tree_lik[sorted_lik_index[s]-1])-(lowest_BIC) > c){
+    
+    //delete tree from tree list
+    //if((tree_lik[sorted_lik_index[s]-1])-(lowest_BIC)>c){
+    //set indicator for index of trees to be removed 
+    to_be_removed[s]=sorted_lik_index[s]-1;
+    
+    if(s==(tree_lik.size()-1)){
+      s+=1;
+      break;
+    }
+    
+    s+=1;
+    //}
+  }
+  
+  to_be_removed.resize(s);
+  IntegerVector remove_order_index(to_be_removed.size());
+  //delete elements from the higest index down 
+  remove_order_index=order__bcf(wrap(to_be_removed));
+  
+  for(int j=0;j<s;j++){    
+    tree_list.erase(to_be_removed[remove_order_index[j]-1]);
+    tree_mat_list.erase(to_be_removed[remove_order_index[j]-1]);
+    tree_lik.erase(to_be_removed[remove_order_index[j]-1]);
+    curr_round_added_mu_addall.erase(to_be_removed[remove_order_index[j]-1]);
+    tree_parent.erase(to_be_removed[remove_order_index[j]-1]);
+    
+  }
+  
+  
+  curr_round_preds_arma=curr_round_preds_arma.cols(keep_inds_temp);
+  if(is_test_data==1){
+    curr_round_test_preds_arma=curr_round_test_preds_arma.cols(keep_inds_temp);
+  }
+  //curr_true_preds=wrap(curr_true_preds_arma.cols(keep_inds_temp));
+  
+  List ret(7);
+  ret(0)=curr_round_added_mu_addall;
+  ret(1)=tree_lik;
+  ret(2)=tree_list;
+  ret(3)=tree_mat_list;
+  ret(4)=tree_parent;
+  ret(5)=wrap(curr_round_preds_arma);
+  ret(6)=wrap(curr_round_test_preds_arma);
+  
+  return(ret);  
+}
+
+//######################################################################################################################//
+
+// [[Rcpp::export]]
+List evaluate_model_OW_fusedlists_exact_bcf(IntegerVector curr_round_added_mu_addall,
+                                            NumericVector tree_lik,
+                                            double lowest_BIC,double c,
+                                            List tree_list,
+                                            List tree_mat_list,
+                                            IntegerVector tree_parent, 
+                                            NumericMatrix curr_round_preds,
+                                            NumericMatrix curr_round_test_preds,
+                                            NumericMatrix curr_true_preds,
+                                            bool is_test_data){
+  
+  
+  arma::mat curr_round_preds_arma = Rcpp::as<arma::mat>(curr_round_preds);
+  arma::mat curr_round_test_preds_arma = Rcpp::as<arma::mat>(curr_round_test_preds);
+  arma::mat curr_true_preds_arma = Rcpp::as<arma::mat>(curr_true_preds);
+  
+  arma::uvec keep_inds_temp=arma::find(Rcpp::as<arma::vec>(tree_lik) -(lowest_BIC) <= c );
+  
+  //descending order indices of BIC positions
+  IntegerVector sorted_lik_index=order__bcf(tree_lik);
+  std::vector<double> to_be_removed(tree_lik.size());
+  int s=0;
+  
+  // check tree is in Occam's window if it isn't then delete it from list                    
+  while((tree_lik[sorted_lik_index[s]-1])-(lowest_BIC) > c){
+    
+    //delete tree from tree list
+    //if((tree_lik[sorted_lik_index[s]-1])-(lowest_BIC)>c){
+    //set indicator for index of trees to be removed 
+    to_be_removed[s]=sorted_lik_index[s]-1;
+    if(s==(tree_lik.size()-1)){
+      s+=1;
+      break;
+    }
+    s+=1;
+    //}
+  }
+  
+  to_be_removed.resize(s);
+  IntegerVector remove_order_index(to_be_removed.size());
+  //delete elements from the higest index down 
+  remove_order_index=order__bcf(wrap(to_be_removed));
+  
+  for(int j=0;j<s;j++){    
+    tree_list.erase(to_be_removed[remove_order_index[j]-1]);
+    tree_mat_list.erase(to_be_removed[remove_order_index[j]-1]);
+    tree_lik.erase(to_be_removed[remove_order_index[j]-1]);
+    curr_round_added_mu_addall.erase(to_be_removed[remove_order_index[j]-1]);
+    tree_parent.erase(to_be_removed[remove_order_index[j]-1]);
+
+  }
+  
+  curr_round_preds_arma=curr_round_preds_arma.cols(keep_inds_temp);
+  if(is_test_data==1){
+    curr_round_test_preds_arma=curr_round_test_preds_arma.cols(keep_inds_temp);
+  }
+  
+  curr_true_preds_arma=curr_true_preds_arma.cols(keep_inds_temp);
+  
+  
+  List ret(8);
+  ret(0)= curr_round_added_mu_addall;
+  ret(1)=tree_lik;
+  ret(2)=tree_list;
+  ret(3)=tree_mat_list;
+  ret(4)=tree_parent;
+  ret(5)=wrap(curr_round_preds_arma);
+  ret(6)=wrap(curr_round_test_preds_arma);
+  ret(7)=wrap(curr_true_preds_arma);
+  return(ret);  
+}
 //######################################################################################################################//
 
 // [[Rcpp::depends(RcppArmadillo)]]
@@ -1113,7 +1292,7 @@ else{
       }
     }
     double nodemean=tree_data(terminal_nodes[i]-1,5);				// let nodemean equal tree_data row terminal_nodes[i]^th row , 6th column. The minus 1 is because terminal nodes consists of indices starting at 1, but need indices to start at 0.
-    IntegerVector predind=as<IntegerVector>(wrap(pred_indices));	// convert pred_indices from a uvec to the IntegerVector predind
+    IntegerVector predind=as<IntegerVector>(wrap(arma::conv_to<arma::ivec>::from(pred_indices)));	// convert pred_indices from a uvec to the IntegerVector predind
     predictions[predind]= nodemean;			// Let the elements of predictions indexed by predind be equal to nodemean
 
     
@@ -1140,7 +1319,7 @@ List get_initial_resids(NumericMatrix test_data,
   arma::uvec z_inds= arma::find(z_a==1) ;			// Obtain the elements of the split_var^th column of the input matrix indexed by grow_obs
   
   //arma::uvec get_min=arma::intersect(z_inds,grow_obs2 );			// Obtain the elements of the split_var^th column of the input matrix indexed by grow_obs
-  IntegerVector z_ind_wrapped=as<IntegerVector>(wrap(z_inds));
+  IntegerVector z_ind_wrapped=as<IntegerVector>(wrap(arma::conv_to<arma::ivec>::from(z_inds)));
   
   NumericVector treated_y= ytrain[z_ind_wrapped];
   
@@ -1269,7 +1448,7 @@ List get_initial_resids(NumericMatrix test_data,
               continue;
             }
           }
-          IntegerVector predind=as<IntegerVector>(wrap(pred_indices));
+          IntegerVector predind=as<IntegerVector>(wrap(arma::conv_to<arma::ivec>::from(pred_indices)));
           NumericVector ys_in_node= ytrain[predind];
           double nodemean=mean(ys_in_node)/One_sum_of_tree_list_mu.size();
           predictions[predind]= nodemean;
@@ -1385,7 +1564,7 @@ List get_initial_resids(NumericMatrix test_data,
             }
           }
           arma::uvec inds_tr_obs_node = arma::intersect(pred_indices,z_inds);
-          IntegerVector predind=as<IntegerVector>(wrap(inds_tr_obs_node));
+          IntegerVector predind=as<IntegerVector>(wrap(arma::conv_to<arma::ivec>::from(inds_tr_obs_node)));
           
           NumericVector ys_in_node= ytrain[predind];
           double nodemean=mean(ys_in_node)/One_sum_of_tree_list_tau.size();
@@ -1623,7 +1802,7 @@ List likelihood_function_exact_bcf(NumericVector y_temp,NumericMatrix treetable_
   
   
   //arma::mat rel=(b/2)*log(a)-(1/2)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);
-  arma::mat rel=(b*0.5)*log(a)-0.5*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);
+  arma::mat rel=(b*0.5)*log(a)-0.5*real(arma::log_det(sec_term))-expon*log(nu*lambda - mvm +yty);
   
   
   double rel2=as<double>(wrap(rel));
@@ -1691,7 +1870,7 @@ double sumtree_likelihood_function_bcf_bcf(NumericVector y_temp,List sum_treetab
   arma::mat third_term=Wmat.t()*y;						// W_bcf transpose Y
   //get m^TV^{-1}m
   arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
-  arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+  arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(0.5)*real(arma::log_det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
   double rel2=as<double>(wrap(rel));					// convert to double (from 1 by 1 arma mat)
   return(rel2);											// return the log marginal likelihood
 }    
@@ -1748,7 +1927,7 @@ List sumtree_likelihood_function_exact_bcf(NumericVector y_temp,List sum_treetab
   arma::mat third_term=Wmat.t()*y;						// W_bcf transpose Y
   //get m^TV^{-1}m
   arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
-  arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+  arma::mat rel=(b_mu*0.5)*log(a_mu)+(b_tau*0.5)*log(a_tau)-(0.5)*real(arma::log_det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
   double rel2=as<double>(wrap(rel));					// convert to double (from 1 by 1 arma mat)
   
   
@@ -1813,7 +1992,7 @@ double sumtree_likelihood_tau_round1_bcf(NumericVector y_temp,NumericMatrix tree
   arma::mat third_term=Wmat.t()*y;						// W_bcf transpose Y
   //get m^TV^{-1}m
   arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
-  arma::mat rel=(b_tau*0.5)*log(a_tau)-(0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+  arma::mat rel=(b_tau*0.5)*log(a_tau)-(0.5)*real(arma::log_det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
   double rel2=as<double>(wrap(rel));					// convert to double (from 1 by 1 arma mat)
   return(rel2);											// return the log marginal likelihood
 }    
@@ -1867,7 +2046,7 @@ List sumtree_likelihood_tau_round1_exact_bcf(NumericVector y_temp,NumericMatrix 
   arma::mat third_term=Wmat.t()*y;						// W_bcf transpose Y
   //get m^TV^{-1}m
   arma::mat mvm= ytW*sec_term_inv*third_term;			// matrix expression in middle of equation 5
-  arma::mat rel=(b_tau*0.5)*log(a_tau)-(0.5)*log(det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
+  arma::mat rel=(b_tau*0.5)*log(a_tau)-(0.5)*real(arma::log_det(sec_term))-expon*log(nu*lambda - mvm +yty);		// log of all of equation 5 (i.e. the log of the marginal likelihood of the sum of tree model)
   double rel2=as<double>(wrap(rel));					// convert to double (from 1 by 1 arma mat)
   
   arma::vec predsoutput=Wmat*sec_term_inv*third_term;
@@ -1971,7 +2150,7 @@ List get_best_split_mu_bcf(double spike_tree, int s_t_hyperprior, double p_s_t, 
       proposal_tree=grow_tree_bcf(data,//resids,
                                   treemat_c,terminal_nodes[l],treetable_c,split_var,
                                   split_point,//terminal_nodes,
-                                  wrap(grow_obs),
+                                  wrap(arma::conv_to<arma::vec>::from(grow_obs)),
                                   d//,get_min,data_curr_node
                                     ); // elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
       
@@ -2091,10 +2270,10 @@ List get_best_split_mu_bcf(double spike_tree, int s_t_hyperprior, double p_s_t, 
     //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     
     if(exact_residuals==1){
-      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent,
+      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),wrap(tree_mat_list),tree_parent,
                                                   tree_preds);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }else{
-      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }
     
     
@@ -2285,7 +2464,7 @@ List get_best_split_mu_update_bcf(double spike_tree, int s_t_hyperprior, double 
       proposal_tree=grow_tree_bcf(data,//resids,
                                   treemat_c,terminal_nodes[l],treetable_c,split_var,
                                   split_point,//terminal_nodes,
-                                  wrap(grow_obs),
+                                  wrap(arma::conv_to<arma::vec>::from(grow_obs)),
                                   d//,get_min,data_curr_node
       ); // elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
       
@@ -2403,10 +2582,10 @@ List get_best_split_mu_update_bcf(double spike_tree, int s_t_hyperprior, double 
     //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     
     if(exact_residuals==1){
-      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent,
+      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),wrap(tree_mat_list),tree_parent,
                                                         tree_preds);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }else{
-      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }
     
     NumericVector testlik =eval_model[0];		// testlik is tree_lik after removing models outside Occam's window
@@ -2564,7 +2743,9 @@ List get_best_split_tau_bcf(double spike_tree, int s_t_hyperprior,
     arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node
     //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
-    arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
+    arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, 
+                                                 wrap(arma::conv_to<arma::vec>::from(grow_obs))
+    );
     //arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
     
     arma::mat data_curr_node=x_moderate_a.rows(z_growvec);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
@@ -2612,7 +2793,7 @@ List get_best_split_tau_bcf(double spike_tree, int s_t_hyperprior,
       proposal_tree=grow_tree_bcf(x_moderate_a,//resids,
                                   tree_mat_tau_c,terminal_nodes[l],
                                   tree_table_tau_c,split_var,split_point,//terminal_nodes,
-                                  wrap(grow_obs),
+                                  wrap(arma::conv_to<arma::vec>::from(grow_obs)),
                                   d//,get_min,data_curr_node
                                     );	// elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
       
@@ -2734,11 +2915,11 @@ List get_best_split_tau_bcf(double spike_tree, int s_t_hyperprior,
     //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),wrap(tree_parent));	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     
     if(exact_residuals==1){
-      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),
+      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),
                                                   wrap(tree_mat_list),tree_parent,
                                                   tree_preds);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }else{
-      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }
     
     NumericVector testlik =eval_model[0];						// testlik is tree_lik after removing models outside Occam's window
@@ -2901,7 +3082,9 @@ List get_best_split_tau_update_bcf(double spike_tree, int s_t_hyperprior,
     arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node
     //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
-    arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
+    arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, 
+                                                 wrap(arma::conv_to<arma::vec>::from(grow_obs))
+    );
     //arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
     
     arma::mat data_curr_node=x_moderate_a.rows(z_growvec);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
@@ -2949,7 +3132,7 @@ List get_best_split_tau_update_bcf(double spike_tree, int s_t_hyperprior,
       proposal_tree=grow_tree_bcf(x_moderate_a,//resids,
                                   tree_mat_tau_c,terminal_nodes[l],
                                                                tree_table_tau_c,split_var,split_point,//terminal_nodes,
-                                                               wrap(grow_obs),
+                                                               wrap(arma::conv_to<arma::vec>::from(grow_obs)),
                                                                d//,get_min,data_curr_node
       );	// elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
       
@@ -3073,11 +3256,11 @@ List get_best_split_tau_update_bcf(double spike_tree, int s_t_hyperprior,
     //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     
     if(exact_residuals==1){
-      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),
+      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),
                                                         wrap(tree_mat_list),tree_parent,
                                                         tree_preds);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }else{
-      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }
     
     NumericVector testlik =eval_model[0];						// testlik is tree_lik after removing models outside Occam's window
@@ -3240,7 +3423,9 @@ List get_best_split_tau_round1_bcf(double spike_tree, int s_t_hyperprior,
     // Rcout << "terminal_nodes[l] = " << terminal_nodes[l] << ".\n";
     
     // Rcout << "d1 = " << d1 << ".\n";
-    arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
+    arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, 
+                                                 wrap(arma::conv_to<arma::vec>::from(grow_obs))
+                                                   );
     //arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
     
     arma::mat data_curr_node=x_moderate_a.rows(z_growvec);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
@@ -3304,7 +3489,7 @@ List get_best_split_tau_round1_bcf(double spike_tree, int s_t_hyperprior,
       proposal_tree=grow_tree_bcf(x_moderate_a,//resids,
                                   tree_mat_tau_c,terminal_nodes[l],
                                   tree_table_tau_c,split_var,split_point,//terminal_nodes,
-                                  wrap(grow_obs),
+                                  wrap(arma::conv_to<arma::vec>::from(grow_obs)),
                                   d//,get_min,data_curr_node
                                     );	// elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
       
@@ -3508,11 +3693,11 @@ List get_best_split_tau_round1_bcf(double spike_tree, int s_t_hyperprior,
     //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     
     if(exact_residuals==1){
-      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),
+      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),
                                                         wrap(tree_mat_list),tree_parent,
                                                         tree_preds);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }else{
-      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }
     
     NumericVector testlik =eval_model[0];						// testlik is tree_lik after removing models outside Occam's window
@@ -3677,7 +3862,9 @@ List get_best_split_tau_round1_update_bcf(double spike_tree, int s_t_hyperprior,
     // Rcout << "terminal_nodes[l] = " << terminal_nodes[l] << ".\n";
     
     // Rcout << "d1 = " << d1 << ".\n";
-    arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
+    arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, 
+                                                 wrap(arma::conv_to<arma::vec>::from(grow_obs))
+    );
     //arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
     
     arma::mat data_curr_node=x_moderate_a.rows(z_growvec);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
@@ -3741,7 +3928,7 @@ List get_best_split_tau_round1_update_bcf(double spike_tree, int s_t_hyperprior,
       proposal_tree=grow_tree_bcf(x_moderate_a,//resids,
                                   tree_mat_tau_c,terminal_nodes[l],
                                                                tree_table_tau_c,split_var,split_point,//terminal_nodes,
-                                                               wrap(grow_obs),
+                                                               wrap(arma::conv_to<arma::vec>::from(grow_obs)),
                                                                d//,get_min,data_curr_node
       );	// elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
       
@@ -3941,11 +4128,11 @@ List get_best_split_tau_round1_update_bcf(double spike_tree, int s_t_hyperprior,
     //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     
     if(exact_residuals==1){
-      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),
+      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),
                                                         wrap(tree_mat_list),tree_parent,
                                                         tree_preds);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }else{
-      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }
     
     NumericVector testlik =eval_model[0];						// testlik is tree_lik after removing models outside Occam's window
@@ -4099,7 +4286,9 @@ List get_best_split_sum_tau_bcf(double spike_tree, int s_t_hyperprior,
     arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node
     //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
-    arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
+    arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, 
+                                                 wrap(arma::conv_to<arma::vec>::from(grow_obs))
+    );
     //arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
     
     arma::mat data_curr_node=x_moderate_a.rows(z_growvec);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
@@ -4144,7 +4333,7 @@ List get_best_split_sum_tau_bcf(double spike_tree, int s_t_hyperprior,
       proposal_tree=grow_tree_bcf(x_moderate_a,//resids,
                                   tree_mat_tau_c,terminal_nodes[l],
                                   tree_table_tau_c,split_var,split_point,//terminal_nodes,
-                                  wrap(grow_obs),
+                                  wrap(arma::conv_to<arma::vec>::from(grow_obs)),
                                   d//,get_min,data_curr_node
                                     );	// elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
       
@@ -4449,11 +4638,11 @@ List get_best_split_sum_tau_bcf(double spike_tree, int s_t_hyperprior,
     //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     
     if(exact_residuals==1){
-      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),
+      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),
                                                         wrap(tree_mat_list),tree_parent,
                                                         tree_preds);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }else{
-      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }
     
     NumericVector testlik =eval_model[0];						// testlik is tree_lik after removing models outside Occam's window
@@ -4606,7 +4795,8 @@ List get_best_split_sum_tau_update_bcf(double spike_tree, int s_t_hyperprior,
     arma::uvec grow_obs=find_term_obs_bcf(tree_mat_tau_c,terminal_nodes[l]);						// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[l] (letter l) (for leftmost column of tree_mat_tau_c that has elements equal to terminal_nodes[l] (letter l)).
     //depth of tree at current terminal node
     //NumericVector d1=unique(find_term_cols_bcf(tree_mat_tau_c,terminal_nodes[l]));						// d1 is a vector of indexes of (starting at 0) all the columns with at least some elements equal to terminal_nodes[l] (letter l). Unique funtion removes duplcated of columns. Unique also sorts descending.
-    arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, wrap(grow_obs));
+    arma::uvec z_growvec = get_grow_obs_in_z_bcf(z_ar, 
+                                                 wrap(arma::conv_to<arma::vec>::from(grow_obs)));
     //arma::vec z_growvec_a=Rcpp::as<arma::vec>(z_growvec);		// converts to arma vec
     
     arma::mat data_curr_node=x_moderate_a.rows(z_growvec);								// matrix consisting of first grow_obs rows of x_moderate_a. Note grow_obs changed on line 926, therefore not duplicating line 919.
@@ -4650,7 +4840,7 @@ List get_best_split_sum_tau_update_bcf(double spike_tree, int s_t_hyperprior,
       proposal_tree=grow_tree_bcf(x_moderate_a,//resids,
                                   tree_mat_tau_c,terminal_nodes[l],
                                                                tree_table_tau_c,split_var,split_point,//terminal_nodes,
-                                                               wrap(grow_obs),
+                                                               wrap(arma::conv_to<arma::vec>::from(grow_obs)),
                                                                d//,get_min,data_curr_node
       );	// elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
       
@@ -4958,11 +5148,11 @@ List get_best_split_sum_tau_update_bcf(double spike_tree, int s_t_hyperprior,
     //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     
     if(exact_residuals==1){
-      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),
+      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),
                                                         wrap(tree_mat_list),tree_parent,
                                                         tree_preds);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }else{
-      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }
     
     NumericVector testlik =eval_model[0];						// testlik is tree_lik after removing models outside Occam's window
@@ -5157,7 +5347,7 @@ List get_best_split_sum_mu_bcf(double spike_tree, int s_t_hyperprior,
       proposal_tree=grow_tree_bcf(x_control_a,//resids,
                                   tree_mat_mu_c,terminal_nodes[l],
                                   tree_table_mu_c,split_var,split_point,//terminal_nodes,
-                                  wrap(grow_obs),
+                                  wrap(arma::conv_to<arma::vec>::from(grow_obs)),
                                   d//,get_min,data_curr_node
                                     );	// elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
       
@@ -5472,11 +5662,11 @@ List get_best_split_sum_mu_bcf(double spike_tree, int s_t_hyperprior,
     //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     
     if(exact_residuals==1){
-      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),
+      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),
                                                         wrap(tree_mat_list),tree_parent,
                                                         tree_preds);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }else{
-      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }
     
     NumericVector testlik =eval_model[0];						// testlik is tree_lik after removing models outside Occam's window
@@ -5673,7 +5863,7 @@ List get_best_split_sum_mu_update_bcf(double spike_tree, int s_t_hyperprior,
       proposal_tree=grow_tree_bcf(x_control_a,//resids,
                                   tree_mat_mu_c,terminal_nodes[l],
                                                               tree_table_mu_c,split_var,split_point,//terminal_nodes,
-                                                              wrap(grow_obs),
+                                                              wrap(arma::conv_to<arma::vec>::from(grow_obs)),
                                                               d//,get_min,data_curr_node
       );	// elaborate function on line 469. creates list of 2 elements, tree matrix and tree table. Appears to grow node indexed by terminal_nodes[l] (letter l) (?).
       
@@ -5993,11 +6183,11 @@ List get_best_split_sum_mu_update_bcf(double spike_tree, int s_t_hyperprior,
     //eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     
     if(exact_residuals==1){
-      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),
+      eval_model=evaluate_model_occams_window_exact_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),
                                                         wrap(tree_mat_list),tree_parent,
                                                         tree_preds);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }else{
-      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,log(c),wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
+      eval_model=evaluate_model_occams_window_bcf(wrap(tree_lik),lowest_BIC,c,wrap(tree_list),wrap(tree_mat_list),tree_parent);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_list, tree_lik, tree_parent
     }
     
     NumericVector testlik =eval_model[0];						// testlik is tree_lik after removing models outside Occam's window
@@ -6127,7 +6317,7 @@ List update_predictions_bcf(NumericMatrix tree_table,NumericMatrix tree_matrix,N
     term_obs=find_term_obs_bcf(tree_matrix,terminal_nodes[k]);        	// function find_term_obs_bcf. Gives indices of elements equal to terminal_nodes[k] (for leftmost column of tree_matrix that has elements equal to terminal_nodes[k]). 
     //update the terminal node mean of the selected tree nodes:
     tree_table(terminal_nodes[k]-1,5)= new_mean[k];					// reset tree_table terminal_nodes[k]^th row, 6^th column equal to new_mean[k] (new_mean is an input vector)
-    IntegerVector term_obs2=wrap(term_obs);							// create R object from term_obs
+    IntegerVector term_obs2=wrap(arma::conv_to<arma::ivec>::from(term_obs));							// create R object from term_obs
     new_preds[term_obs2]=new_mean[k];								// reset the predictions for observations in node k to the new mean for node k
   }
   updated_preds[0]=tree_table;		// first element of updated_preds is the updated tree table.
@@ -6359,13 +6549,13 @@ List make_gridpoint_cpmat_mu_bcf(NumericMatrix data,NumericVector resp,int grids
   int numcols=3;										// create variable numcols. Initialize equal to 0.
   arma::mat change_points(numrows,numcols);			// create arma mat changepoints. Dimensions numrows by numcols.
   int row_count=-1;									// create variable row_count. Initialize equal to -1.
-  IntegerVector sorted_var;							// create IntegerVector sorted_var. Length not specified.
+  //IntegerVector sorted_var;							// create IntegerVector sorted_var. Length not specified.
+  arma::vec resp_ar=Rcpp::as<arma::vec>(resp);			// t is input resp converted to arma vec. (resp is the residuals?)
   
   for(int i=0;i<data.ncol();i++){						// for-loop of length equal to number of columns in the input data (number of variables).
     NumericVector coli=data(_,i);					// coli is i+1^th column of data.	(data is the X matrix)
     arma::vec coli_ar=as<arma::vec>(coli);			// convert coli to  arma vec.
-    arma::vec t=Rcpp::as<arma::vec>(resp);			// t is input resp converted to arma vec. (resp is the residuals?)
-    List ans1 = gridCP_bcf(coli,t,gridsize);			// apply gridCP_bcf (defined on line 1500) to column i+1. returns list of two elements.
+    List ans1 = gridCP_bcf(coli,resp_ar,gridsize);			// apply gridCP_bcf (defined on line 1500) to column i+1. returns list of two elements.
     NumericVector ans2=ans1[0];						// vector of viable splitting values of the variable in the i+1^th column. 
     NumericVector cp_strength=ans1[1];				// vector of residual sums of squares from the splits.
     
@@ -6382,9 +6572,9 @@ List make_gridpoint_cpmat_mu_bcf(NumericMatrix data,NumericVector resp,int grids
     change_points.shed_rows(row_count+1,change_points.n_rows-1);	// remove all extra rows that were no filled in by the for-loops above.
   }
   arma::vec te=change_points.col(2);									// set te equal to third column of change_points. The residuals SS_bcf for all potential splits.
-  NumericVector col_to_order=as<NumericVector>(wrap(te));				// convert residual SS_bcf vector to NumericVector.
-  IntegerVector ordered_dev=order_inc__bcf(col_to_order);					// gives indices of position of smallest, followed by position of second smallest element, and so on/
-  ordered_dev=ordered_dev-1;											// take one away from all indices (so that they are between 0 and number of splits -1).
+  //NumericVector col_to_order=as<NumericVector>(wrap(te));				// convert residual SS_bcf vector to NumericVector.
+  //IntegerVector ordered_dev=order_inc__bcf(col_to_order);					// gives indices of position of smallest, followed by position of second smallest element, and so on/
+  //ordered_dev=ordered_dev-1;											// take one away from all indices (so that they are between 0 and number of splits -1).
   change_points.shed_col(2);											// removes third column.
   int cp=change_points.n_rows;										// number of rows of change_points. Number of potential splits.
   double cp_prop=(double)num_cp/(double)100;							// cp_prop is the input value num_cp divided by 100. [presumably the fraction of possible splits to keep]
@@ -6401,7 +6591,9 @@ List make_gridpoint_cpmat_mu_bcf(NumericMatrix data,NumericVector resp,int grids
     err1=1;															// re-set the integer err1 equal to 1. This could be a bool instead of an int? Records an error?
   }
   if(err1==0){														// if err1=0, i.e. num_cp !=0.
-    arma::uvec t=Rcpp::as<arma::uvec>(ordered_dev);					// indices of smallest residual SS_bcf, then second smallest, and so on.
+    //arma::uvec t=Rcpp::as<arma::uvec>(ordered_dev);					// indices of smallest residual SS_bcf, then second smallest, and so on.
+    arma::uvec t=arma::sort_index(te);
+    
     t=t.subvec(0,num_cp-1);											// keep indices for the best num_cp potential splits.
     change_points=change_points.rows(t);							// Keep rows of matrix change_points that correspond to best potential splits.
   }
@@ -6427,7 +6619,7 @@ List make_gridpoint_cpmat_tau_bcf(NumericMatrix data,NumericVector resp,int grid
   
   // create vector of residuals for treated households only
   arma::vec resp_treat_a = resp_a.elem(arma::find(z_ar==1));	
-  NumericVector resp_treat = wrap(resp_treat_a);
+  //NumericVector resp_treat = wrap(resp_treat_a);
   
   
   int err1=0;											// create variable err1. Initialize equal to 0.
@@ -6436,13 +6628,13 @@ List make_gridpoint_cpmat_tau_bcf(NumericMatrix data,NumericVector resp,int grid
   int numcols=3;										// create variable numcols. Initialize equal to 0.
   arma::mat change_points(numrows,numcols);			// create arma mat changepoints. Dimensions numrows by numcols.
   int row_count=-1;									// create variable row_count. Initialize equal to -1.
-  IntegerVector sorted_var;							// create IntegerVector sorted_var. Length not specified.
+  //IntegerVector sorted_var;							// create IntegerVector sorted_var. Length not specified.
   
   for(int i=0;i<x_mod_treat.ncol();i++){						// for-loop of length equal to number of columns in the input x_mod_treat (number of variables).
     NumericVector coli=x_mod_treat(_,i);					// coli is i+1^th column of x_mod_treat.	(x_mod_treat is the X matrix)
-    arma::vec coli_ar=as<arma::vec>(coli);			// convert coli to  arma vec.
-    arma::vec t=Rcpp::as<arma::vec>(resp_treat);			// t is input resp_treat converted to arma vec. (resp_treat is the residuals?)
-    List ans1 = gridCP_bcf(coli,t,gridsize);			// apply gridCP_bcf (defined on line 1500) to column i+1. returns list of two elements.
+    //arma::vec coli_ar=as<arma::vec>(coli);			// convert coli to  arma vec.
+    //arma::vec t=Rcpp::as<arma::vec>(resp_treat);			// t is input resp_treat converted to arma vec. (resp_treat is the residuals?)
+    List ans1 = gridCP_bcf(coli,resp_treat_a,gridsize);			// apply gridCP_bcf (defined on line 1500) to column i+1. returns list of two elements.
     NumericVector ans2=ans1[0];						// vector of viable splitting values of the variable in the i+1^th column. 
     NumericVector cp_strength=ans1[1];				// vector of residual sums of squares from the splits.
     
@@ -6459,9 +6651,9 @@ List make_gridpoint_cpmat_tau_bcf(NumericMatrix data,NumericVector resp,int grid
     change_points.shed_rows(row_count+1,change_points.n_rows-1);	// remove all extra rows that were no filled in by the for-loops above.
   }
   arma::vec te=change_points.col(2);									// set te equal to third column of change_points. The residuals SS_bcf for all potential splits.
-  NumericVector col_to_order=as<NumericVector>(wrap(te));				// convert residual SS_bcf vector to NumericVector.
-  IntegerVector ordered_dev=order_inc__bcf(col_to_order);					// gives indices of position of smallest, followed by position of second smallest element, and so on/
-  ordered_dev=ordered_dev-1;											// take one away from all indices (so that they are between 0 and number of splits -1).
+  //NumericVector col_to_order=as<NumericVector>(wrap(te));				// convert residual SS_bcf vector to NumericVector.
+  //IntegerVector ordered_dev=order_inc__bcf(col_to_order);					// gives indices of position of smallest, followed by position of second smallest element, and so on/
+  //ordered_dev=ordered_dev-1;											// take one away from all indices (so that they are between 0 and number of splits -1).
   change_points.shed_col(2);											// removes third column.
   int cp=change_points.n_rows;										// number of rows of change_points. Number of potential splits.
   double cp_prop=(double)num_cp/(double)100;							// cp_prop is the input value num_cp divided by 100. [presumably the fraction of possible splits to keep]
@@ -6478,7 +6670,9 @@ List make_gridpoint_cpmat_tau_bcf(NumericMatrix data,NumericVector resp,int grid
     err1=1;															// re-set the integer err1 equal to 1. This could be a bool instead of an int? Records an error?
   }
   if(err1==0){														// if err1=0, i.e. num_cp !=0.
-    arma::uvec t=Rcpp::as<arma::uvec>(ordered_dev);					// indices of smallest residual SS_bcf, then second smallest, and so on.
+    //arma::uvec t=Rcpp::as<arma::uvec>(ordered_dev);					// indices of smallest residual SS_bcf, then second smallest, and so on.
+    arma::uvec t=arma::sort_index(te);
+    
     t=t.subvec(0,num_cp-1);											// keep indices for the best num_cp potential splits.
     change_points=change_points.rows(t);							// Keep rows of matrix change_points that correspond to best potential splits.
   }
@@ -6916,6 +7110,42 @@ List get_best_trees_mu_bcf(double spike_tree, int s_t_hyperprior,
         predvecs_curr_round=resize_bcf(predvecs_curr_round,count);
       }
       
+      
+      if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0
+        break;															// break out of the for-loop,
+      }
+      
+      List eval_modeltemp;
+      if(exact_residuals==1){
+        
+        eval_modeltemp=evaluate_model_occams_window_exact_bcf(as<NumericVector>(wrap(lik_subset_curr_round)),
+                                                              lowest_BIC,
+                                                              log(c),
+                                                              table_subset_curr_round,
+                                                              mat_subset_curr_round,
+                                                              as<IntegerVector>(wrap(parent_curr_round)),
+                                                              predvecs_curr_round);
+      }else{
+        eval_modeltemp=evaluate_model_occams_window_bcf(as<NumericVector>(wrap(lik_subset_curr_round)),
+                                                        lowest_BIC,
+                                                        log(c),
+                                                        table_subset_curr_round,
+                                                        mat_subset_curr_round,
+                                                        as<IntegerVector>(wrap(parent_curr_round)));
+      }
+      
+      lik_subset_curr_round=Rcpp::as<std::vector<double>>(eval_modeltemp[0]);
+      table_subset_curr_round=eval_modeltemp[1];
+      mat_subset_curr_round=eval_modeltemp[2];
+      //overall_count=overall_trees.size();
+      parent_curr_round=Rcpp::as<std::vector<int>>(eval_modeltemp[3]);
+      
+      if(exact_residuals==1){
+        predvecs_curr_round=eval_modeltemp[4];
+      }
+      
+      
+      
       if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0
         break;															// break out of the for-loop,
       }
@@ -7085,7 +7315,7 @@ List get_best_trees_mu_bcf(double spike_tree, int s_t_hyperprior,
             //Rcout << "Line 3369. j = " << j << ". k = " << k << " . \n";
             
             arma::uvec term_obsarma=find_term_obs_bcf(mat_subset_curr_round[k],terminal_nodes[nodeind]);
-            IntegerVector term_obs=wrap(term_obsarma);
+            IntegerVector term_obs=wrap(arma::conv_to<arma::ivec>::from(term_obsarma));
             
           // 
           // NumericVector curr_test_res=updated_curr_preds[1];		// Let curr_test_res be the vector of updated predictions
@@ -7288,7 +7518,7 @@ List get_best_trees_mu_bcf_2(double spike_tree, int s_t_hyperprior,
     
   }
   
-  // Rcout << "get past likelihood function mu round one. \n";
+   // Rcout << "get past zero tree code mu round one. \n";
   
   
   
@@ -7307,9 +7537,13 @@ List get_best_trees_mu_bcf_2(double spike_tree, int s_t_hyperprior,
     List predvecs_curr_round(lsize);
     
     int count=0;										// create a vector count. Initialize as 0.
+    // Rcout << "Line 7310. j = " << j << " . \n";
+    
     for(int i=0;i<tree_table_mu.size();i++){				// create a length equal to the length of the input list tree_table_mu
       parent=-1;									// reset input vector parent to have one element, equal to -1.
       //NumericMatrix temp_list=cp_mat_list[0];		// indexes columns of splitting variables for potential splitting points. let temp_list equal the first element of the input list cp_mat_list
+      
+      // Rcout << "Line 7316. j = " << j << ". i = " << i << " . \n";
       
       if(split_rule_node==1){
         
@@ -7344,6 +7578,7 @@ List get_best_trees_mu_bcf_2(double spike_tree, int s_t_hyperprior,
         ); 
       }
       
+      // Rcout << "Line 7351. j = " << j << " . \n";
       
       if(best_subset.size()==1){						// if get_best_split_bcf resulted in a (?no tree?) error.
         continue;									// skip to the next iteration of the iner for-loop.
@@ -7404,9 +7639,46 @@ List get_best_trees_mu_bcf_2(double spike_tree, int s_t_hyperprior,
       predvecs_curr_round=resize_bcf(predvecs_curr_round,count);
     }
     
+    
     if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0
       break;															// break out of the for-loop,
     }
+    
+    List eval_modeltemp;
+    if(exact_residuals==1){
+      
+      eval_modeltemp=evaluate_model_occams_window_exact_bcf(as<NumericVector>(wrap(lik_subset_curr_round)),
+                                                             lowest_BIC,
+                                                             log(c),
+                                                             table_subset_curr_round,
+                                                             mat_subset_curr_round,
+                                                             as<IntegerVector>(wrap(parent_curr_round)),
+                                                             predvecs_curr_round);
+    }else{
+      eval_modeltemp=evaluate_model_occams_window_bcf(as<NumericVector>(wrap(lik_subset_curr_round)),
+                                                            lowest_BIC,
+                                                            log(c),
+                                                            table_subset_curr_round,
+                                                            mat_subset_curr_round,
+                                                            as<IntegerVector>(wrap(parent_curr_round)));
+    }
+    
+    lik_subset_curr_round=Rcpp::as<std::vector<double>>(eval_modeltemp[0]);
+    table_subset_curr_round=eval_modeltemp[1];
+    mat_subset_curr_round=eval_modeltemp[2];
+    //overall_count=overall_trees.size();
+    parent_curr_round=Rcpp::as<std::vector<int>>(eval_modeltemp[3]);
+    
+    if(exact_residuals==1){
+      predvecs_curr_round=eval_modeltemp[4];
+    }
+    
+    
+    if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0 
+      break;															// break out of the for-loop,
+    }
+    
+    
     for(int k=0;k<table_subset_curr_round.size();k++){					// for-loop of length table_subset_curr_round (potential splits/addittions to trees?)
       overall_trees[overall_count]=table_subset_curr_round[k];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
       overall_lik[overall_count]=lik_subset_curr_round[k];			// include all elements of lik_subset_curr_round in overall_lik (across iterations of this loop)
@@ -7530,6 +7802,7 @@ List get_best_trees_mu_bcf_2(double spike_tree, int s_t_hyperprior,
     }
     tree_mat_mu=mat_subset_curr_round;									// reset tree_mat_mu to list of treematrices obtained in current round of for-loop)
     parent=parent_curr_round;										// reset parent to parent vector obtained in current round of for-loop.
+    // Rcout << "Line 7533. j = " << j << " . \n";
     
     if(split_rule_node==1){											// If input boolean split_rule_node = 1 (true)
       NumericVector temp_preds;									// create vector. Length not given.
@@ -7542,6 +7815,8 @@ List get_best_trees_mu_bcf_2(double spike_tree, int s_t_hyperprior,
       List temp(table_subset_curr_round.size());
       
       cp_mat_list=temp;
+      
+      // Rcout << "Line 7546. j = " << j << " . \n";
       
       for(int k=0;k<table_subset_curr_round.size();k++){			// for-loop of length equal to number of models proposed in the current iteration
         NumericVector terminal_nodes;							// create a vector called terminal_nodes.
@@ -7568,7 +7843,7 @@ List get_best_trees_mu_bcf_2(double spike_tree, int s_t_hyperprior,
           //Rcout << "Line 3369. j = " << j << ". k = " << k << " . \n";
           
           arma::uvec term_obsarma=find_term_obs_bcf(mat_subset_curr_round[k],terminal_nodes[nodeind]);
-          IntegerVector term_obs=wrap(term_obsarma);
+           IntegerVector term_obs=wrap(arma::conv_to<arma::ivec>::from(term_obsarma));
         
         // 
         // NumericVector curr_test_res=updated_curr_preds[1];		// Let curr_test_res be the vector of updated predictions
@@ -7592,14 +7867,15 @@ List get_best_trees_mu_bcf_2(double spike_tree, int s_t_hyperprior,
         }
         
         Tempcpmatlist[nodeind]=cp_mat_list1[0];
-        //Rcout << "Line 3389. j = " << j << ". k = " << k << " . \n";
+        //Rcout << "Line 7595. j = " << j << ". k = " << k << " . \n";
         
       }
-      //Rcout << "Line 3384. j = " << j << ". k = " << k << " . \n";
+      // Rcout << "Line 7598. j = " << j << ". k = " << k << " . \n";
       
       cp_mat_list[k]=Tempcpmatlist;        
       }
       
+      // Rcout << "Line 7602. j = " << j << " . \n";
       
     }
   }
@@ -8349,6 +8625,40 @@ List get_best_trees_sum_mu_bcf(double spike_tree, int s_t_hyperprior,
       predvecs_curr_round=resize_bcf(predvecs_curr_round,count);
     }
     
+    if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0
+      break;															// break out of the for-loop,
+    }
+    
+    List eval_modeltemp;
+    if(exact_residuals==1){
+      
+      eval_modeltemp=evaluate_model_occams_window_exact_bcf(as<NumericVector>(wrap(lik_subset_curr_round)),
+                                                            lowest_BIC,
+                                                            log(c),
+                                                            table_subset_curr_round,
+                                                            mat_subset_curr_round,
+                                                            as<IntegerVector>(wrap(parent_curr_round)),
+                                                            predvecs_curr_round);
+    }else{
+      eval_modeltemp=evaluate_model_occams_window_bcf(as<NumericVector>(wrap(lik_subset_curr_round)),
+                                                      lowest_BIC,
+                                                      log(c),
+                                                      table_subset_curr_round,
+                                                      mat_subset_curr_round,
+                                                      as<IntegerVector>(wrap(parent_curr_round)));
+    }
+    
+    lik_subset_curr_round=Rcpp::as<std::vector<double>>(eval_modeltemp[0]);
+    table_subset_curr_round=eval_modeltemp[1];
+    mat_subset_curr_round=eval_modeltemp[2];
+    //overall_count=overall_trees.size();
+    parent_curr_round=Rcpp::as<std::vector<int>>(eval_modeltemp[3]);
+    
+    if(exact_residuals==1){
+      predvecs_curr_round=eval_modeltemp[4];
+    }
+    
+    
     // Rcout << "Get to Line 4021 in get_best_trees_sum_mu_bcf.\n";
     if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0 
       break;															// break out of the for-loop,
@@ -8520,7 +8830,7 @@ List get_best_trees_sum_mu_bcf(double spike_tree, int s_t_hyperprior,
           //Rcout << "Line 3369. j = " << j << ". k = " << k << " . \n";
           
           arma::uvec term_obsarma=find_term_obs_bcf(mat_subset_curr_round[k],terminal_nodes[nodeind]);
-          IntegerVector term_obs=wrap(term_obsarma);
+           IntegerVector term_obs=wrap(arma::conv_to<arma::ivec>::from(term_obsarma));
         
         // 
         // NumericVector curr_test_res=updated_curr_preds[1];					// Let curr_test_res be the vector of updated predictions
@@ -8702,7 +9012,7 @@ List get_best_trees_sum_mu_bcf_2(double spike_tree, int s_t_hyperprior,
   List overall_predvecs(overall_size);
   
   
-   //Rcout << "Get to Line 8444 in get_best_trees_sum_mu_bcf.\n";
+   // Rcout << "Get to Line 8714 in get_best_trees_sum_mu_bcf_2.\n";
   
   
   //////   //COMMENTED OUT ATTEMPT TO FIX NO ZERO SPLIT TREES BUG
@@ -9150,7 +9460,7 @@ List get_best_trees_sum_mu_bcf_2(double spike_tree, int s_t_hyperprior,
   } //end if zero split=1 code
   
   
-  //Rcout << "Get to Line 8889 in get_best_trees_sum_mu_bcf.\n";
+  // Rcout << "Get to Line 9162 in get_best_trees_sum_mu_bcf_2.\n";
   
   
   for(int j=0;j<num_splits_mu;j++){									// create a for-loop of length 5.
@@ -9162,6 +9472,7 @@ List get_best_trees_sum_mu_bcf_2(double spike_tree, int s_t_hyperprior,
     std::vector<int> parent_curr_round(lsize);			// create a vector of length 1000.
     
     List predvecs_curr_round(lsize);
+    // Rcout << "Line 9174. j = " << j << " . \n";
     
     int count=0;										// create a varialble. Initialized equal to 0.
     for(int i=0;i<tree_table_mu.size();i++){				// for loop of length equal to that of the list tree_table_mu (input or updated in previous iteration)
@@ -9195,7 +9506,8 @@ List get_best_trees_sum_mu_bcf_2(double spike_tree, int s_t_hyperprior,
           // Rcout << "Length of input tree table list used to get best split sum = " << example_tree_tab.size() << ".\n";
           // Rcout << "Length of input tree mat list used to get best split sum= " << example_tree_mat.size() << ".\n";
           
-          
+          // Rcout << "Line 9208. j = " << j << ". i= " << i << " . \n";
+      
           if(split_rule_node==1){
             if(j==0){
               best_subset=get_best_split_sum_mu_bcf(spike_tree, s_t_hyperprior, p_s_t_mu, a_s_t_mu, b_s_t_mu,p_s_t_tau, a_s_t_tau, b_s_t_tau,
@@ -9242,6 +9554,7 @@ List get_best_trees_sum_mu_bcf_2(double spike_tree, int s_t_hyperprior,
             
           }
           
+          // Rcout << "Line 9256. j = " << j << ". i= " << i << " . \n";
           
           //Rcout << "Get to Line 8976 in get_best_trees_sum_mu_bcf. i = " << i << "\n";
           
@@ -9333,10 +9646,45 @@ List get_best_trees_sum_mu_bcf_2(double spike_tree, int s_t_hyperprior,
     }
     
     
-    // Rcout << "Get to Line 4021 in get_best_trees_sum_mu_bcf.\n";
+    
+    if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0
+      break;															// break out of the for-loop,
+    }
+    
+    List eval_modeltemp;
+    if(exact_residuals==1){
+      
+      eval_modeltemp=evaluate_model_occams_window_exact_bcf(as<NumericVector>(wrap(lik_subset_curr_round)),
+                                                            lowest_BIC,
+                                                            log(c),
+                                                            table_subset_curr_round,
+                                                            mat_subset_curr_round,
+                                                            as<IntegerVector>(wrap(parent_curr_round)),
+                                                            predvecs_curr_round);
+    }else{
+      eval_modeltemp=evaluate_model_occams_window_bcf(as<NumericVector>(wrap(lik_subset_curr_round)),
+                                                      lowest_BIC,
+                                                      log(c),
+                                                      table_subset_curr_round,
+                                                      mat_subset_curr_round,
+                                                      as<IntegerVector>(wrap(parent_curr_round)));
+    }
+    
+    lik_subset_curr_round=Rcpp::as<std::vector<double>>(eval_modeltemp[0]);
+    table_subset_curr_round=eval_modeltemp[1];
+    mat_subset_curr_round=eval_modeltemp[2];
+    //overall_count=overall_trees.size();
+    parent_curr_round=Rcpp::as<std::vector<int>>(eval_modeltemp[3]);
+    
+    if(exact_residuals==1){
+      predvecs_curr_round=eval_modeltemp[4];
+    }
+    
+    
     if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0 
       break;															// break out of the for-loop,
     }
+    
     for(int k=0;k<table_subset_curr_round.size();k++){					// for-loop of length table_subset_curr_round (potential splits/addittions to trees?)
       overall_trees[overall_count]=table_subset_curr_round[k];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
       overall_lik[overall_count]=lik_subset_curr_round[k];			// include all elements of lik_subset_curr_round in overall_lik (across iterations of this loop)
@@ -9464,6 +9812,8 @@ List get_best_trees_sum_mu_bcf_2(double spike_tree, int s_t_hyperprior,
     tree_mat_mu=mat_subset_curr_round;										// reset tree_mat_mu to list of treematrices obtained in current round of for-loop)
     parent=parent_curr_round;											// reset parent to parent vector obtained in current round of for-loop.
     // Rcout << "Get to Line 4094 in get_best_trees_sum_mu_bcf.\n";
+    
+    // Rcout << "Line 9480. j = " << j << " . \n";
     if(split_rule_node==1){												// If input boolean split_rule_node = 1 (true)
       NumericVector temp_preds;										// create vector. Length not given.
       List updated_curr_preds;										// create list. Length not given.
@@ -9503,7 +9853,7 @@ List get_best_trees_sum_mu_bcf_2(double spike_tree, int s_t_hyperprior,
           //Rcout << "Line 3369. j = " << j << ". k = " << k << " . \n";
           
           arma::uvec term_obsarma=find_term_obs_bcf(mat_subset_curr_round[k],terminal_nodes[nodeind]);
-          IntegerVector term_obs=wrap(term_obsarma);
+           IntegerVector term_obs=wrap(arma::conv_to<arma::ivec>::from(term_obsarma));
           
           // 
           // NumericVector curr_test_res=updated_curr_preds[1];					// Let curr_test_res be the vector of updated predictions
@@ -9531,16 +9881,17 @@ List get_best_trees_sum_mu_bcf_2(double spike_tree, int s_t_hyperprior,
         //Rcout << "Line 3389. j = " << j << ". k = " << k << " . \n";
       
       }
-      //Rcout << "Line 3384. j = " << j << ". k = " << k << " . \n";
+      // Rcout << "Line 9548. j = " << j << ". k = " << k << " . \n";
       
       cp_mat_list[k]=Tempcpmatlist;      
       }
+      // Rcout << "Line 9552. j = " << j << " . \n";
       
       
     }
   }
   
-  //Rcout << "Get to Line 9273 in get_best_trees_sum_mu_bcf.\n";
+  // Rcout << "Get to Line 9557 in get_best_trees_sum_mu_bcf.\n";
   
   
   overall_trees=resize_bcf(overall_trees,overall_count);		// remove remaining spaces that are not filled in
@@ -9850,9 +10201,47 @@ List get_best_trees_tau_bcf(double spike_tree, int s_t_hyperprior,
       predvecs_curr_round=resize_bcf(predvecs_curr_round,count);
     }
     
+    if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0
+      break;															// break out of the for-loop,
+    }
+    
+    List eval_modeltemp;
+    if(exact_residuals==1){
+      
+      eval_modeltemp=evaluate_model_occams_window_exact_bcf(as<NumericVector>(wrap(lik_subset_curr_round)),
+                                                            lowest_BIC,
+                                                            log(c),
+                                                            table_subset_curr_round,
+                                                            mat_subset_curr_round,
+                                                            as<IntegerVector>(wrap(parent_curr_round)),
+                                                            predvecs_curr_round);
+    }else{
+      eval_modeltemp=evaluate_model_occams_window_bcf(as<NumericVector>(wrap(lik_subset_curr_round)),
+                                                      lowest_BIC,
+                                                      log(c),
+                                                      table_subset_curr_round,
+                                                      mat_subset_curr_round,
+                                                      as<IntegerVector>(wrap(parent_curr_round)));
+    }
+    
+    lik_subset_curr_round=Rcpp::as<std::vector<double>>(eval_modeltemp[0]);
+    table_subset_curr_round=eval_modeltemp[1];
+    mat_subset_curr_round=eval_modeltemp[2];
+    //overall_count=overall_trees.size();
+    parent_curr_round=Rcpp::as<std::vector<int>>(eval_modeltemp[3]);
+    
+    if(exact_residuals==1){
+      predvecs_curr_round=eval_modeltemp[4];
+    }
+    
+    
     if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0 
       break;															// break out of the for-loop,
     }
+    
+    
+    
+    
     for(int k=0;k<table_subset_curr_round.size();k++){					// for-loop of length table_subset_curr_round (potential splits/addittions to trees?)
       overall_trees[overall_count]=table_subset_curr_round[k];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
       overall_lik[overall_count]=lik_subset_curr_round[k];			// include all elements of lik_subset_curr_round in overall_lik (across iterations of this loop)
@@ -10017,7 +10406,7 @@ List get_best_trees_tau_bcf(double spike_tree, int s_t_hyperprior,
           //Rcout << "Line 3369. j = " << j << ". k = " << k << " . \n";
           
           arma::uvec term_obsarma=find_term_obs_bcf(mat_subset_curr_round[k],terminal_nodes[nodeind]);
-          IntegerVector term_obs=wrap(term_obsarma);
+           IntegerVector term_obs=wrap(arma::conv_to<arma::ivec>::from(term_obsarma));
           
         // //Rcout << "Line 4431.\n";
         // 
@@ -10614,9 +11003,47 @@ List get_best_trees_sum_tau_round1_bcf(double spike_tree, int s_t_hyperprior,
       predvecs_curr_round=resize_bcf(predvecs_curr_round,count);
     }
     
+    if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0
+      break;															// break out of the for-loop,
+    }
+    
+    List eval_modeltemp;
+    if(exact_residuals==1){
+      
+      eval_modeltemp=evaluate_model_occams_window_exact_bcf(as<NumericVector>(wrap(lik_subset_curr_round)),
+                                                            lowest_BIC,
+                                                            log(c),
+                                                            table_subset_curr_round,
+                                                            mat_subset_curr_round,
+                                                            as<IntegerVector>(wrap(parent_curr_round)),
+                                                            predvecs_curr_round);
+    }else{
+      eval_modeltemp=evaluate_model_occams_window_bcf(as<NumericVector>(wrap(lik_subset_curr_round)),
+                                                      lowest_BIC,
+                                                      log(c),
+                                                      table_subset_curr_round,
+                                                      mat_subset_curr_round,
+                                                      as<IntegerVector>(wrap(parent_curr_round)));
+    }
+    
+    lik_subset_curr_round=Rcpp::as<std::vector<double>>(eval_modeltemp[0]);
+    table_subset_curr_round=eval_modeltemp[1];
+    mat_subset_curr_round=eval_modeltemp[2];
+    //overall_count=overall_trees.size();
+    parent_curr_round=Rcpp::as<std::vector<int>>(eval_modeltemp[3]);
+    
+    if(exact_residuals==1){
+      predvecs_curr_round=eval_modeltemp[4];
+    }
+    
+    
+    
     if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0 
       break;															// break out of the for-loop,
     }
+    
+    
+    
     for(int k=0;k<table_subset_curr_round.size();k++){					// for-loop of length table_subset_curr_round (potential splits/addittions to trees?)
       overall_trees[overall_count]=table_subset_curr_round[k];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
       overall_lik[overall_count]=lik_subset_curr_round[k];			// include all elements of lik_subset_curr_round in overall_lik (across iterations of this loop)
@@ -10788,7 +11215,7 @@ List get_best_trees_sum_tau_round1_bcf(double spike_tree, int s_t_hyperprior,
           //Rcout << "Line 3369. j = " << j << ". k = " << k << " . \n";
           
           arma::uvec term_obsarma=find_term_obs_bcf(mat_subset_curr_round[k],terminal_nodes[nodeind]);
-          IntegerVector term_obs=wrap(term_obsarma);
+           IntegerVector term_obs=wrap(arma::conv_to<arma::ivec>::from(term_obsarma));
         // 
         // 
         // NumericVector temp_preds = updated_curr_preds[1];
@@ -11563,9 +11990,47 @@ List get_best_trees_sum_tau_bcf(double spike_tree, int s_t_hyperprior,
       predvecs_curr_round=resize_bcf(predvecs_curr_round,count);
     }
     
+    if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0
+      break;															// break out of the for-loop,
+    }
+    
+    List eval_modeltemp;
+    if(exact_residuals==1){
+      
+      eval_modeltemp=evaluate_model_occams_window_exact_bcf(as<NumericVector>(wrap(lik_subset_curr_round)),
+                                                            lowest_BIC,
+                                                            log(c),
+                                                            table_subset_curr_round,
+                                                            mat_subset_curr_round,
+                                                            as<IntegerVector>(wrap(parent_curr_round)),
+                                                            predvecs_curr_round);
+    }else{
+      eval_modeltemp=evaluate_model_occams_window_bcf(as<NumericVector>(wrap(lik_subset_curr_round)),
+                                                      lowest_BIC,
+                                                      log(c),
+                                                      table_subset_curr_round,
+                                                      mat_subset_curr_round,
+                                                      as<IntegerVector>(wrap(parent_curr_round)));
+    }
+    
+    lik_subset_curr_round=Rcpp::as<std::vector<double>>(eval_modeltemp[0]);
+    table_subset_curr_round=eval_modeltemp[1];
+    mat_subset_curr_round=eval_modeltemp[2];
+    //overall_count=overall_trees.size();
+    parent_curr_round=Rcpp::as<std::vector<int>>(eval_modeltemp[3]);
+    
+    if(exact_residuals==1){
+      predvecs_curr_round=eval_modeltemp[4];
+    }
+    
+    
     if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0 
       break;															// break out of the for-loop,
     }
+    
+    
+    
+    
     for(int k=0;k<table_subset_curr_round.size();k++){					// for-loop of length table_subset_curr_round (potential splits/addittions to trees?)
       overall_trees[overall_count]=table_subset_curr_round[k];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
       overall_lik[overall_count]=lik_subset_curr_round[k];			// include all elements of lik_subset_curr_round in overall_lik (across iterations of this loop)
@@ -11730,7 +12195,7 @@ List get_best_trees_sum_tau_bcf(double spike_tree, int s_t_hyperprior,
           //Rcout << "Line 3369. j = " << j << ". k = " << k << " . \n";
           
           arma::uvec term_obsarma=find_term_obs_bcf(mat_subset_curr_round[k],terminal_nodes[nodeind]);
-          IntegerVector term_obs=wrap(term_obsarma);
+           IntegerVector term_obs=wrap(arma::conv_to<arma::ivec>::from(term_obsarma));
         // 
         // NumericVector temppreds = updated_curr_preds[1];
         // NumericVector curr_test_res=z*temppreds;				//might be unnecessary to multiply by z because will probably subset correctly when this vector is used	// Let curr_test_res be the vector of updated predictions
@@ -12528,11 +12993,47 @@ List get_best_trees_sum_tau_bcf_2(double spike_tree, int s_t_hyperprior,
       predvecs_curr_round=resize_bcf(predvecs_curr_round,count);
     }
     
+    if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0
+      break;															// break out of the for-loop,
+    }
+    
+    List eval_modeltemp;
+    if(exact_residuals==1){
+      
+      eval_modeltemp=evaluate_model_occams_window_exact_bcf(as<NumericVector>(wrap(lik_subset_curr_round)),
+                                                            lowest_BIC,
+                                                            log(c),
+                                                            table_subset_curr_round,
+                                                            mat_subset_curr_round,
+                                                            as<IntegerVector>(wrap(parent_curr_round)),
+                                                            predvecs_curr_round);
+    }else{
+      eval_modeltemp=evaluate_model_occams_window_bcf(as<NumericVector>(wrap(lik_subset_curr_round)),
+                                                      lowest_BIC,
+                                                      log(c),
+                                                      table_subset_curr_round,
+                                                      mat_subset_curr_round,
+                                                      as<IntegerVector>(wrap(parent_curr_round)));
+    }
+    
+    lik_subset_curr_round=Rcpp::as<std::vector<double>>(eval_modeltemp[0]);
+    table_subset_curr_round=eval_modeltemp[1];
+    mat_subset_curr_round=eval_modeltemp[2];
+    //overall_count=overall_trees.size();
+    parent_curr_round=Rcpp::as<std::vector<int>>(eval_modeltemp[3]);
+    
+    if(exact_residuals==1){
+      predvecs_curr_round=eval_modeltemp[4];
+    }
+    
+    
     if(table_subset_curr_round.size()==0){								// If length of table_subset_curr_round is 0 
       //Rcout << "Line 9506. Break out of for-loop, j == " << j << ". \n";
       
       break;															// break out of the for-loop,
     }
+    
+    
     for(int k=0;k<table_subset_curr_round.size();k++){					// for-loop of length table_subset_curr_round (potential splits/addittions to trees?)
       overall_trees[overall_count]=table_subset_curr_round[k];		// include all elements of table_subset_curr_round in overall_trees (across iterations of this loop)
       overall_lik[overall_count]=lik_subset_curr_round[k];			// include all elements of lik_subset_curr_round in overall_lik (across iterations of this loop)
@@ -12700,7 +13201,7 @@ List get_best_trees_sum_tau_bcf_2(double spike_tree, int s_t_hyperprior,
         for(int nodeind=0;nodeind<terminal_nodes.size();nodeind++){
           
           arma::uvec term_obsarma=find_term_obs_bcf(mat_subset_curr_round[k],terminal_nodes[nodeind]);
-          IntegerVector term_obs=wrap(term_obsarma);
+           IntegerVector term_obs=wrap(arma::conv_to<arma::ivec>::from(term_obsarma));
           
           if(parent_curr_round[k]==-1){										// if the k+1^th element of parent_curr_round equals -1 (don't know how it could take a different value)
             test_res=resids(_,0);											// let test_res equal the first column of resids
@@ -16028,7 +16529,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       throw std::range_error("The nunber of rows in the input matrix pihat is greater than the number of observations in the data"); 
     }
   }
-  //Rcout << "LINE 7694.\n";
+  // Rcout << "LINE 16031.\n";
   
   //check test data has the same number of variables as training data
   if(test_data.nrow()>0 && (data.ncol() != test_data.ncol())){	// If the number of rows in the test data is >0 AND the number of columns (variables) is not equal to that of data (the training data)
@@ -16311,11 +16812,12 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
   arma::colvec predicted_values_mu;					// create an arma colvec
   arma::colvec predicted_values_tau;					// create an arma colvec
   
+  // Rcout << "LINE 16314.\n";
   
   for(int j=0;j<ntree_control+ntree_moderate;j++){					// create a for-loop of length equal to the input value num_rounds.
-       //Rcout << "Beginning of loop number = " << j << ".\n";
-      //Rcout << "ntree_control = " << ntree_control << ".\n";
-      //Rcout << "ntree_moderate = " << ntree_moderate << ".\n";
+      // Rcout << "Beginning of loop number = " << j << ".\n";
+      // Rcout << "ntree_control = " << ntree_control << ".\n";
+      // Rcout << "ntree_moderate = " << ntree_moderate << ".\n";
     
     //if(j<ntree_control){
       if(j>0){
@@ -16412,7 +16914,8 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       
       
       
-       //Rcout << "Get to Line 15267 in loop j = " << j << ".\n";
+      // Rcout << "Get to Line 16416 in loop j = " << j << ".\n";
+      
       if(j==0){									// If in the first round of the for-loop.
         parent.push_back(0);					// append a 0 to the end of the parent vector. (first and only element of parent vector so far).
         //first_round=1;							// set the variable first_round equal to 1.
@@ -16426,6 +16929,8 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       int resids_count=0;																// create a variable resids_count. Initialize equal to zero.
       std::vector<int> err_list(resids.ncol());										// create a vector err_list of length equal to the number of colmns of resids
       std::vector<int> no_more_mu_trees(resids.ncol());										// create a vector err_list of length equal to the number of colmns of resids
+      
+      // Rcout << "Get to Line 16432. Before getting mu change points in loop j = " << j << ".\n";
       
       //get best splits
       for(int f=0;f<resids.ncol();f++){												// for-loop of length equal to the unmber of columns of resids
@@ -16464,7 +16969,10 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       err_list.resize(resids_count);													// remove elements of err_list that are not fileld in. How is  it possible that elements are not filled in??
       no_more_mu_trees.resize(resids_count);													// remove elements of err_list that are not fileld in. How is  it possible that elements are not filled in??
       parent=seq_len(tree_table_mu.size())-1;											// set parent equal to a vector 0,1,2,3,..., up to the length of tree_table minus one.
-      // Rcout << "ORIGINAL parent = " << parent << ".\n"; 
+      
+      // Rcout << "Get to Line 16472. After getting mu change points in loop j = " << j << ".\n";
+      
+      //Rcout << "ORIGINAL parent = " << parent << ".\n"; 
       // Rcout << "ORIGINAL tree_table_mu.size() = " << tree_table_mu.size() << ".\n"; 
       // Rcout << "ORIGINAL prev_sum_trees_mu.size() = " << prev_sum_trees_mu.size() << ".\n"; 
       // Rcout << "ORIGINAL prev_sum_trees_tau.size() = " << prev_sum_trees_tau.size() << ".\n"; 
@@ -16483,7 +16991,8 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       
       
       
-        //Rcout << "Get to Line 15338 in loop j = " << j << ".\n";
+      // Rcout << "Get to Line 16493. Before getting best  mu trees in loop j = " << j << ".\n";
+      
       //get current set of trees.
       if(j==0){						// If in the first round of the for-loop.
         CART_BMA_mu=get_best_trees_mu_bcf_2(spike_tree, s_t_hyperprior, 
@@ -16529,7 +17038,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       }
         
         
-      //Rcout << "Get to after get best trees in line 15376 in loop j = " << j << ".\n";
+      // Rcout << "Get to after get best mu trees in line 16540 in loop j = " << j << ".\n";
       
       curr_round_lik_addmu=CART_BMA_mu[0];							// vector of BICs (for whole sum-of tree-models after suggested trees added). Should be ordered ascending
       curr_round_trees_mu_addmu=CART_BMA_mu[1];						// list of tree tables
@@ -16586,6 +17095,9 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       std::vector<int> err_list2(resids.ncol());										// create a vector err_list2 of length equal to the number of colmns of resids
       std::vector<int> no_more_tau_trees(resids.ncol());										// create a vector err_list of length equal to the number of colmns of resids
       //get best splits
+      
+      // Rcout << "Get to before get tau changepoints  in line 16598 in loop j = " << j << ".\n";
+      
       for(int f=0;f<resids.ncol();f++){												// for-loop of length equal to the unmber of columns of resids
         
         
@@ -16660,6 +17172,9 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       no_more_tau_trees.resize(resids_count2);													// remove elements of err_list2 that are not fileld in. How is  it possible that elements are not filled in??
       parent=seq_len(tree_table_tau.size())-1;											// set parent equal to a vector 0,1,2,3,..., up to the length of tree_table minus one.
       
+      // Rcout << "Get to after get tau changepoints  in line 16675 in loop j = " << j << ".\n";
+      
+      
       
       // if(is_true(all(as<IntegerVector>(wrap(err_list2))==1))){							// if all elements of err_list2 equal 1.
       //   if(j==0){																	// If in the first round of the for-loop.
@@ -16672,6 +17187,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       
       
       //Rcout << "Get to 15483 in loop j = " << j << ".\n";
+      // Rcout << "Get to before get best tau trees  in line 16689 in loop j = " << j << ".\n";
       
       //get current set of trees.
       if(j==0){						// If in the first round of the for-loop.
@@ -16732,6 +17248,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
         
         //Rcout << "Get to 15493 in loop j = " << j << ".\n";
         //Rcout << "Get to 15535 in loop j = " << j << ".\n";
+        // Rcout << "Get to after get best tau trees  in line 16750 in loop j = " << j << ".\n";
       
       
 
@@ -16773,7 +17290,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       
       
       
-      //Rcout << "Get to 15577 in loop j = " << j << ".\n";
+      // Rcout << "Get to 17236 in loop j = " << j << ".\n";
       
       
       
@@ -16809,7 +17326,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       
       
       
-       //Rcout << "Get to Line 10688 in loop j = " << j << ".\n";
+       // Rcout << "Get to Line 17272 in loop j = " << j << ".\n";
       
       
       if(curr_BIC_addmu[0]<lowest_BIC){							// If the lowest BIC obtained by get_best_trees_sum is less than the currently saved lowest value
@@ -16846,7 +17363,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
 
       
       
-      NumericVector curr_BIC = fuse_numvecs(curr_BIC_addmu,curr_BIC_addtau);						// create vector.
+      //NumericVector curr_BIC = fuse_numvecs(curr_BIC_addmu,curr_BIC_addtau);						// create vector.
       IntegerVector curr_round_parent = fuse_intvecs(curr_round_parent_addmu,curr_round_parent_addtau) ;			// create vector.
       
       // There does not appear to be LISTS to fuse
@@ -16863,8 +17380,13 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       //BUT NEED TO USE RCPPARMADILLO OR STANDARD LIBRARY
       
       
-      NumericMatrix curr_round_preds = cbind(curr_round_preds_mu,curr_round_preds_tau);
-      NumericMatrix curr_round_test_preds = cbind(curr_round_test_preds_mu,curr_round_test_preds_tau);
+      NumericMatrix curr_round_preds_temp1 = cbind(curr_round_preds_mu,curr_round_preds_tau);
+      NumericMatrix curr_round_test_preds_temp1 = cbind(curr_round_test_preds_mu,curr_round_test_preds_tau);
+      
+      //NumericMatrix curr_round_preds;
+      //NumericMatrix curr_round_test_preds;
+      
+      
       //CHECK IF 2 LINES BELOW ARE FASTER than those above
       //NumericMatrix curr_round_preds = mmult1(curr_round_preds_mu,curr_round_preds_tau);
       //NumericMatrix curr_round_test_preds = mmult1(curr_round_test_preds_mu,curr_round_test_preds_tau);
@@ -16872,11 +17394,172 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       
       //Rcout << "Get to 15674 in loop j = " << j << ".\n";
       
+      NumericMatrix curr_true_preds_temp1;
       NumericMatrix curr_true_preds;
+      
       if(exact_residuals==1){
-        curr_true_preds= cbind(curr_true_preds_mu,curr_true_preds_tau);
+        curr_true_preds_temp1= cbind(curr_true_preds_mu,curr_true_preds_tau);
       }
       
+      // Rcout << "curr_round_lik.size() " << curr_round_lik.size() << " . \n";
+      // Rcout << "curr_round_preds_temp1.ncol() " << curr_round_preds_temp1.ncol() << " . \n";
+      // Rcout << "curr_round_test_preds_temp1.ncol() " << curr_round_test_preds_temp1.ncol() << " . \n";
+      // Rcout << "curr_true_preds_temp1.ncol() " << curr_true_preds_temp1.ncol() << " . \n";
+      
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
+      
+      // Rcout << "Get to 17352 in loop j = " << j << ".\n";
+      
+      if(min(curr_round_lik)<lowest_BIC){							// If the lowest BIC obtained by get_best_trees_sum is less than the currently saved lowest value
+        lowest_BIC=min(curr_round_lik);							// reset lowest_BIC to the new lowest value
+      }  
+      
+      
+      List eval_modelfused;
+      
+      // Rcout << "Get to 17361 in loop j = " << j << ".\n";
+      
+      if(exact_residuals==1){
+        eval_modelfused=evaluate_model_OW_fusedlists_exact_bcf(curr_round_added_mu_addall,
+                                                               curr_round_lik,
+                                                          lowest_BIC,
+                                                          log(c),
+                                                          curr_round_trees,
+                                                          curr_round_mat,
+                                                          curr_round_parent,
+                                                          curr_round_preds_temp1,
+                                                          curr_round_test_preds_temp1,
+                                                          curr_true_preds_temp1,
+                                                          is_test_data);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_mu_list, tree_lik, tree_parent
+        
+        
+        
+        
+        
+        
+      }else{
+        eval_modelfused=evaluate_model_OW_fusedlists_bcf(curr_round_added_mu_addall,
+                                                         curr_round_lik,
+                                                    lowest_BIC,
+                                                    log(c),
+                                                    curr_round_trees,
+                                                    curr_round_mat,
+                                                    curr_round_parent,
+                                                    curr_round_preds_temp1,
+                                                    curr_round_test_preds_temp1,
+                                                    is_test_data);	// removes models (trees?) outside Occam's window and returns a list of four elements: tree_list, tree_mat_mu_list, tree_lik, tree_parent
+        
+      }
+      
+      
+      // Rcout << "Get to 17406 in loop j = " << j << ".\n";
+      
+      
+      //Rcout << "Line 8809.\n";
+      curr_round_added_mu_addall=  eval_modelfused[0];
+      curr_round_lik= eval_modelfused[1];
+      curr_round_trees= eval_modelfused[2];
+      curr_round_mat= eval_modelfused[3];
+      curr_round_parent = eval_modelfused[4];
+      NumericMatrix curr_round_preds = eval_modelfused[5];
+      NumericMatrix curr_round_test_preds= eval_modelfused[6];
+      if(exact_residuals==1){
+        NumericMatrix curr_true_preds_temp2= eval_modelfused[7];
+        curr_true_preds= curr_true_preds_temp2;
+      }
+      
+
+      
+
+      //Rcout << "Get to Line 3543 in get_best_trees_sum_mu_bcf.\n"; 
+      //add in check to see if OW accepted more than the top maxOW models... 
+      if(curr_round_lik.size()>maxOWsize){									// If more than maxOWsize models kept in Occam's window
+        //find the maxOWsize best models and continue with those! 
+        IntegerVector owindices=orderforOW__bcf(curr_round_lik);					// Function orderforOW__bcf defined on line 555. Gives vector of position of largest element, then position of second largest argument, and so on. 
+        owindices=owindices-1;											// take one away from indices so that they are in the correct range.
+        //get the top maxOWsize indices to keep in OW
+        NumericVector temp_olik(maxOWsize);								// create vector of length maxOWsize
+        List temp_otrees(maxOWsize);									// create list of length maxOWsize
+        List temp_omat(maxOWsize);										// create list of length maxOWsize
+        IntegerVector temp_oparent(maxOWsize);							// create vector of length maxOWsize
+        
+
+        //Ideally would not convert from Rcpp to armadillo objects nor vice versa
+        arma::vec curr_round_lik_arma = Rcpp::as<arma::vec>(curr_round_lik);
+        arma::uvec tempsortind= arma::sort_index(curr_round_lik_arma);
+        tempsortind= tempsortind.subvec(0,maxOWsize);
+        arma::mat curr_round_preds_arma = Rcpp::as<arma::mat>(curr_round_preds);
+        arma::mat curr_round_test_preds_arma = Rcpp::as<arma::mat>(curr_round_test_preds);
+        
+        curr_round_preds_arma= curr_round_preds_arma.cols(tempsortind) ;
+        //curr_round_test_preds_arma = curr_round_test_preds_arma.cols(tempsortind) ;
+        
+        curr_round_preds= wrap(curr_round_preds_arma );
+        
+        if(is_test_data==1){       
+          curr_round_test_preds_arma = curr_round_test_preds_arma.cols(tempsortind) ;
+          curr_round_test_preds = wrap(curr_round_test_preds_arma );
+        }
+        
+        if(exact_residuals==1){
+          arma::mat curr_true_preds_arma = Rcpp::as<arma::mat>(curr_true_preds);
+          curr_true_preds_arma= curr_true_preds_arma.cols(tempsortind) ;
+          curr_true_preds= wrap(curr_true_preds_arma);
+        }
+        
+        //now only select those elements
+        for(int t=0;t<maxOWsize;t++){									// for-loop of length equal to size of Occam's window
+          temp_olik[t]=curr_round_lik[owindices[t]];					// keep the BICs (likelihoods?) for the top maxOWsize models
+          temp_otrees[t]=curr_round_trees[owindices[t]];					// keep the tree tables for the top maxOWsize models
+          temp_omat[t]= curr_round_mat[owindices[t]];					// keep the tree matrices for the top maxOWsize models
+          temp_oparent[t]=curr_round_parent[owindices[t]];				// keep the tree parent vectors for the top maxOWsize models
+          
+          if(exact_residuals==1){
+            //temp_opreds[t]=overall_predvecs[owindices[t]];
+            
+            
+          }
+          
+        }
+        
+        curr_round_lik=temp_olik;											// reset overall_lik2 to keep only top maxOWsize models
+        curr_round_trees=temp_otrees;										// reset overall_trees to keep only top maxOWsize models
+        curr_round_mat=temp_omat;											// reset overall_mat to keep only top maxOWsize models
+        //overall_count=curr_round_trees.size();								// reset overall_count to keep only top maxOWsize models
+        curr_round_parent=temp_oparent;									// reset overall_parent2 to keep only top maxOWsize models
+        
+        
+        
+      }
+      
+      
+      
+      // Rcout << "curr_round_lik.size() " << curr_round_lik.size() << " . \n";
+      
+      // Rcout << "curr_round_preds.ncol() " << curr_round_preds.ncol() << " . \n";
+      // Rcout << "curr_round_test_preds.ncol() " << curr_round_test_preds.ncol() << " . \n";
+      // Rcout << "curr_true_preds.ncol() " << curr_true_preds.ncol() << " . \n";
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
       
       //Rcout << "Get to 15682 in loop j = " << j << ".\n";
       
@@ -16930,6 +17613,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       // matrices of predictions and lists of trees, matrices, and partial residuals
       // to be used in the next for-loop of length curr_round_lik.size()
       
+      // Rcout << "Get to before creating temporary matrices of predictions and lists of trees in line 17558 in loop j = " << j << ".\n";
       
       int count=0; 										// create a count variable. Initialized equal to zero.
       for(int k=0;k<curr_round_lik.size();k++){
@@ -17186,6 +17870,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
         count++;													// Increment the count by 1.(Note this is within the innermost for-loop).
       }
       
+      // Rcout << "Get to after creating temporary matrices of predictions and lists of trees in line 16950 in loop j = " << j << ".\n";
       
       //if(curr_round_lik.size()==0){									// if no new trees outputted in current round (by get_best_trees_sum? Why not throw this error earlier, at line 2350)
       //  throw std::range_error("No trees chosen in last round");
@@ -17203,6 +17888,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       // THE FOLLOWING LOOP CREATES THE SUM_OF_TREES LISTS (And matrices and partial resids)
       // FOR EACH OF THE MODELS PROPOSED IN THE ROUND OF THE OUTER LOOP
       // THEN ADDS THEN TO THE overall_sum lists
+      // Rcout << "Get to before creating overall_sum lists in line 17224 in loop j = " << j << ".\n";
       
       for(int k=0;k<curr_round_lik.size();k++){	// create a for-loop of length equal to the number of sum of tree models returned by get_best_trees_sum
         
@@ -17723,6 +18409,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
        //Rcout << "overall_sum_trees_mu.size() = " << overall_sum_trees_mu.size() << ".\n";
        //Rcout << "overall_count = " << overall_count << ".\n";
       
+      // Rcout << "Get to after creating overall_sum lists in line 17745 in loop j = " << j << ".\n";
       
       
       
@@ -17995,6 +18682,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       
        //Rcout << "Get to Line 16797 in loop j = " << j  << ".\n";
       
+      // Rcout << "Get to before creating prev_round lists in line 18018 in loop j = " << j << ".\n";
       
       //prev_round_preds_outcome=temp_preds_outcome;															// let prev_round_preds equal to the matrix of predictions.
       prev_round_preds_mu=temp_preds_mu;															// let prev_round_preds equal to the matrix of predictions.
@@ -18093,7 +18781,8 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
         }
       //}  commented out if(first_round==1) because everything should be a list regardless of the round
       
-      
+      // Rcout << "Get to after creating prev_round lists in line 18018 in loop j = " << j << ".\n";
+        
       
       
       // overall_overall_sum_trees_mu[oo_count]=overall_sum_trees_mu;									// Add the current outer loop's table list to overall_overall_sum_trees (list of lists?? OR list of lists of lists??)
@@ -18147,7 +18836,7 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
       }
       
       
-      
+
       
       //overall_trees_mu[j]=curr_round_trees_mu;														// let the j+1^th element of the list overall_trees be the list of trees obtained in the current round of the outer loop (list of lists of tree table matrices)
       //overall_trees_tau[j]=curr_round_trees_tau;														// let the j+1^th element of the list overall_trees be the list of trees obtained in the current round of the outer loop (list of lists of tree table matrices)
@@ -18176,11 +18865,11 @@ List BCF_BMA_sumLikelihood_add_mu_or_tau(double spike_tree, int s_t_hyperprior,
 
     
     
-      //Rcout << "Get to end of loop j = " << j << ".\n";
+      // Rcout << "Get to end of loop j = " << j << ".\n";
     
   } //	END OF OUTER LOOP
   
-   //Rcout << "Get to outside outer loop.\n";
+   // Rcout << "Get to outside outer loop.\n";
   
   
   if(first_round_break==1){
@@ -25612,32 +26301,33 @@ List pred_ints_exact_insamp_bcf(List overall_sum_trees_mu,List overall_sum_trees
   }
   
   arma::mat output_rescaled(output.n_rows, output.n_cols);
-  
+  double min_y=min(y);
+  double max_y=max(y);
   
 #pragma omp parallel num_threads(num_cores)
 #pragma omp for
   for(unsigned int i=0;i<output.n_cols;i++){
     //output(_,i)=Quantile(draws_wrapped(_,i), probs_for_quantiles);
     
-    output_rescaled.col(i)=get_original_TE_arma_bcf(min(y),max(y),-0.5,0.5, output.col(i));
+    output_rescaled.col(i)=get_original_TE_arma_bcf(min_y,max_y,-0.5,0.5, output.col(i));
     
     
   }  
 #pragma omp barrier  
   
-  arma::mat cate_ints_rescaled=get_original_TE_arma_bcf(min(y),max(y),-0.5,0.5, cate_ints.col(0));
-  arma::mat catt_ints_rescaled=get_original_TE_arma_bcf(min(y),max(y),-0.5,0.5, catt_ints.col(0));
-  arma::mat catnt_ints_rescaled=get_original_TE_arma_bcf(min(y),max(y),-0.5,0.5, catnt_ints.col(0));
+  arma::mat cate_ints_rescaled=get_original_TE_arma_bcf(min_y,max_y,-0.5,0.5, cate_ints.col(0));
+  arma::mat catt_ints_rescaled=get_original_TE_arma_bcf(min_y,max_y,-0.5,0.5, catt_ints.col(0));
+  arma::mat catnt_ints_rescaled=get_original_TE_arma_bcf(min_y,max_y,-0.5,0.5, catnt_ints.col(0));
   
   
   List ret(8);
   ret[0]= wrap(output_rescaled);
-  ret[1]= get_original_TE_bcf(min(y),max(y),-0.5,0.5,wrap(predicted_values));
-  ret[2]= get_original_TE_double_bcf(min(y),max(y),-0.5,0.5,cate_pred);
+  ret[1]= get_original_TE_bcf(min_y,max_y,-0.5,0.5,wrap(predicted_values));
+  ret[2]= get_original_TE_double_bcf(min_y,max_y,-0.5,0.5,cate_pred);
   ret[3]= wrap(cate_ints_rescaled);
-  ret[4]= get_original_TE_double_bcf(min(y),max(y),-0.5,0.5,catt_pred);
+  ret[4]= get_original_TE_double_bcf(min_y,max_y,-0.5,0.5,catt_pred);
   ret[5]= wrap(catt_ints_rescaled);
-  ret[6]= get_original_TE_double_bcf(min(y),max(y),-0.5,0.5,catnt_pred);
+  ret[6]= get_original_TE_double_bcf(min_y,max_y,-0.5,0.5,catnt_pred);
   ret[7]= wrap(catnt_ints_rescaled);
   return(ret);
   

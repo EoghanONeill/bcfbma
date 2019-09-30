@@ -438,6 +438,47 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// evaluate_model_OW_fusedlists_bcf
+List evaluate_model_OW_fusedlists_bcf(IntegerVector curr_round_added_mu_addall, NumericVector tree_lik, double lowest_BIC, double c, List tree_list, List tree_mat_list, IntegerVector tree_parent, NumericMatrix curr_round_preds, NumericMatrix curr_round_test_preds, bool is_test_data);
+RcppExport SEXP _bcfbma_evaluate_model_OW_fusedlists_bcf(SEXP curr_round_added_mu_addallSEXP, SEXP tree_likSEXP, SEXP lowest_BICSEXP, SEXP cSEXP, SEXP tree_listSEXP, SEXP tree_mat_listSEXP, SEXP tree_parentSEXP, SEXP curr_round_predsSEXP, SEXP curr_round_test_predsSEXP, SEXP is_test_dataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type curr_round_added_mu_addall(curr_round_added_mu_addallSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type tree_lik(tree_likSEXP);
+    Rcpp::traits::input_parameter< double >::type lowest_BIC(lowest_BICSEXP);
+    Rcpp::traits::input_parameter< double >::type c(cSEXP);
+    Rcpp::traits::input_parameter< List >::type tree_list(tree_listSEXP);
+    Rcpp::traits::input_parameter< List >::type tree_mat_list(tree_mat_listSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type tree_parent(tree_parentSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type curr_round_preds(curr_round_predsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type curr_round_test_preds(curr_round_test_predsSEXP);
+    Rcpp::traits::input_parameter< bool >::type is_test_data(is_test_dataSEXP);
+    rcpp_result_gen = Rcpp::wrap(evaluate_model_OW_fusedlists_bcf(curr_round_added_mu_addall, tree_lik, lowest_BIC, c, tree_list, tree_mat_list, tree_parent, curr_round_preds, curr_round_test_preds, is_test_data));
+    return rcpp_result_gen;
+END_RCPP
+}
+// evaluate_model_OW_fusedlists_exact_bcf
+List evaluate_model_OW_fusedlists_exact_bcf(IntegerVector curr_round_added_mu_addall, NumericVector tree_lik, double lowest_BIC, double c, List tree_list, List tree_mat_list, IntegerVector tree_parent, NumericMatrix curr_round_preds, NumericMatrix curr_round_test_preds, NumericMatrix curr_true_preds, bool is_test_data);
+RcppExport SEXP _bcfbma_evaluate_model_OW_fusedlists_exact_bcf(SEXP curr_round_added_mu_addallSEXP, SEXP tree_likSEXP, SEXP lowest_BICSEXP, SEXP cSEXP, SEXP tree_listSEXP, SEXP tree_mat_listSEXP, SEXP tree_parentSEXP, SEXP curr_round_predsSEXP, SEXP curr_round_test_predsSEXP, SEXP curr_true_predsSEXP, SEXP is_test_dataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type curr_round_added_mu_addall(curr_round_added_mu_addallSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type tree_lik(tree_likSEXP);
+    Rcpp::traits::input_parameter< double >::type lowest_BIC(lowest_BICSEXP);
+    Rcpp::traits::input_parameter< double >::type c(cSEXP);
+    Rcpp::traits::input_parameter< List >::type tree_list(tree_listSEXP);
+    Rcpp::traits::input_parameter< List >::type tree_mat_list(tree_mat_listSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type tree_parent(tree_parentSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type curr_round_preds(curr_round_predsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type curr_round_test_preds(curr_round_test_predsSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type curr_true_preds(curr_true_predsSEXP);
+    Rcpp::traits::input_parameter< bool >::type is_test_data(is_test_dataSEXP);
+    rcpp_result_gen = Rcpp::wrap(evaluate_model_OW_fusedlists_exact_bcf(curr_round_added_mu_addall, tree_lik, lowest_BIC, c, tree_list, tree_mat_list, tree_parent, curr_round_preds, curr_round_test_preds, curr_true_preds, is_test_data));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_testdata_term_obs_bcf
 NumericVector get_testdata_term_obs_bcf(NumericMatrix test_data, NumericMatrix tree_data, NumericVector term_node_means);
 RcppExport SEXP _bcfbma_get_testdata_term_obs_bcf(SEXP test_dataSEXP, SEXP tree_dataSEXP, SEXP term_node_meansSEXP) {
@@ -3289,6 +3330,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bcfbma_start_matrix_bcf", (DL_FUNC) &_bcfbma_start_matrix_bcf, 1},
     {"_bcfbma_evaluate_model_occams_window_bcf", (DL_FUNC) &_bcfbma_evaluate_model_occams_window_bcf, 6},
     {"_bcfbma_evaluate_model_occams_window_exact_bcf", (DL_FUNC) &_bcfbma_evaluate_model_occams_window_exact_bcf, 7},
+    {"_bcfbma_evaluate_model_OW_fusedlists_bcf", (DL_FUNC) &_bcfbma_evaluate_model_OW_fusedlists_bcf, 10},
+    {"_bcfbma_evaluate_model_OW_fusedlists_exact_bcf", (DL_FUNC) &_bcfbma_evaluate_model_OW_fusedlists_exact_bcf, 11},
     {"_bcfbma_get_testdata_term_obs_bcf", (DL_FUNC) &_bcfbma_get_testdata_term_obs_bcf, 3},
     {"_bcfbma_get_initial_resids", (DL_FUNC) &_bcfbma_get_initial_resids, 6},
     {"_bcfbma_resize_bcf", (DL_FUNC) &_bcfbma_resize_bcf, 2},

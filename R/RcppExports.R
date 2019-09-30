@@ -130,6 +130,14 @@ evaluate_model_occams_window_exact_bcf <- function(tree_lik, lowest_BIC, c, tree
     .Call(`_bcfbma_evaluate_model_occams_window_exact_bcf`, tree_lik, lowest_BIC, c, tree_list, tree_mat_list, tree_parent, tree_pred_list)
 }
 
+evaluate_model_OW_fusedlists_bcf <- function(curr_round_added_mu_addall, tree_lik, lowest_BIC, c, tree_list, tree_mat_list, tree_parent, curr_round_preds, curr_round_test_preds, is_test_data) {
+    .Call(`_bcfbma_evaluate_model_OW_fusedlists_bcf`, curr_round_added_mu_addall, tree_lik, lowest_BIC, c, tree_list, tree_mat_list, tree_parent, curr_round_preds, curr_round_test_preds, is_test_data)
+}
+
+evaluate_model_OW_fusedlists_exact_bcf <- function(curr_round_added_mu_addall, tree_lik, lowest_BIC, c, tree_list, tree_mat_list, tree_parent, curr_round_preds, curr_round_test_preds, curr_true_preds, is_test_data) {
+    .Call(`_bcfbma_evaluate_model_OW_fusedlists_exact_bcf`, curr_round_added_mu_addall, tree_lik, lowest_BIC, c, tree_list, tree_mat_list, tree_parent, curr_round_preds, curr_round_test_preds, curr_true_preds, is_test_data)
+}
+
 get_testdata_term_obs_bcf <- function(test_data, tree_data, term_node_means) {
     .Call(`_bcfbma_get_testdata_term_obs_bcf`, test_data, tree_data, term_node_means)
 }

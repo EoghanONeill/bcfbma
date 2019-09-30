@@ -96,7 +96,18 @@ bcfBMA.default<-function(x.train,y.train,z,pihat,
   mu_tau=0
   sigma_mu_mu=0; 
   sigma_mu_tau=0; 
-  sigma=sd(y.train)/(max(y.train)-min(y.train))
+  
+  #if(length(y.train) > 3 + ncol(cbind(pihat, x.train)) ){
+    #df = data.frame((x.train),y.train)
+    #lmf = lm(y.train~z+as.matrix(cbind(pihat, x.train)))
+    #sigest = summary(lmf)$sigma
+  #}else{
+    sigest = sd(y.train)
+  #}
+  
+  sigma=sigest/(max(y.train)-min(y.train))
+  
+  #sigma=sd(y.train)/(max(y.train)-min(y.train))
   qchi = qchisq(1.0-sigquant,nu,1,0);
   lambda = (sigma*sigma*qchi)/nu;
   include_pi2=-1
