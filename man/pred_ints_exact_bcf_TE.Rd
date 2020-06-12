@@ -4,8 +4,14 @@
 \alias{pred_ints_exact_bcf_TE}
 \title{Prediction intervals for BCF-BMA Treatment Effect estimates}
 \usage{
-pred_ints_exact_bcf_TE(object, l_quant, u_quant, newdata = NULL,
-  num_cores = 1, root_alg_precision = 1e-05)
+pred_ints_exact_bcf_TE(
+  object,
+  l_quant,
+  u_quant,
+  newdata = NULL,
+  num_cores = 1,
+  root_alg_precision = 1e-05
+)
 }
 \arguments{
 \item{object}{bartBMA object obtained from function bartBMA}

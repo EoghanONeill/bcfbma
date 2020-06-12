@@ -4,11 +4,33 @@
 \alias{gibbs_sampler_no_update}
 \title{Obtain draws from gibbs sampler}
 \usage{
-gibbs_sampler_no_update(overall_sum_trees_mu, overall_sum_trees_tau,
-  overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter,
-  burnin, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda,
-  resids_mu, resids_tau, z, test_data, test_pihat, z_test, include_pi2,
-  num_propscores, num_test_obs)
+gibbs_sampler_no_update(
+  overall_sum_trees_mu,
+  overall_sum_trees_tau,
+  overall_sum_mat_mu,
+  overall_sum_mat_tau,
+  y,
+  BIC_weights,
+  num_iter,
+  burnin,
+  num_obs,
+  a_mu,
+  a_tau,
+  sigma,
+  mu_mu_mu,
+  mu_mu_tau,
+  nu,
+  lambda,
+  resids_mu,
+  resids_tau,
+  z,
+  test_data,
+  test_pihat,
+  z_test,
+  include_pi2,
+  num_propscores,
+  num_test_obs
+)
 }
 \description{
 Obtain draws from gibbs sampler

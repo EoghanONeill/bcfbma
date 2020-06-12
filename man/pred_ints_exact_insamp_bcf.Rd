@@ -4,10 +4,27 @@
 \alias{pred_ints_exact_insamp_bcf}
 \title{Obtain BARTBMA predictions}
 \usage{
-pred_ints_exact_insamp_bcf(overall_sum_trees_mu, overall_sum_trees_tau,
-  overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_obs, a_mu,
-  a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob,
-  num_cores, root_alg_precision)
+pred_ints_exact_insamp_bcf(
+  overall_sum_trees_mu,
+  overall_sum_trees_tau,
+  overall_sum_mat_mu,
+  overall_sum_mat_tau,
+  y,
+  BIC_weights,
+  num_obs,
+  a_mu,
+  a_tau,
+  sigma,
+  mu_mu_mu,
+  mu_mu_tau,
+  nu,
+  lambda,
+  z,
+  lower_prob,
+  upper_prob,
+  num_cores,
+  root_alg_precision
+)
 }
 \description{
 Obtain BARTBMA predictions

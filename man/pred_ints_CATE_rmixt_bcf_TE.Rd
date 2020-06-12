@@ -4,8 +4,14 @@
 \alias{pred_ints_CATE_rmixt_bcf_TE}
 \title{Prediction intervals for BCF-BMA CATE estimates}
 \usage{
-pred_ints_CATE_rmixt_bcf_TE(object, num_iter, l_quant, u_quant,
-  newdata = NULL, num_cores = 1)
+pred_ints_CATE_rmixt_bcf_TE(
+  object,
+  num_iter,
+  l_quant,
+  u_quant,
+  newdata = NULL,
+  num_cores = 1
+)
 }
 \arguments{
 \item{object}{bartBMA object obtained from function bartBMA}

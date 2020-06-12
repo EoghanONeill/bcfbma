@@ -4,11 +4,35 @@
 \alias{gibbs_sampler_new_inits}
 \title{Obtain draws from gibbs sampler}
 \usage{
-gibbs_sampler_new_inits(overall_sum_trees_mu, overall_sum_trees_tau,
-  overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_iter,
-  burnin, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda,
-  resids_mu, resids_tau, z, test_data, test_pihat, z_test, include_pi2,
-  num_propscores, num_test_obs, new_pred_list_mu, new_pred_list_tau)
+gibbs_sampler_new_inits(
+  overall_sum_trees_mu,
+  overall_sum_trees_tau,
+  overall_sum_mat_mu,
+  overall_sum_mat_tau,
+  y,
+  BIC_weights,
+  num_iter,
+  burnin,
+  num_obs,
+  a_mu,
+  a_tau,
+  sigma,
+  mu_mu_mu,
+  mu_mu_tau,
+  nu,
+  lambda,
+  resids_mu,
+  resids_tau,
+  z,
+  test_data,
+  test_pihat,
+  z_test,
+  include_pi2,
+  num_propscores,
+  num_test_obs,
+  new_pred_list_mu,
+  new_pred_list_tau
+)
 }
 \description{
 Obtain draws from gibbs sampler

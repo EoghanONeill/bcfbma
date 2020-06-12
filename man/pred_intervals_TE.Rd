@@ -4,8 +4,15 @@
 \alias{pred_intervals_TE}
 \title{Prediction intervals for BCF-BMA Treatment Effect estimates}
 \usage{
-pred_intervals_TE(object, num_iter, burnin, l_quant, u_quant,
-  newdata = NULL, update_resids = 1)
+pred_intervals_TE(
+  object,
+  num_iter,
+  burnin,
+  l_quant,
+  u_quant,
+  newdata = NULL,
+  update_resids = 1
+)
 }
 \arguments{
 \item{object}{bartBMA object obtained from function bartBMA}

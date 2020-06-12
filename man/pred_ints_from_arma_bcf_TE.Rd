@@ -4,8 +4,7 @@
 \alias{pred_ints_from_arma_bcf_TE}
 \title{Prediction intervals for BCF-BMA Treatment Effect estimates}
 \usage{
-pred_ints_from_arma_bcf_TE(object, num_iter, l_quant, u_quant,
-  newdata = NULL)
+pred_ints_from_arma_bcf_TE(object, num_iter, l_quant, u_quant, newdata = NULL)
 }
 \arguments{
 \item{object}{bartBMA object obtained from function bartBMA}

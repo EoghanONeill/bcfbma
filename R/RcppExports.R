@@ -470,6 +470,16 @@ pred_ints_exact_insamp_bcf <- function(overall_sum_trees_mu, overall_sum_trees_t
     .Call(`_bcfbma_pred_ints_exact_insamp_bcf`, overall_sum_trees_mu, overall_sum_trees_tau, overall_sum_mat_mu, overall_sum_mat_tau, y, BIC_weights, num_obs, a_mu, a_tau, sigma, mu_mu_mu, mu_mu_tau, nu, lambda, z, lower_prob, upper_prob, num_cores, root_alg_precision)
 }
 
+get_imp_vars <- function(split_vars, num_col, current_vars) {
+    .Call(`_bcfbma_get_imp_vars`, split_vars, num_col, current_vars)
+}
+
+#' @title Obtain weighted variable importances
+#' @export
+get_weighted_var_imp <- function(num_vars, BIC, sum_trees) {
+    .Call(`_bcfbma_get_weighted_var_imp`, num_vars, BIC, sum_trees)
+}
+
 find_term_nodes_gs <- function(tree_table) {
     .Call(`_bcfbma_find_term_nodes_gs`, tree_table)
 }

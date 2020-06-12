@@ -2785,6 +2785,32 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_imp_vars
+NumericVector get_imp_vars(NumericVector split_vars, int num_col, NumericVector current_vars);
+RcppExport SEXP _bcfbma_get_imp_vars(SEXP split_varsSEXP, SEXP num_colSEXP, SEXP current_varsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type split_vars(split_varsSEXP);
+    Rcpp::traits::input_parameter< int >::type num_col(num_colSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type current_vars(current_varsSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_imp_vars(split_vars, num_col, current_vars));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_weighted_var_imp
+List get_weighted_var_imp(int num_vars, NumericVector BIC, List sum_trees);
+RcppExport SEXP _bcfbma_get_weighted_var_imp(SEXP num_varsSEXP, SEXP BICSEXP, SEXP sum_treesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type num_vars(num_varsSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type BIC(BICSEXP);
+    Rcpp::traits::input_parameter< List >::type sum_trees(sum_treesSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_weighted_var_imp(num_vars, BIC, sum_trees));
+    return rcpp_result_gen;
+END_RCPP
+}
 // find_term_nodes_gs
 NumericVector find_term_nodes_gs(NumericMatrix tree_table);
 RcppExport SEXP _bcfbma_find_term_nodes_gs(SEXP tree_tableSEXP) {
@@ -3414,6 +3440,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bcfbma_rootmixt", (DL_FUNC) &_bcfbma_rootmixt, 8},
     {"_bcfbma_pred_ints_exact_outsamp_bcf", (DL_FUNC) &_bcfbma_pred_ints_exact_outsamp_bcf, 25},
     {"_bcfbma_pred_ints_exact_insamp_bcf", (DL_FUNC) &_bcfbma_pred_ints_exact_insamp_bcf, 19},
+    {"_bcfbma_get_imp_vars", (DL_FUNC) &_bcfbma_get_imp_vars, 3},
+    {"_bcfbma_get_weighted_var_imp", (DL_FUNC) &_bcfbma_get_weighted_var_imp, 3},
     {"_bcfbma_find_term_nodes_gs", (DL_FUNC) &_bcfbma_find_term_nodes_gs, 1},
     {"_bcfbma_find_term_obs_gs", (DL_FUNC) &_bcfbma_find_term_obs_gs, 2},
     {"_bcfbma_calc_rowsums", (DL_FUNC) &_bcfbma_calc_rowsums, 1},

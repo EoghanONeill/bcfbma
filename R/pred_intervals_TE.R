@@ -125,7 +125,7 @@ pred_intervals_TE<-function(object,num_iter,burnin,l_quant,u_quant,newdata=NULL,
   
   
   ret<-list()
-  length(ret)<-1
+  length(ret)<-2
   ret[[1]]<-PI
   ret[[2]] <- meanpreds
   

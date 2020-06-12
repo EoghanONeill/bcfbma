@@ -4,8 +4,17 @@
 \alias{pred_intervals_CATE_bcf_new_initials}
 \title{Prediction intervals for BCF-BMA estimates of CATE, CATT, PATE, PATT}
 \usage{
-pred_intervals_CATE_bcf_new_initials(object, num_iter, burnin, l_quant,
-  u_quant, newdata = NULL, update_resids = 1, trainingdata, pihatdata)
+pred_intervals_CATE_bcf_new_initials(
+  object,
+  num_iter,
+  burnin,
+  l_quant,
+  u_quant,
+  newdata = NULL,
+  update_resids = 1,
+  trainingdata,
+  pihatdata
+)
 }
 \arguments{
 \item{object}{bartBMA object obtained from function bartBMA}

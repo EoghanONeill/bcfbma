@@ -4,8 +4,15 @@
 \alias{pred_means_TE}
 \title{BCF-BMA Treatment Effect estimates obtained from a Gibbs sampler}
 \usage{
-pred_means_TE(object, num_iter, burnin, l_quant, u_quant, newdata = NULL,
-  update_resids = 1)
+pred_means_TE(
+  object,
+  num_iter,
+  burnin,
+  l_quant,
+  u_quant,
+  newdata = NULL,
+  update_resids = 1
+)
 }
 \arguments{
 \item{object}{bartBMA object obtained from function bartBMA}

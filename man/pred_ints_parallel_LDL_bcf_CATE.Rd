@@ -4,8 +4,14 @@
 \alias{pred_ints_parallel_LDL_bcf_CATE}
 \title{Prediction intervals for BCF-BMA Treatment Effect estimates}
 \usage{
-pred_ints_parallel_LDL_bcf_CATE(object, num_iter, l_quant, u_quant,
-  newdata = NULL, num_cores = 1)
+pred_ints_parallel_LDL_bcf_CATE(
+  object,
+  num_iter,
+  l_quant,
+  u_quant,
+  newdata = NULL,
+  num_cores = 1
+)
 }
 \arguments{
 \item{object}{bartBMA object obtained from function bartBMA}
