@@ -3,7 +3,7 @@
 #' @description This measure defines the importance of a variable as the model-probability weighted sum of the number of splits on the variable of interest, divided by the sum over all variables of such weighted counts of splits.
 #' @param object A bartBMA object obtained using the barBMA function.
 #' @export 
-#' @return A vector of variable importances. The variables are ordered in the same order that they occur in columns of the input covariate matrix used to obtain the input bartBMA object.
+#' @return A list contianing vectors of variable importances for 1. mu (control tree), i.e. the prognostic effect, and 2. tau (treatment moderator trees), i.e. the treatment effect. The variables are ordered in the same order that they occur in columns of the input covariate matrix used to obtain the input bartBMA object.
 #' @examples 
 #' #set the seed
 #' set.seed(100)

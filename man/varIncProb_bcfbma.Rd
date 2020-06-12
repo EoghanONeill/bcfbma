@@ -10,7 +10,7 @@ varIncProb_bcfbma(object, ...)
 \item{object}{A bartBMA object obtained using the barBMA function.}
 }
 \value{
-A vector of posterior inclusion probabilities. The variables are ordered in the same order that they occur in columns of the input covariate matrix used to obtain the input bartBMA object.
+A list containing: Vectors of posterior inclusion probabilities for 1. mu (control trees), i.e. the prognostic effect and 2. tau (treatment effect moderator trees), i.e. the treatment effect. The variables are ordered in the same order that they occur in columns of the input covariate matrix used to obtain the input bartBMA object.
 }
 \description{
 This measure defines the posterior inclusion probability of a variable as the model-probability weighted sum of indicator variables for whether the variable was used in any splitting rules in any of the trees in the sum-of-tree model.
