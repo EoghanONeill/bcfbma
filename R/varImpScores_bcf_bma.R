@@ -25,8 +25,40 @@
 #' varImpScores(bart_bma_example)
 
 varImpScores_bcf_bma<-function(object){
+  
+  num_to_add_mu = 0
+  num_to_add_tau = 0
+  
+  if(object$include_pi2 == 0) {
+    #include_pi2 = 0
+    # control
+    num_to_add_mu = num_to_add_mu + object$numPSmethods
+  }
+  if(object$include_pi2 == 1) {
+    #include_pi2 = 1
+    #moderate
+    
+    num_to_add_tau = num_to_add_tau + object$numPSmethods
+    
+  }
+  if(object$include_pi2 == 2) {
+    #include_pi2 = 2
+    # both
+    
+    num_to_add_mu = num_to_add_mu + object$numPSmethods
+    num_to_add_tau = num_to_add_tau + object$numPSmethods
+    
+  }
+  if(object$include_pi2 == 4) {
+    #include_pi2 = 4
+    # none
+    
+  }
+  
   #object will be bartBMA object.
-  imp_vars2_mu=get_weighted_var_imp(num_vars=object$numvars,BIC=object$bic,sum_trees=object$sumoftrees_mu)
+  imp_vars2_mu=get_weighted_var_imp(num_vars=object$numvars + num_to_add_mu,
+                                    BIC=object$bic,
+                                    sum_trees=object$sumoftrees_mu)
   res_mu <-apply(imp_vars2_mu[[4]],2,sum)
   #create varImpPlot command
   vIP_mu <-rep(NA,length(res_mu))
@@ -36,7 +68,9 @@ varImpScores_bcf_bma<-function(object){
   class(vIP_mu)<-"varImpScores.bcfBMA"
   
   
-  imp_vars2_tau=get_weighted_var_imp(num_vars=object$numvars,BIC=object$bic,sum_trees=object$sumoftrees_tau)
+  imp_vars2_tau=get_weighted_var_imp(num_vars=object$numvars + num_to_add_tau,
+                                     BIC=object$bic,
+                                     sum_trees=object$sumoftrees_tau)
   res_tau <-apply(imp_vars2_tau[[4]],2,sum)
   #create varImpPlot command
   vIP_tau <-rep(NA,length(res_tau))
