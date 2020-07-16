@@ -74,12 +74,12 @@
 bcfBMA<-function(x,...)UseMethod("bcfBMA")
 
 bcfBMA.default<-function(x.train,y.train,z,pihat,
-                         a_mu=3,a_tau=3,nu=3,sigquant=0.9,c=1000,
+                         a_mu=1,a_tau=0.5,nu=3,sigquant=0.9,c=1000,
                           pen_mu=12,pen_tau=12,num_cp_mu=20,num_cp_tau=20,
                           x.test=matrix(0.0,0,0),test_z = numeric(),test_pihat = matrix(0.0,0,0),
                           ntree_control=5,ntree_moderate=5,
-                          alpha_mu=0.95,alpha_tau=0.95,beta_mu=1,beta_tau=1,split_rule_node=0,
-                          gridpoint=0,maxOWsize=100, num_splits_mu =5, num_splits_tau =5, gridsize_mu=10, gridsize_tau=10,
+                          alpha_mu=0.95,alpha_tau=0.25,beta_mu=2,beta_tau=3,split_rule_node=0,
+                          gridpoint=1,maxOWsize=100, num_splits_mu =5, num_splits_tau =5, gridsize_mu=20, gridsize_tau=20,
                           include_pi= "control", zero_split=1, only_max_num_trees=1, mu_or_tau_each_round=1,separate_tree_numbers=1,
                          min_num_obs_for_mu_split=2, min_num_obs_after_mu_split=2,
                          min_num_obs_for_tau_split=2, min_num_obs_after_tau_split=2,
