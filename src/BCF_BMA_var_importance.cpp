@@ -70,8 +70,11 @@ List get_weighted_var_imp(int num_vars,NumericVector BIC,List sum_trees){
         NumericVector tree_vars=tree_data(_,2);
         selected_variables=get_imp_vars(tree_vars,num_vars,selected_variables);
         
-        NumericVector temp_counts_so_far = vars_for_all_trees(i,_);
-        vars_for_all_trees(i,_)= temp_counts_so_far + selected_variables;
+        //NumericVector temp_counts_so_far = vars_for_all_trees(i,_);
+        //vars_for_all_trees(i,_)= temp_counts_so_far + selected_variables;
+        if(j==tree_set.size()-1){
+          vars_for_all_trees(i,_)= selected_variables;
+        }
         
       }
     }else{
